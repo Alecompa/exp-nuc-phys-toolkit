@@ -1,0 +1,2 @@
+14986d2ad99b505a1a5c51a47b4ffe898eef943b Tue Oct 13 07:57:03 2026 +0000
+Copied from https://github.com/skowrons94/LunaSRIM (lunasrim/data, tests/reference_sr). SRIM-2013 data (c) J.F. Ziegler, free for non-commercial use.
