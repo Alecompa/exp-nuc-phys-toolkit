@@ -1,0 +1,11 @@
+Gamow
+Copyright (c) 2026 Alessandro Compagnucci, MIT License (see LICENSE).
+
+Third-party data and code are not covered by the licence above and keep their own terms:
+
+- Data/SRIM2013 and the stopping data derived from it (SRIM-2013, J. F. Ziegler et al.):
+  free for non-commercial use only.
+- The Swift stopping code is a port of LunaSRIM by J. Skowronski, MIT licensed
+  (see Data/SRIM2013/LunaSRIM-LICENSE).
+- AME2020, NUBASE2020 and ENSDF/IAEA LiveChart data: published nuclear-data evaluations;
+  cite the original references when you use them.

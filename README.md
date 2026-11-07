@@ -140,7 +140,7 @@ Because the SRIM data may only be used non-commercially, Gamow is and will stay 
 ## License
 
 The code is released under the [MIT License](LICENSE). The bundled data keep their own terms (see the table
-above): in particular the SRIM-2013 data are for non-commercial use only, so builds that include them must stay free.
+above and [NOTICE](NOTICE)): in particular the SRIM-2013 data are for non-commercial use only, so builds that include them must stay free.
 
 ## Privacy
 
