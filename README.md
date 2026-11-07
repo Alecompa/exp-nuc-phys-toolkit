@@ -4,6 +4,7 @@
 ![Swift](https://img.shields.io/badge/Swift-6-orange)
 ![SwiftUI](https://img.shields.io/badge/UI-SwiftUI%20%2B%20Liquid%20Glass-purple)
 ![Tests](https://img.shields.io/badge/tests-55%20passing-brightgreen)
+![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
 Gamow is a native iPhone and iPad app for the numbers an experimental nuclear physicist needs at the
 accelerator, in the counting room or in a meeting: Q values and kinematics, SRIM stopping powers through target
@@ -135,6 +136,11 @@ publication against the primary references.
 | Constants | CODATA 2018 | Public domain |
 
 Because the SRIM data may only be used non-commercially, Gamow is and will stay free.
+
+## License
+
+The code is released under the [MIT License](LICENSE). The bundled data keep their own terms (see the table
+above): in particular the SRIM-2013 data are for non-commercial use only, so builds that include them must stay free.
 
 ## Privacy
 
