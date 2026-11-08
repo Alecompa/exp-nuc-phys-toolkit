@@ -544,9 +544,24 @@ public actor ExforClient {
         FileManager.default.fileExists(atPath: cacheURL(d).path)
     }
 
+    /// Downloads in progress, keyed by path, shared by all callers.
+    private var inFlight: [String: Task<String, Error>] = [:]
+
     /// The table's text, from the cache or downloaded (and then cached).
+    ///
+    /// The download runs in its own task, so cancelling the caller (SwiftUI cancels a view's `.task` when the
+    /// view disappears or its id changes) does not abort it: the table still reaches the cache, and a caller that
+    /// asks again while it runs waits for the same download instead of starting a second one.
     public func text(_ d: ExforDataset) async throws -> String {
         if let t = cachedText(d) { return t }
+        if let running = inFlight[d.path] { return try await running.value }
+        let task = Task { try await self.download(d) }
+        inFlight[d.path] = task
+        defer { inFlight[d.path] = nil }
+        return try await task.value
+    }
+
+    private func download(_ d: ExforDataset) async throws -> String {
         var req = URLRequest(url: Self.url(for: d, commit: commit))
         req.setValue("Gamow-toolkit/1.0 (iOS)", forHTTPHeaderField: "User-Agent")
         req.timeoutInterval = 20

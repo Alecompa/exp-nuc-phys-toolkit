@@ -145,11 +145,13 @@ struct ExforChannelView<Header: View>: View {
     let entrance: ChargedChannel?
     let datasets: [ExforDataset]
     /// The channel is the current reaction setup: offer "Use in Reaction Rate".
-    var isSetupReaction = false
-    @ViewBuilder var header: () -> Header
+    let isSetupReaction: Bool
+    let header: () -> Header
 
     @Environment(Workbench.self) private var workbench
-    @State private var finalState: Int? = -1          // -1: not chosen yet
+    @State private var finalState: Int?
+    /// Incremented by "Try Again" to rerun the downloads.
+    @State private var attempt = 0
     @State private var quantity = ExforTable.Quantity.crossSection
     @State private var frame = ExforTable.Frame.lab
     @State private var logX = true
@@ -157,8 +159,22 @@ struct ExforChannelView<Header: View>: View {
     @State private var tables: [String: TableState] = [:]
     @State private var hidden: Set<String> = []
 
+    init(title: String, target: Nuclide, entrance: ChargedChannel?, datasets: [ExforDataset],
+         isSetupReaction: Bool = false, @ViewBuilder header: @escaping () -> Header) {
+        self.title = title
+        self.target = target
+        self.entrance = entrance
+        self.datasets = datasets
+        self.isSetupReaction = isSetupReaction
+        self.header = header
+        // Total if any table has it, else the ground state, else the lowest level.
+        _finalState = State(initialValue: Self.finalStates(of: datasets).first ?? nil)
+    }
+
     /// Final states present, in display order: total, ground state, then levels.
-    private var finalStates: [Int?] {
+    private var finalStates: [Int?] { Self.finalStates(of: datasets) }
+
+    private static func finalStates(of datasets: [ExforDataset]) -> [Int?] {
         let levels = Set(datasets.map(\.level))
         return (levels.contains(nil) ? [nil] : []) + levels.compactMap { $0 }.sorted().map { Optional($0) }
     }
@@ -179,6 +195,9 @@ struct ExforChannelView<Header: View>: View {
                     .padding(.vertical, 8)
                 if let note = loadingNote(shown) {
                     Text(note).font(.footnote).foregroundStyle(.secondary)
+                }
+                if shown.contains(where: { if case .failed = tables[$0.id] { true } else { false } }) {
+                    Button("Try Again", systemImage: "arrow.clockwise") { attempt += 1 }
                 }
             }
 
@@ -249,11 +268,8 @@ struct ExforChannelView<Header: View>: View {
                 }
             }
         }
-        .onAppear {
-            if finalState == -1 { finalState = finalStates.first ?? nil }
-        }
         .onChange(of: quantity) { _, q in frame = q == .sFactor ? .cm : .lab }
-        .task(id: finalState) { await load(visible) }
+        .task(id: LoadKey(finalState: finalState, attempt: attempt)) { await load(visible) }
     }
 
     static func finalStateLabel(_ level: Int?, datasets: [ExforDataset]) -> String {
@@ -266,26 +282,37 @@ struct ExforChannelView<Header: View>: View {
         return "\(name) (\(n))"
     }
 
+    private struct LoadKey: Hashable {
+        let finalState: Int?
+        let attempt: Int
+    }
+
+    /// Loads every table of `ds` that is not loaded yet. A run that SwiftUI cancels (the view disappeared or
+    /// the final state changed) writes nothing more; the next run picks up whatever is still missing.
     private func load(_ ds: [ExforDataset]) async {
-        let todo = ds.filter { tables[$0.id] == nil }
+        let todo = ds.filter { if case .loaded = tables[$0.id] { false } else { true } }
+        guard !todo.isEmpty else { return }
         for d in todo { tables[d.id] = .loading }
-        await withTaskGroup(of: (String, TableState).self) { group in
+        await withTaskGroup(of: (String, TableState?).self) { group in
             var next = todo.makeIterator()
             func add() -> Bool {
-                guard let d = next.next() else { return false }
+                guard !Task.isCancelled, let d = next.next() else { return false }
                 group.addTask {
                     do { return (d.id, .loaded(try await ExforClient.shared.table(d))) }
+                    catch where isCancellation(error) { return (d.id, nil) }
                     catch { return (d.id, .failed(error.localizedDescription)) }
                 }
                 return true
             }
             for _ in 0..<6 { if !add() { break } }        // at most six downloads at a time
             for await (id, state) in group {
+                guard !Task.isCancelled, let state else { continue }
                 withAnimation(.smooth) { tables[id] = state }
                 _ = add()
             }
         }
     }
+
 
     private func loadingNote(_ ds: [ExforDataset]) -> String? {
         let loading = ds.filter { if case .loading = tables[$0.id] { true } else { false } }.count
@@ -696,6 +723,11 @@ struct ExforToolView: View {
 enum ExforCache {
     static func clear() async { await ExforClient.shared.clearCache() }
     static func usage() async -> (bytes: Int, tables: Int) { await ExforClient.shared.cacheUsage() }
+}
+
+/// True for the error of a cancelled task or URL request (not a real failure).
+nonisolated func isCancellation(_ error: Error) -> Bool {
+    error is CancellationError || (error as? URLError)?.code == .cancelled
 }
 
 // MARK: - Axis helpers

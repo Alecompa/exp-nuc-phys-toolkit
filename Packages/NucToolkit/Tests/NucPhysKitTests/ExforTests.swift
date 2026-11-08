@@ -224,3 +224,45 @@ struct ExforZeroEnergyTests {
         #expect(t.points(as: .sFactor, frame: .cm, channel: c).count == 1)
     }
 }
+
+/// Answers every request with a fixture after a delay, and counts the requests.
+private final class SlowFixtureProtocol: URLProtocol, @unchecked Sendable {
+    nonisolated(unsafe) static var body = Data()
+    nonisolated(unsafe) static var requests = 0
+    override class func canInit(with request: URLRequest) -> Bool { true }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override func startLoading() {
+        Self.requests += 1
+        DispatchQueue.global().asyncAfter(deadline: .now() + 0.3) { [self] in
+            let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+            client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+            client?.urlProtocol(self, didLoad: Self.body)
+            client?.urlProtocolDidFinishLoading(self)
+        }
+    }
+    override func stopLoading() {}
+}
+
+@Suite("EXFOR client", .serialized)
+struct ExforClientTests {
+    /// SwiftUI cancels a view's task when the view disappears; that must not turn a download into an error.
+    @Test func cancellingTheCallerDoesNotAbortTheDownload() async throws {
+        SlowFixtureProtocol.body = Data(try fixture("exfor_al27pg_chakrabarty").utf8)
+        SlowFixtureProtocol.requests = 0
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [SlowFixtureProtocol.self]
+        let cache = FileManager.default.temporaryDirectory.appendingPathComponent("exfor-test-\(UUID())")
+        defer { try? FileManager.default.removeItem(at: cache) }
+        let client = ExforClient(session: URLSession(configuration: config), cacheDirectory: cache, commit: "test")
+        let d = try #require(ExforDataset(directory: "p/Al-27/p-g", fileName: "Al-27_p-g-L0_Al-27_D.R.Chakrabarty-D6305-002-0-2017.txt"))
+
+        let first = Task { try await client.text(d) }
+        try await Task.sleep(for: .milliseconds(50))      // the download is running
+        first.cancel()
+        let second = try await client.text(d)              // joins the same download
+        #expect(try await first.value == second)           // the cancelled caller still gets the table
+        #expect(second.contains("D.R.Chakrabarty"))
+        #expect(SlowFixtureProtocol.requests == 1)
+        #expect(await client.isCached(d))
+    }
+}
