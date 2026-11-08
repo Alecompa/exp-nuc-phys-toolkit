@@ -5,6 +5,7 @@ struct SettingsView: View {
     @Environment(Workbench.self) private var workbench
     @AppStorage("livechart.autoload") private var autoloadLevels = true
     @State private var cacheCleared = 0
+    @State private var exforCache: (bytes: Int, tables: Int)?
 
     var body: some View {
         @Bindable var workbench = workbench
@@ -26,6 +27,7 @@ struct SettingsView: View {
                     LabeledContent("Nuclides", value: MassTable.ame2020.nuclides.count.formatted())
                     LabeledContent("Half-lives, Jπ, isomers", value: "NUBASE2020")
                     LabeledContent("Levels, γ rays", value: "ENSDF (IAEA)")
+                    LabeledContent("Cross sections", value: "EXFOR (IAEA), \(ExforIndex.bundled.date)")
                     Link(destination: URL(string: "https://doi.org/10.1088/1674-1137/abddaf")!) {
                         Label("Wang et al., Chin. Phys. C 45, 030003 (2021)", systemImage: "doc.text")
                     }
@@ -50,6 +52,23 @@ struct SettingsView: View {
                 }
 
                 Section {
+                    LabeledContent("Downloaded tables", value: exforCache.map {
+                        "\($0.tables) · \(ByteCountFormatter.string(fromByteCount: Int64($0.bytes), countStyle: .file))"
+                    } ?? "…")
+                    Button("Clear EXFOR Cache", role: .destructive) {
+                        Task {
+                            await ExforCache.clear()
+                            exforCache = await ExforCache.usage()
+                            cacheCleared += 1
+                        }
+                    }
+                } header: {
+                    Text("EXFOR")
+                } footer: {
+                    Text("Cross-section tables come from the IAEA's EXFOR tables on GitHub (IAEA-NDS/exfortables_py, snapshot \(ExforIndex.bundled.date)). Only the index is in the app; a table downloads when you open its reaction and is kept for offline use.")
+                }
+
+                Section {
                     NavigationLink { AboutView() } label: { Label("About Gamow", systemImage: "info.circle") }
                     NavigationLink { LicencesView() } label: { Label("Data Sources & Licences", systemImage: "books.vertical") }
                     NavigationLink { PrivacyView() } label: { Label("Privacy", systemImage: "hand.raised") }
@@ -60,6 +79,7 @@ struct SettingsView: View {
             .navigationTitle("Settings")
             .largeTitle()
             .sensoryFeedback(.success, trigger: cacheCleared)
+            .task { exforCache = await ExforCache.usage() }
         }
     }
 }

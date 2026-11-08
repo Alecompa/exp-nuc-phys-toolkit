@@ -14,6 +14,7 @@ Status: `[x]` done · `[~]` in progress · `[ ]` planned
 | 3 | Nuclear astrophysics (Gamow window, S factor, resonances, rates, penetrabilities) | ✅ done (broad resonances, rate uncertainties, stellar screening open) |
 | 4 | Run planning, detectors, sources | ✅ done |
 | 5 | Data and productivity (NUBASE, ENSDF, notebook, exports, reference, Shortcuts, widget) | ✅ done (iPad pass, Mac, iCloud open) |
+| 5b | Experimental and evaluated reaction data (EXFOR, level-scheme diagram, rate evaluations) | 🚧 EXFOR done |
 | 6 | Release: first TestFlight / App Store version | ⏳ next |
 | 7 | Ideas for later | 💡 open |
 
@@ -89,6 +90,36 @@ Ziegler's non-commercial terms → app stays free / non-commercial, credit SRIM)
 - [x] Release basics: automatic signing, export-compliance key, About/licences/privacy screens, docs/release.md
 - [ ] iPad polish, Mac and iCloud: moved to milestones 6 and 7
 
+## Milestone 5b — Reaction data
+
+EXFOR comes from the tables the IAEA publishes as [IAEA-NDS/exfortables_py](https://github.com/IAEA-NDS/exfortables_py)
+(the data behind the IAEA Data Explorer). Decisions:
+
+- **Index bundled, tables on demand.** The app bundles only the list of tables (345 kB compressed, 51 871 tables:
+  p, d, t, ³He, α and heavy-ion cross sections on isotopic targets) and downloads a table from
+  `raw.githubusercontent.com` when its reaction is opened. Bundling the data would cost hundreds of MB.
+- **GitHub, not the IAEA API.** In November 2026 the IAEA EXFOR services (`nds.iaea.org/dataexplorer/api`,
+  `nds.iaea.org/exfor/...`) answer scripted clients with a Cloudflare challenge (HTTP 403), which an app cannot
+  pass. The GitHub mirror has no challenge. If the IAEA opens its API to apps, it can replace GitHub later.
+- **Pinned commit.** exfortables_py warns that its directory layout may change; the index and every table URL use
+  commit `f9c2d73` (2026-09-11), so links cannot break, and cached tables never go stale. Rebuild with
+  `Tools/build_exfor_index.py` (see README).
+- **Evaluated charged-particle data are not added.** The ENDF/B-VIII.1 proton sublibrary has 49 targets from the LANL
+  1996–97 evaluations, with only elastic and one lumped nonelastic cross section (no (p,γ) or (p,α)) and a
+  >1 MeV application range; the α sublibrary has 5 targets. For astrophysics, rate evaluations are the useful ones.
+
+- [x] Bundled index of exfortables_py, file-name grammar checked on all 73 512 charged-particle and heavy-ion tables
+- [x] Table parser (σ in b/mb/µb/nb, S in b·eV/keV/MeV, lab or c.m., DATA-MAX and DATA-APRX, NAN rows, S(0) at E = 0)
+- [x] Download client with on-disk cache (pinned commit, never expires), clearable in Settings
+- [x] Nuclide page: reaction channels on the nuclide as target; channel explorer with overlay chart, σ ↔ S,
+      lab ↔ c.m., final-state filter, per-table visibility, CSV export; table page with reference and EXFOR link
+- [x] EXFOR tool for the current reaction setup; a table can become the S(E) table of the rate tool
+- [ ] Natural-element targets (`Al-0`) and angular distributions (`angle/`) from the same repository
+- [ ] Ask the IAEA NDS whether their Data Explorer API can be opened to a non-commercial app
+- [ ] Drawn level-scheme diagram (levels by energy, γ arrows weighted by intensity) from the cached ENSDF data
+- [ ] Rate evaluations (STARLIB rates with uncertainty factors for light targets, licence to be checked)
+- [ ] Device test of the EXFOR screens (simulator unavailable on the development Mac at the time of writing)
+
 ## Milestone 6 — First public release
 
 - [ ] Test on physical iPhones and iPads: launch time, memory, haptics, keyboard, widget refresh
@@ -112,7 +143,7 @@ Ziegler's non-commercial terms → app stays free / non-commercial, credit SRIM)
 - [ ] Broad resonances (Breit–Wigner with energy-dependent widths) and interference in the rate integral
 - [ ] Rate uncertainties by Monte Carlo (lognormal), REACLIB 7-parameter fit and export
 - [ ] Stellar screening and stellar enhancement factor; inverse rates by detailed balance
-- [ ] Import S-factor data from EXFOR for comparison plots
+- [x] Import S-factor data from EXFOR for comparison plots (milestone 5b)
 
 ### Detectors and data
 

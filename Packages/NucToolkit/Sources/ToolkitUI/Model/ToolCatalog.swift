@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Tools that are implemented and navigable.
 enum Tool: String, CaseIterable, Identifiable, Hashable {
-    case qValue, kinematics, rutherford, stopping, energyLoss
+    case qValue, kinematics, rutherford, stopping, energyLoss, exfor
     case gamowWindow, penetrability, sFactor, resonanceStrength, reactionRate
     case gammaDoppler, yieldEstimate, beamCurrent, detector, sources, decay
     case constants, units, formulas
@@ -30,6 +30,7 @@ enum Tool: String, CaseIterable, Identifiable, Hashable {
         case .constants: "Constants"
         case .units: "Unit Converter"
         case .formulas: "Formula Sheet"
+        case .exfor: "EXFOR Cross Sections"
         }
     }
 
@@ -54,6 +55,7 @@ enum Tool: String, CaseIterable, Identifiable, Hashable {
         case .constants: "CODATA 2018, nuclear and atomic"
         case .units: "Energy, T₉, barns, lengths, activity"
         case .formulas: "Kinematics, astrophysics, decay, detectors"
+        case .exfor: "Measured σ and S factors for the setup"
         }
     }
 
@@ -78,6 +80,7 @@ enum Tool: String, CaseIterable, Identifiable, Hashable {
         case .constants: "number"
         case .units: "arrow.left.arrow.right"
         case .formulas: "sum"
+        case .exfor: "chart.dots.scatter"
         }
     }
 
@@ -102,6 +105,7 @@ enum Tool: String, CaseIterable, Identifiable, Hashable {
         case .constants: .gray
         case .units: .blue
         case .formulas: .indigo
+        case .exfor: .mint
         }
     }
 }
@@ -123,7 +127,7 @@ struct ToolSection: Identifiable {
 
 enum ToolCatalog {
     static let sections: [ToolSection] = [
-        ToolSection(title: "Reactions", tools: [.qValue, .kinematics, .rutherford, .gammaDoppler], planned: []),
+        ToolSection(title: "Reactions", tools: [.qValue, .kinematics, .exfor, .rutherford, .gammaDoppler], planned: []),
         ToolSection(title: "Stopping & Targets", tools: [.stopping, .energyLoss], planned: []),
         ToolSection(title: "Nuclear Astrophysics",
                     tools: [.gamowWindow, .sFactor, .resonanceStrength, .reactionRate, .penetrability], planned: []),

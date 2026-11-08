@@ -9,3 +9,8 @@ Third-party data and code are not covered by the licence above and keep their ow
   (see Data/SRIM2013/LunaSRIM-LICENSE).
 - AME2020, NUBASE2020 and ENSDF/IAEA LiveChart data: published nuclear-data evaluations;
   cite the original references when you use them.
+- Packages/NucToolkit/Sources/NucPhysKit/Resources/exfor_index.deflate is a list of the file names in
+  IAEA-NDS/exfortables_py (EXFOR tables by the IAEA Nuclear Data Section; S. Okumura, G. Schnabel, A. Koning),
+  and the test fixtures exfor_*.txt are three of its tables. They are distributed under the Creative Commons
+  Attribution-ShareAlike 4.0 licence (https://creativecommons.org/licenses/by-sa/4.0/), like the source.
+  Cite EXFOR (N. Otuka et al., Nucl. Data Sheets 120, 272 (2014)) and the original measurement.
