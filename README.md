@@ -3,13 +3,14 @@
 ![Platform](https://img.shields.io/badge/platform-iOS%20%7C%20iPadOS%2026-blue)
 ![Swift](https://img.shields.io/badge/Swift-6-orange)
 ![SwiftUI](https://img.shields.io/badge/UI-SwiftUI%20%2B%20Liquid%20Glass-purple)
-![Tests](https://img.shields.io/badge/tests-55%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-73%20passing-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
 Gamow is a native iPhone and iPad app for the numbers an experimental nuclear physicist needs at the
 accelerator, in the counting room or in a meeting: Q values and kinematics, SRIM stopping powers through target
 stacks, Gamow windows, S factors and reaction rates, beam-time estimates, detector response, calibration sources
-and nuclear data. It works offline, keeps a notebook of saved calculations, and has no account, tracking or ads.
+and nuclear data, including measured cross sections from EXFOR. It works offline, keeps a notebook of saved
+calculations, and has no account, tracking or ads.
 
 <p align="center">
   <img src="docs/screenshots/tools.png" width="200" alt="Tools home with the current reaction setup">
@@ -32,6 +33,7 @@ the target updates every screen.
 | **Detectors & sources** | HPGe/scintillator resolution model · weighted efficiency-curve fit to your calibration points · calibration sources: activity today with uncertainty, γ lines with expected counts, air-kerma rate · decay calculator (activity, atoms, mass, time to a fraction) |
 | **Reference** | CODATA 2018 constants · unit converter (energy, T₉ ↔ kT, barns, lengths, areal density, activity, time, charge) · formula sheet |
 | **Nuclides** | AME2020 masses and separation energies · NUBASE2020 half-lives, Jπ, decay modes, abundances, isomers · ENSDF levels and γ rays from the IAEA LiveChart, cached for offline use |
+| **Cross sections (EXFOR)** | Measured σ and S factors for p, d, t, ³He, α and heavy-ion reactions (51 871 tables) · every reaction on a nuclide, or the data for the current setup · overlay of all measurements with error bars, σ ↔ S and lab ↔ c.m. conversion, final-state selection · reference, facility and link to the EXFOR entry · CSV export · a measured S(E) can feed the rate tool |
 | **Notebook** | Save any tool's inputs and results with a note; search; export as CSV, PDF or text |
 | **System** | Shortcuts / Siri actions (Q value, Gamow peak, source activity, half-life) · Home and Lock Screen widget for a source's activity today |
 
@@ -64,9 +66,9 @@ TestFlight and the App Store.
 
 | Path | Contents |
 |---|---|
-| `Packages/NucToolkit/Sources/NucPhysKit` | Physics only, no UI: masses, reactions, kinematics, `Stopping/` (SRIM-2013), `Astro/` (Coulomb functions, Gamow window, rates), `NuclearData/` (NUBASE, decay, LiveChart client), `RunPlanning/` (beam, statistics, detectors) |
+| `Packages/NucToolkit/Sources/NucPhysKit` | Physics only, no UI: masses, reactions, kinematics, `Stopping/` (SRIM-2013), `Astro/` (Coulomb functions, Gamow window, rates), `NuclearData/` (NUBASE, decay, LiveChart client, EXFOR index, table parser and client), `RunPlanning/` (beam, statistics, detectors) |
 | `Packages/NucToolkit/Sources/ToolkitUI` | All SwiftUI screens |
-| `Packages/NucToolkit/Tests/NucPhysKitTests` | Swift Testing suite: Q values against AME2020, kinematics conservation, 24 SRIM SR-module reference cases, Coulomb functions against mpmath, Gamow peak, rate formulae, NUBASE, decay, efficiency fit |
+| `Packages/NucToolkit/Tests/NucPhysKitTests` | Swift Testing suite: Q values against AME2020, kinematics conservation, 24 SRIM SR-module reference cases, Coulomb functions against mpmath, Gamow peak, rate formulae, NUBASE, decay, efficiency fit, EXFOR index and tables |
 | `App/` | `@main` app target and the App Intents (Shortcuts) |
 | `Widgets/` | Widget extension |
 | `Data/` | Source tables: AME2020, NUBASE2020, SRIM-2013 data, raw IAEA LiveChart decay data |
@@ -105,6 +107,20 @@ python3 -I Tools/fetch_sources.py Data/LiveChart Packages/NucToolkit/Sources/Nuc
 python3 -I Tools/convert_srim.py Data/SRIM2013 Packages/NucToolkit/Sources/NucPhysKit/Resources Packages/NucToolkit/Tests/NucPhysKitTests/Resources
 ```
 
+The EXFOR index lists the cross-section tables of
+[IAEA-NDS/exfortables_py](https://github.com/IAEA-NDS/exfortables_py) at one pinned commit. To update it, list the
+repository without downloading its data, then rebuild the index and the `bundledIndexIsPinned` test numbers:
+
+```bash
+git clone --depth 1 --filter=blob:none --no-checkout https://github.com/IAEA-NDS/exfortables_py.git /tmp/xt
+git -C /tmp/xt ls-tree -r --name-only HEAD > /tmp/xt_paths.txt
+git -C /tmp/xt log -1 --format='%H %cs'
+python3 -I Tools/build_exfor_index.py /tmp/xt_paths.txt <commit> <date> Packages/NucToolkit/Sources/NucPhysKit/Resources/exfor_index.deflate
+```
+
+The network test that downloads a table from GitHub is off by default; run it with
+`GAMOW_NETWORK_TESTS=1 ./Tools/test.sh`.
+
 Planned work is tracked in [ROADMAP.md](ROADMAP.md).
 
 ## Conventions
@@ -117,6 +133,10 @@ Planned work is tracked in [ROADMAP.md](ROADMAP.md).
 - Astrophysics: centre-of-mass energies, reduced masses in u, kT = 86.173 keV · T₉, S in keV b, ωγ and widths in eV,
   rates in cm³ mol⁻¹ s⁻¹ (bare, no stellar screening). Thick-target yields use the stopping per active nucleus,
   ε_eff = ε_compound / (element atom fraction × isotopic abundance).
+- EXFOR: energies in keV and cross sections in barn (S factors in keV b) after conversion from the tables' units.
+  σ ↔ S and lab ↔ c.m. use the entrance channel, non-relativistically, with S = σ E exp(2πη) at the c.m. energy.
+  Measured data include electron screening. Values that EXFOR gives at E = 0 (extrapolated S(0)) are listed but
+  not plotted.
 - Run planning: thick-target yields integrate σ(E)/ε(E) over the target layer; counting times use
   t = (S + kB)/(S²u²); detection limits follow Currie. Dose rates are unshielded air kerma from NUBASE/ENSDF lines.
 
@@ -130,6 +150,7 @@ publication against the primary references.
 | Atomic masses | AME2020, M. Wang et al., Chin. Phys. C 45, 030003 (2021) | Published evaluation (AMDC) |
 | Half-lives, Jπ, isomers | NUBASE2020, F. G. Kondev et al., Chin. Phys. C 45, 030001 (2021) | Published evaluation (AMDC) |
 | Levels, γ rays, decay radiations | ENSDF via the [IAEA LiveChart of Nuclides](https://www-nds.iaea.org/relnsd/vcharthtml/VChartHTML.html) | Public nuclear data |
+| Measured cross sections | EXFOR, N. Otuka et al., Nucl. Data Sheets 120, 272 (2014), as tabulated in [IAEA-NDS/exfortables_py](https://github.com/IAEA-NDS/exfortables_py) (S. Okumura, G. Schnabel, A. Koning) | CC BY-SA 4.0 (the bundled index too) |
 | Stopping powers | SRIM-2013, J. F. Ziegler, M. D. Ziegler, J. P. Biersack, NIM B 268, 1818 (2010) | **Non-commercial use only** |
 | Stopping code | [LunaSRIM](https://github.com/skowrons94/LunaSRIM) by J. Skowronski, ported to Swift | MIT (`Data/SRIM2013/LunaSRIM-LICENSE`) |
 | Air μ_en/ρ | J. H. Hubbell and S. M. Seltzer, NISTIR 5632 | Public domain |
@@ -144,5 +165,6 @@ above and [NOTICE](NOTICE)): in particular the SRIM-2013 data are for non-commer
 
 ## Privacy
 
-Gamow collects no data. The only network request goes to the IAEA Nuclear Data Section to fetch the level scheme of
-the nuclide you open. See [docs/privacy.md](docs/privacy.md).
+Gamow collects no data. It makes two kinds of network request: to the IAEA Nuclear Data Section for the level
+scheme of the nuclide you open, and to GitHub (`raw.githubusercontent.com`) for the EXFOR tables of the reaction you
+open. See [docs/privacy.md](docs/privacy.md).

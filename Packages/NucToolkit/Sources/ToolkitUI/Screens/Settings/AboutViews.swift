@@ -69,6 +69,10 @@ struct LicencesView: View {
               detail: "Levels, γ rays and decay radiations; Evaluated Nuclear Structure Data File (NNDC/IAEA)",
               licence: "Public nuclear data; retrieved from the IAEA API. Cite the ENSDF evaluation shown with the data.",
               url: "https://www-nds.iaea.org/relnsd/vcharthtml/VChartHTML.html"),
+        .init(name: "EXFOR experimental nuclear reaction data",
+              detail: "N. Otuka et al., Nucl. Data Sheets 120, 272 (2014). Tables from IAEA-NDS/exfortables_py (S. Okumura, G. Schnabel, A. Koning, IAEA)",
+              licence: "exfortables_py and the index of it bundled in Gamow: Creative Commons Attribution-ShareAlike 4.0. Cite the original measurement shown with each table.",
+              url: "https://doi.org/10.1016/j.nds.2014.07.065"),
         .init(name: "SRIM-2013 stopping powers",
               detail: "J. F. Ziegler, M. D. Ziegler, J. P. Biersack, Nucl. Instrum. Methods B 268, 1818 (2010)",
               licence: "SRIM is free for non-commercial use. For this reason Gamow is, and stays, free.",
@@ -120,7 +124,7 @@ struct PrivacyView: View {
             Section {
                 Label("No account, no tracking, no analytics, no ads.", systemImage: "hand.raised.fill")
                 Label("Your inputs, sources and notebook stay on this device.", systemImage: "iphone")
-                Label("The only network request goes to the IAEA Nuclear Data Section, to fetch level schemes of the nuclide you open. It contains the nuclide name and nothing about you.", systemImage: "network")
+                Label("Network requests go to the IAEA Nuclear Data Section, for the level scheme of the nuclide you open, and to GitHub, for the EXFOR tables of the reaction you open. They contain the nuclide or table name and nothing about you.", systemImage: "network")
                 Label("Files you export leave the device only through the share sheet, when you choose.", systemImage: "square.and.arrow.up")
             }
             .labelStyle(PrivacyLabelStyle())

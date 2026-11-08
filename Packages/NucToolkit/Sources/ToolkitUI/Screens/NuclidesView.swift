@@ -169,6 +169,10 @@ struct NuclideDetailView: View {
                 LevelSchemeSection(nuclide: nuclide)
             }
 
+            if nuclide.z > 0 {
+                ExforTargetSection(nuclide: nuclide)
+            }
+
             if nuclide.a > 1 {
                 Section {
                     Button {

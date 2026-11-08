@@ -85,6 +85,8 @@ extension View {
                 ConstantsView().zoomTransition(id: Tool.constants, in: namespace)
             case .tool(.units):
                 UnitConverterView().zoomTransition(id: Tool.units, in: namespace)
+            case .tool(.exfor):
+                ExforToolView().zoomTransition(id: Tool.exfor, in: namespace)
             case .tool(.formulas):
                 FormulaSheetView().zoomTransition(id: Tool.formulas, in: namespace)
             case .nuclide(let n):
