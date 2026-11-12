@@ -3,7 +3,7 @@
 ![Platform](https://img.shields.io/badge/platform-iOS%20%7C%20iPadOS%2026-blue)
 ![Swift](https://img.shields.io/badge/Swift-6-orange)
 ![SwiftUI](https://img.shields.io/badge/UI-SwiftUI%20%2B%20Liquid%20Glass-purple)
-![Tests](https://img.shields.io/badge/tests-90%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-96%20passing-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
 Gamow is a native iPhone and iPad app for the numbers an experimental nuclear physicist needs at the
@@ -13,7 +13,7 @@ and nuclear data, including measured cross sections from EXFOR. It works offline
 calculations, and has no account, tracking or ads.
 
 <p align="center">
-  <img src="docs/screenshots/tools.png" width="200" alt="Tools home with the current reaction setup">
+  <img src="docs/screenshots/tools.png" width="200" alt="Tools home with the current setup, pinned tools and collapsible categories">
   <img src="docs/screenshots/kinematics.png" width="200" alt="Relativistic kinematics with an interactive chart">
   <img src="docs/screenshots/yield.png" width="200" alt="Yield and beam-time estimator">
   <img src="docs/screenshots/nuclide.png" width="200" alt="Nuclide page with ENSDF levels">
@@ -21,8 +21,14 @@ calculations, and has no account, tracking or ads.
 
 ## Features
 
-One reaction setup (for example `27Al(p,g)28Si` at 1400 keV) is shared by all tools, so changing the beam energy or
-the target updates every screen.
+One reaction setup (for example `27Al(p,g)28Si` at 1400 keV) is shared by all tools, so changing the beam energy,
+the residual level or the target updates every screen.
+
+The **Tools** home shows the current setup, a **Pinned** row of favourite tools and the rest grouped in collapsible
+categories (Reactions, Stopping & targets, Nuclear astrophysics, Run planning, Detectors & sources, Reference).
+Pin or unpin a tool by swiping its row or from its context menu; long-press a pinned tile to reorder it. Tools that
+do not apply to the setup are hidden from the list (Gamma Doppler when the ejectile is a particle and the residual
+is left in its ground state) but stay reachable through search.
 
 | Area | Tools |
 |---|---|
@@ -30,6 +36,7 @@ the target updates every screen.
 | **Stopping & targets** | SRIM-2013 stopping powers (Swift port of LunaSRIM), ranges and straggling · any composition from a formula (`Ta2N5`, `Ca(OH)2`, `TiD2`, `Ta2[17O]5`) or the SRIM compound library, gases from pressure and temperature · layer stacks with energy loss, straggling and mean energy in the target |
 | **Nuclear astrophysics** | Gamow peak and window vs T₉ · S factor ↔ σ with electron screening · resonance strength ↔ thick-target yield · Nₐ⟨σv⟩ from a polynomial or tabulated S(E) plus narrow resonances (CSV import/export) · Coulomb penetrability, shift factor, Wigner limit, θ² |
 | **Run planning** | Yield, count rate and beam time for a target statistical uncertainty, with background and the Currie detection limit · beam current ↔ particles/s, charge state, power on target, integrated charge |
+| **Detector spectrum** | Expected spectrum for the current setup · charged-particle mode: ejectile groups and beam elastically scattered on the target elements at the detector angle, through absorber foils (SRIM stopping, straggling, kinematic spread) · γ mode: primary capture γ and the residual-level cascade from ENSDF branching, custom and source lines, Gaussian photopeaks, Compton continuum, single/double escape peaks scaled with the NIST XCOM pair-production fraction, NIST foil attenuation · zoom, cursors, ROI sums, CSV export |
 | **Detectors & sources** | HPGe/scintillator resolution model · weighted efficiency-curve fit to your calibration points · calibration sources: activity today with uncertainty, γ lines with expected counts, air-kerma rate · decay calculator (activity, atoms, mass, time to a fraction) |
 | **Reference** | CODATA 2018 constants · unit converter (energy, T₉ ↔ kT, barns, lengths, areal density, activity, time, charge) · formula sheet |
 | **Nuclides** | AME2020 masses and separation energies · NUBASE2020 half-lives, Jπ, decay modes, abundances, isomers · ENSDF levels and γ rays from the IAEA LiveChart, cached for offline use |
@@ -52,14 +59,28 @@ expanded/focused views too. Calculator search is available on Tools.
 The [calculation audit](docs/calculation-audit-2026-11-11.md) documents corrected target/yield behavior,
 independent checks and validation limits.
 
-## Custom experiment builder
+## Building an experiment
 
-Use **Tools → Build your experiment** to construct an arbitrary two-body reaction, edit compound
-materials and beam layers, or open the gamma-spectrum tool. Add custom reaction/contaminant lines,
-choose HPGe/BGO/NaI resolution, and insert compound foils in front of the detector. The spectrum
-combines Gaussian photopeaks and a simplified Compton continuum with NIST foil attenuation;
-line counts and continuum/peak ratio are experimental inputs. Export the expected spectrum as CSV.
-See [the experiment-builder guide](docs/experiment-builder.md) for workflow, assumptions and validation.
+**Tools → Current Setup → Edit** holds everything the tools share: the reaction (builder fields or notation such as
+`10B(a,p)13C`), beam energy, the residual excitation — typed, or picked from the residual's ENSDF levels below the
+available energy — and the target material, thickness, tilt and isotope abundance. The sheet warns when the
+material does not contain the reaction's target element.
+
+**Detector Spectrum** follows the exit channel. With a charged ejectile it shows the particle groups at a silicon
+detector: the ejectile and the beam elastically scattered on each target element, slowed by absorber foils, with
+particles that stop in a foil flagged. With a γ ray, or a residual left in an excited state, it lists the reaction's
+own γ rays — the primary capture γ and the cascade of the residual level, following the ENSDF branching ratios — and
+builds the HPGe or scintillator response with photopeaks, Compton continuum and single/double escape peaks. Custom
+and contaminant lines, calibration-source templates, foils in front of the detector and a flat background can be
+added; the spectrum exports as CSV. See [the experiment-builder guide](docs/experiment-builder.md) for the
+workflow, the model's assumptions and its validation.
+
+<p align="center">
+  <img src="docs/screenshots/setup.png" width="200" alt="Setup sheet with the residual-level picker open">
+  <img src="docs/screenshots/spectrum-particles.png" width="200" alt="Particle spectrum for 10B(α,p)13C behind an absorber foil">
+  <img src="docs/screenshots/spectrum-cascade.png" width="200" alt="γ rays of 27Al(p,γ)28Si from the ENSDF cascade">
+  <img src="docs/screenshots/spectrum-gamma.png" width="200" alt="γ spectrum with photopeaks, Compton continuum and escape peaks">
+</p>
 
 ## Install on your iPhone
 
@@ -85,9 +106,9 @@ TestFlight and the App Store.
 
 | Path | Contents |
 |---|---|
-| `Packages/NucToolkit/Sources/NucPhysKit` | Physics only, no UI: masses, reactions, kinematics, `Stopping/` (SRIM-2013), `Astro/` (Coulomb functions, Gamow window, rates), `NuclearData/` (NUBASE, decay, LiveChart client, EXFOR index, table parser and client), `RunPlanning/` (beam, statistics, detectors) |
+| `Packages/NucToolkit/Sources/NucPhysKit` | Physics only, no UI: masses, reactions, kinematics, `Stopping/` (SRIM-2013), `Astro/` (Coulomb functions, Gamow window, rates), `NuclearData/` (NUBASE, decay, LiveChart client, γ cascades, EXFOR index, table parser and client), `RunPlanning/` (beam, statistics, detectors, γ and particle spectra) |
 | `Packages/NucToolkit/Sources/ToolkitUI` | All SwiftUI screens |
-| `Packages/NucToolkit/Tests/NucPhysKitTests` | Swift Testing suite: Q values against AME2020, kinematics conservation, 24 SRIM SR-module reference cases, Coulomb functions against mpmath, Gamow peak, rate formulae, NUBASE, decay, efficiency fit, EXFOR index and tables |
+| `Packages/NucToolkit/Tests/NucPhysKitTests` | Swift Testing suite: Q values against AME2020, kinematics conservation, 24 SRIM SR-module reference cases, Coulomb functions against mpmath, Gamow peak, rate formulae, NUBASE, decay, efficiency fit, EXFOR index and tables, γ cascades, escape peaks, photon attenuation, particle spectra |
 | `App/` | `@main` app target and the App Intents (Shortcuts) |
 | `Widgets/` | Widget extension |
 | `Data/` | Source tables: AME2020, NUBASE2020, SRIM-2013 data, raw IAEA LiveChart decay data |
@@ -173,6 +194,7 @@ publication against the primary references.
 | Stopping powers | SRIM-2013, J. F. Ziegler, M. D. Ziegler, J. P. Biersack, NIM B 268, 1818 (2010) | **Non-commercial use only** |
 | Stopping code | [LunaSRIM](https://github.com/skowrons94/LunaSRIM) by J. Skowronski, ported to Swift | MIT (`Data/SRIM2013/LunaSRIM-LICENSE`) |
 | Photon foil μ/ρ | J. H. Hubbell and S. M. Seltzer, NISTIR 5632, elemental tables Z=1–92 | Public domain |
+| Pair-production fraction (escape peaks) | M. J. Berger et al., [NIST XCOM](https://physics.nist.gov/PhysRefData/Xcom/html/xcom1.html) | Public domain |
 | Air μ_en/ρ | J. H. Hubbell and S. M. Seltzer, NISTIR 5632 | Public domain |
 | Constants | CODATA 2018 | Public domain |
 

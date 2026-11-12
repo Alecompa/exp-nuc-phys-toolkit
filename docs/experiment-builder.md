@@ -20,14 +20,25 @@ and source certificates are not part of the shared snapshot: save calculator out
 
 The spectrum plot supports channel inspection, zoom in/out around the cursor, left/right pan,
 explicit energy limits, a reset button, expanded presentation, component visibility and log counts.
-The ROI panel sums predicted photopeak, Compton, background and total counts over chosen limits.
+The ROI panel sums predicted photopeak, Compton, escape, background and total counts over chosen limits.
 Partial boundary channels are weighted by their overlap; this is not measured-spectrum peak fitting.
 Log plots use a display floor of 0.01 counts, without modifying readouts, ROI sums or exported values.
 
 Overview plots retain channel extrema within energy buckets to keep narrow peaks visible with fewer
 drawn points. Zooming reveals individual channels. Analysis and CSV export always use all channels.
-Kinematics and stopping-power plots also have expanded views and focused ranges. Use the search box
-on Tools to find a calculator by name or description.
+Kinematics and stopping-power plots also have expanded views and focused ranges.
+
+## Tools home
+
+The Tools tab opens on the current setup, then a **Pinned** row (Kinematics, Stopping, Yield & Time and
+Spectrum by default) and the remaining tools in collapsible categories. Swipe a row to the right, or
+long-press it, to pin or unpin the tool; long-press a pinned tile to move it left or right or unpin it.
+Pins, their order and which categories are expanded are kept between launches. The search box lists
+every matching tool by name or description, regardless of pins and collapsed categories.
+
+A tool that cannot say anything about the current setup is left out of the list: Gamma Doppler is
+hidden when the ejectile is a particle and the residual Eₓ is 0, since no γ ray is emitted. Search
+still finds it.
 
 ## Isotopes and tilted targets
 
@@ -50,6 +61,10 @@ beam energy and residual Eₓ, and the target — material (formula, compound li
 tilt and isotope abundance. The sheet warns when the material does not contain the reaction's target
 element. Backings and covers stay in the **Energy Loss** tool.
 
+The list button next to **Residual Eₓ** offers the residual's ENSDF levels (energy and Jπ, up to 40)
+that the exit channel can reach, plus the ground state. The level scheme comes from the offline
+cache, or from the IAEA LiveChart when online data are allowed in Settings; without it, type Eₓ.
+
 **Detector Spectrum** adapts to the exit channel:
 
 - **Particles** (default for a charged ejectile): the ejectile and the beam elastically scattered by each
@@ -57,12 +72,19 @@ element. Backings and covers stay in the **Energy Loss** tool.
   two-body kinematics; absorber foils slow them with SRIM stopping and straggling, and a particle that stops
   in a foil is flagged. Peak widths add the detector resolution, foil straggling and the kinematic spread over
   the detector opening. Peaks are drawn with equal areas; energy loss in the target is not included.
-- **γ rays** (default for capture and neutron channels): offers the reaction's own lines — the primary
-  capture γ and the residual level → ground state — plus custom lines and calibration-source templates.
+- **γ rays** (default for capture and neutron channels): offers the reaction's own lines, plus custom
+  lines and calibration-source templates. The reaction's lines are the primary capture γ (E_cm + Q − Eₓ)
+  and the de-excitation cascade of the residual level. The cascade starts at the ENSDF level nearest Eₓ
+  (within max(2 keV, 0.2 %)) and follows each level's γ branching ratios down to the ground state, so
+  each line carries its γ yield per reaction; internal conversion is neglected. The footer reports the
+  fraction of the cascade that reaches a level without γ data. When no level scheme is loaded, or Eₓ
+  is not an ENSDF level, a single recoil-corrected transition Eₓ → 0 is assumed and the footer says so.
+  Line counts are reactions × γ per reaction, times the efficiency curve when it is applied.
   A channel with no γ ray (e.g. (p,α) to the ground state) says so instead of showing a placeholder.
 
 Gamma Doppler and Yield & Beam Time follow the same rule: with a charged ejectile and Eₓ = 0 the yield
-counts the particle itself (efficiency = solid-angle fraction) and the Doppler tool notes that no γ is emitted.
+counts the particle itself (efficiency = solid-angle fraction), and the Doppler tool is hidden from the
+Tools list (see *Tools home*).
 
 ## γ response model
 
@@ -105,4 +127,7 @@ document the underlying formulas; this implementation does not use Geant4 transp
 
 Tests cover NIST reference values and absorption edges, all 92 bundled elements, compound mass
 fractions, foil angle/path length, Gaussian area/centroid/width, additive contaminant lines,
-background, Compton edge and continuum area, cropped windows, invalid inputs and Codable round trips.
+background, Compton edge and continuum area, cropped windows, invalid inputs and Codable round trips;
+cascade branching on a toy level scheme; the pair-production fraction, escape-ratio scaling, escape
+peak positions and decoding of setups saved before escape peaks existed; and particle groups, elastic
+lines and foil stopping in particle mode.
