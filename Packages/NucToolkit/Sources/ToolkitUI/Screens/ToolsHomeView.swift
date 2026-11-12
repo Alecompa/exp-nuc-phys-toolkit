@@ -13,6 +13,9 @@ struct ToolsHomeView: View {
     @State private var path: [Route] = []
     @State private var toolQuery = ""
     @State private var editingSetup = false
+    /// Width of the home screen; the card layout needs room, whatever the size class (iPad, iPhone Duo, landscape).
+    @State private var width: CGFloat = 0
+    @State private var height: CGFloat = 0
     /// Pinned tools, in order (raw values joined by commas).
     @AppStorage("tools.pinned") private var pinnedStore = "kinematics,stopping,yieldEstimate,spectrum"
     /// Expanded categories (titles joined by "|").
@@ -20,26 +23,141 @@ struct ToolsHomeView: View {
 
     var body: some View {
         NavigationStack(path: $path) {
-            List {
-                Section {
-                    SetupCard { editingSetup = true }
-                        .listRowInsets(EdgeInsets())
-                        .listRowBackground(Color.clear)
-                }
-                if toolQuery.isEmpty {
-                    pinnedSection
-                    categorySections
-                } else {
-                    searchResults
-                }
+            Group {
+                if width >= Self.cardLayoutWidth { cardHome } else { listHome }
             }
-            .groupedList()
+            .onGeometryChange(for: CGSize.self) { $0.size } action: { width = $0.width; height = $0.height }
             .navigationTitle("Tools")
             .searchable(text: $toolQuery, prompt: "Find a calculator")
             .largeTitle()
             .appDestinations(namespace: zoom)
             .sheet(isPresented: $editingSetup) {
                 ReactionSetupSheet()
+            }
+        }
+    }
+
+    // MARK: Layouts
+
+    /// iPhone and narrow windows: one inset-grouped list.
+    private var listHome: some View {
+        List {
+            Section {
+                SetupCard { editingSetup = true }
+                    .listRowInsets(EdgeInsets())
+                    .listRowBackground(Color.clear)
+            }
+            if toolQuery.isEmpty {
+                pinnedSection
+                categorySections
+            } else {
+                searchResults
+            }
+        }
+        .groupedList()
+    }
+
+    /// Narrowest content width that gets the card layout instead of the list.
+    static let cardLayoutWidth: CGFloat = 560
+    /// From this width the setup card and the pinned tools sit side by side.
+    static let sideBySideWidth: CGFloat = 880
+
+    /// Wide screens (iPad, iPhone Duo, landscape): the same sections, with each category's tools as a grid of cards.
+    private var cardHome: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 26) {
+                if toolQuery.isEmpty {
+                    header
+                    ForEach(visibleSections) { section in
+                        let open = expanded.contains(section.title)
+                        VStack(alignment: .leading, spacing: 12) {
+                            CategoryHeader(section: section, expanded: open, prominent: true) { toggleExpanded(section.title) }
+                                .padding(.horizontal, 4)
+                            if open {
+                                toolGrid(section.tools)
+                                    .transition(.opacity.combined(with: .scale(scale: 0.98, anchor: .top)))
+                            }
+                        }
+                    }
+                } else {
+                    let hits = ToolCatalog.sections.flatMap(\.tools).filter(matches)
+                    if hits.isEmpty {
+                        ContentUnavailableView.search(text: toolQuery).padding(.top, 40)
+                    } else {
+                        toolGrid(hits)
+                    }
+                }
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 4)
+            .padding(.bottom, 32)
+            .frame(maxWidth: 1100)
+            .frame(maxWidth: .infinity)
+        }
+        .background(Color.groupedBackground)
+    }
+
+    /// Setup card and pinned tools: side by side when there is room, stacked otherwise.
+    @ViewBuilder private var header: some View {
+        // Side by side on wide screens, and on short landscape ones (iPhone Duo, iPhone) where stacking
+        // would push every tool below the fold.
+        if (width >= Self.sideBySideWidth || height < 560) && !pinned.isEmpty {
+            HStack(alignment: .top, spacing: 16) {
+                SetupCard(fillsHeight: true) { editingSetup = true }
+                pinnedPanel(wraps: true)
+                    .frame(width: min(400, max(200, width * 0.36)))
+            }
+            .fixedSize(horizontal: false, vertical: true)
+        } else {
+            SetupCard { editingSetup = true }
+            if !pinned.isEmpty { pinnedPanel(wraps: false) }
+        }
+    }
+
+    private func pinnedPanel(wraps: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label("Pinned", systemImage: "pin.fill")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .labelStyle(.titleAndIcon)
+            if wraps { Spacer(minLength: 0) }
+            PinnedToolsStrip(tools: pinned, wraps: wraps, open: { path.append(.tool($0)) }, unpin: togglePin, move: movePin)
+            if wraps { Spacer(minLength: 0) }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, maxHeight: wraps ? .infinity : nil, alignment: .topLeading)
+        .background(Color.cardBackground, in: .rect(cornerRadius: 26, style: .continuous))
+    }
+
+    private func toolGrid(_ tools: [Tool]) -> some View {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 320), spacing: 14)], spacing: 14) {
+            ForEach(tools) { toolCard($0) }
+        }
+    }
+
+    private func toolCard(_ tool: Tool) -> some View {
+        let isPinned = pinned.contains(tool)
+        return Button { path.append(.tool(tool)) } label: {
+            HStack {
+                // One line each, so cards in a row keep the same height.
+                ToolRow(tool: tool, pinned: isPinned)
+                    .lineLimit(1)
+                Spacer(minLength: 8)
+                Image(systemName: "chevron.right")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(.horizontal, 16).padding(.vertical, 12)
+            .frame(maxWidth: .infinity, minHeight: 76, alignment: .leading)
+            .background(Color.cardBackground, in: .rect(cornerRadius: 20, style: .continuous))
+            .contentShape(.rect(cornerRadius: 20, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .cardHoverEffect()
+        .zoomSource(id: tool, in: zoom)
+        .contextMenu {
+            Button { togglePin(tool) } label: {
+                Label(isPinned ? "Unpin" : "Pin", systemImage: isPinned ? "pin.slash" : "pin")
             }
         }
     }
@@ -200,6 +318,8 @@ private struct PlannedRow: View {
 private struct SetupCard: View {
     @Environment(Workbench.self) private var workbench
     @Environment(\.colorScheme) private var scheme
+    /// Stretch to the height of a neighbouring panel (side-by-side header).
+    var fillsHeight = false
     let edit: () -> Void
 
     var body: some View {
@@ -239,7 +359,7 @@ private struct SetupCard: View {
             }
         }
         .padding(20)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, maxHeight: fillsHeight ? .infinity : nil, alignment: .topLeading)
         .background {
             RoundedRectangle(cornerRadius: 26, style: .continuous)
                 .fill(StellarGradient.mesh(dark: scheme == .dark))

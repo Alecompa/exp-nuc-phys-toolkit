@@ -106,6 +106,21 @@ extension View {
         #endif
     }
 
+    /// Pointer highlight for custom tappable cards on iPad (no-op elsewhere).
+    func cardHoverEffect() -> some View {
+        #if os(iOS)
+        hoverEffect(.highlight)
+        #else
+        self
+        #endif
+    }
+
+    /// Keeps scrolling content (lists, forms, charts) to a comfortable width on wide iPad windows by widening the
+    /// horizontal content margins; narrower windows keep the system margins.
+    func readableContentWidth(_ maxWidth: CGFloat = 880) -> some View {
+        modifier(ReadableContentWidth(maxWidth: maxWidth))
+    }
+
     func minimizingTabBar() -> some View {
         #if os(iOS)
         tabBarMinimizeBehavior(.onScrollDown)
@@ -153,5 +168,18 @@ enum Pasteboard {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(text, forType: .string)
         #endif
+    }
+}
+
+private struct ReadableContentWidth: ViewModifier {
+    let maxWidth: CGFloat
+    @State private var width: CGFloat = 0
+
+    func body(content: Content) -> some View {
+        // nil keeps the system margin, so iPhone and narrow iPad windows are unchanged.
+        let excess = (width - maxWidth) / 2
+        content
+            .contentMargins(.horizontal, excess > 20 ? excess : nil, for: .scrollContent)
+            .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
     }
 }

@@ -19,38 +19,69 @@ struct NuclidesView: View {
         return []
     }
 
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    @Environment(Workbench.self) private var workbench
+    /// Nuclide shown in the detail column (iPad split view).
+    @State private var selected: Nuclide?
+
     var body: some View {
-        NavigationStack {
-            List {
-                if query.isEmpty {
-                    Section("Light nuclei") {
-                        ForEach(Self.featured, id: \.self) { name in
-                            if let n = table.nuclide(named: name) { link(n) }
-                        }
+        if sizeClass == .regular {
+            NavigationSplitView {
+                nuclideList(split: true)
+                    .navigationSplitViewColumnWidth(min: 340, ideal: 380, max: 460)
+            } detail: {
+                NavigationStack {
+                    if let n = selected {
+                        NuclideDetailView(nuclide: n).id(n).readableContentWidth()
+                    } else {
+                        ContentUnavailableView("Choose a Nuclide", systemImage: "atom",
+                                               description: Text("Search by name, symbol or mass number."))
                     }
-                } else {
-                    ForEach(results) { link($0) }
                 }
             }
-            .groupedList()
-            .overlay {
-                if !query.isEmpty && results.isEmpty {
-                    ContentUnavailableView.search(text: query)
-                }
+            // Open on the setup's target nucleus rather than an empty detail column.
+            .onAppear { if selected == nil { selected = workbench.reaction?.target } }
+        } else {
+            NavigationStack {
+                nuclideList(split: false)
+                    .appDestinations(namespace: zoom)
             }
-            .navigationTitle("Nuclides")
-            .largeTitle()
-            .alwaysVisibleSearch(text: $query, prompt: "13N, Carbon, Mg, 26…")
-            .autocorrectionDisabled()
-            .appDestinations(namespace: zoom)
         }
     }
 
-    private func link(_ n: Nuclide) -> some View {
-        NavigationLink(value: Route.nuclide(n)) {
-            NuclideRow(nuclide: n)
+    private func nuclideList(split: Bool) -> some View {
+        List(selection: split ? $selected : .constant(nil)) {
+            if query.isEmpty {
+                Section("Light nuclei") {
+                    ForEach(Self.featured, id: \.self) { name in
+                        if let n = table.nuclide(named: name) { link(n, split: split) }
+                    }
+                }
+            } else {
+                ForEach(results) { link($0, split: split) }
+            }
         }
-        .zoomSource(id: n.id, in: zoom)
+        .groupedList()
+        .overlay {
+            if !query.isEmpty && results.isEmpty {
+                ContentUnavailableView.search(text: query)
+            }
+        }
+        .navigationTitle("Nuclides")
+        .largeTitle()
+        .alwaysVisibleSearch(text: $query, prompt: "13N, Carbon, Mg, 26…")
+        .autocorrectionDisabled()
+    }
+
+    @ViewBuilder
+    private func link(_ n: Nuclide, split: Bool) -> some View {
+        if split {
+            // Selection-driven: the split view shows it in the detail column.
+            NavigationLink(value: n) { NuclideRow(nuclide: n) }
+        } else {
+            NavigationLink(value: Route.nuclide(n)) { NuclideRow(nuclide: n) }
+                .zoomSource(id: n.id, in: zoom)
+        }
     }
 
     static let featured = ["n", "p", "d", "t", "3He", "4He", "7Li", "7Be", "12C", "13C", "13N", "14N", "15N", "16O",
@@ -66,11 +97,14 @@ private struct NuclideRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text("\(nuclide.elementName)-\(nuclide.a)")
                     .font(.body.weight(.medium))
+                    .lineLimit(1)
                 Text(["Z \(nuclide.z) · N \(nuclide.n)", nuclide.nubase.map { Fmt.halfLife($0.halfLife, digits: 4) }]
                         .compactMap { $0 }.joined(separator: " · "))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
+                    .lineLimit(1)
             }
+            .layoutPriority(1)
             Spacer(minLength: 8)
             VStack(alignment: .trailing, spacing: 2) {
                 Text(Fmt.number(nuclide.massExcess, decimals: min(3, Fmt.decimals(forUncertainty: nuclide.massExcessUncertainty))))
