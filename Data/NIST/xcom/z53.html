@@ -1,0 +1,288 @@
+<html>
+<head>
+<title>XCOM: Photon Cross Sections Data for Iodine</title>
+<!-- Google Analtyics 4 -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-9SLN1VEEJ2"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-9SLN1VEEJ2');
+</script>
+<!-- End of Google Analytics 4 -->
+<SCRIPT async type="text/javascript" id="_fed_an_ua_tag" src="https://dap.digitalgov.gov/Universal-Federated-Analytics-Min.js?agency=DOC&subagency=NIST&pua=UA-37115410-46&yt=false&exts=ppsx,pps,f90,sch,rtf,wrl,txz,m1v,xlsm,msi,xsd,f,tif,eps,mpg,xml,pl,xlt,c"></script>
+<script src="/js/clickjack.js" type="text/javascript"></script>
+</head>
+<body BGColor="#FFFFFF" Text="#000000">
+<a href="/PhysRefData/Xcom/Text/XCOM.html"><img src="/PhysRefData/Xcom/Text/XCOMsm.jpg" border=0 width=130 height=50 alt="XCOM"></a>
+<table>
+<tr>
+<td><img src="/PhysRefData/Xcom/tmp/graph_1326208.png" alt="Graph of Coefficients"></td>
+</td></tr></table>
+<form method="POST" action="/cgi-bin/Xcom/xcom3_1">
+<input type="hidden" name="Graph1" value="">
+<input type="hidden" name="Graph2" value="">
+<input type="hidden" name="Graph3" value="">
+<input type="hidden" name="Graph4" value="">
+<input type="hidden" name="Graph5" value="">
+<input type="hidden" name="Graph6" value="on">
+<input type="hidden" name="Graph7" value="">
+<input type="hidden" name="Name" value="Iodine">
+<input type="hidden" name="Method" value="1">
+<input type="hidden" name="ZNum" value="53">
+<input type="hidden" name="OutOpt" value="PIC">
+<input type="hidden" name="NumAdd" value="1">
+<input type="Hidden" name="Energies" value="1.022;1.05;1.1;1.2;1.3;1.5;1.75;2;2.25;2.5;3;3.5;4;4.5;5;6;7;8;9;10;11;12;13;14;15;16;18;20">
+<input type="hidden" name="Output" value="on">
+<input type="hidden" name="Resol" value="-r72.73x72.73">
+<b>Zoom in on energy range: (must be between 0.001 - 100000 MeV)</b>
+<p>Note: If all data are not displayed in the graph, modify the energy range to view graphed data in the region of interest.<br>
+Energy range must cover at least one factor of ten (e.g., 100 to 1000 MeV).<p>
+Minimum: <input type="text" name="WindowXmin" value="0.001" size="8" maxlength="8"> MeV
+&#160;&#160;&#160; Maximum: <input type="text" name="WindowXmax" value="100000" size="8" maxlength="8"> MeV
+<input type="hidden" name="ResizeFlag" value="on">
+<p><input type="submit" value="Change Energy Range">
+</form><hr>
+<b>Atomic Number : 53 </b><p>
+<form enctype="multipart/form-data" method="POST" action="/cgi-bin/Xcom/data.pl">To download data in spreadsheet (array) form, choose a delimiter and use the checkboxes in the table heading.  After downloading, save the output by using your browser's <tt>Save As</tt> feature.<p>
+<b>Delimiter:</b><br>
+<input type="radio" value="space" name="character" checked> space<br>
+<input type="radio" value="bar" name="character"> | (vertical bar)<br>
+<input type="radio" value="tab" name="character"> tab<br>
+<input type="radio" value="newline" name="character"> newline<br>
+<input type="submit" value="Download data"> <input type="reset" value="Reset"><input type="hidden" name="Name" value="Iodine">
+<input type="hidden" name="Method" value="1">
+<input type="hidden" name="ZNum" value="53">
+<input type="hidden" name="OutOpt" value="PIC">
+<input type="hidden" name="NumAdd" value="1">
+<input type="HIDDEN" name="Energies" value="1.022;1.05;1.1;1.2;1.3;1.5;1.75;2;2.25;2.5;3;3.5;4;4.5;5;6;7;8;9;10;11;12;13;14;15;16;18;20">
+<input type="hidden" name="Output" value="on">
+<input type="hidden" name="WindowXmin" value="0.001">
+<input type="hidden" name="WindowXmax" value="100000">
+<table border=1>
+<tr align=center BGColor="#88BBFF">
+<td rowspan=3 align=center>Edge</td>
+<td rowspan=2 align=center><font size="-1">(required)</font><br>Photon<br>Energy</td>
+<td colspan=2 align=center>Scattering</td>
+<td rowspan=2 align=center><input type="checkbox" name="photoelectric"><br>Photoelectric<br>Absorption</td>
+<td colspan=2 align=center>Pair Production</td>
+<td colspan=2 align=center>Total Attenuation</td>
+</tr>
+<tr BGColor="#88BBFF">
+<td align=center><input type="checkbox" name="coherent"><br>Coherent</td>
+<td align=center><input type="checkbox" name="incoherent"><br>Incoherent</td>
+<td align=center><input type="checkbox" name="nuclear"><br>In Nuclear<br>Field</td>
+<td align=center><input type="checkbox" name="electron"><br>In Electron<br>Field</td>
+<td align=center><input type="checkbox" name="with"><br>With Coherent<br>Scattering</td>
+<td align=center><input type="checkbox" name="without"><br>Without Coherent<br>Scattering</td>
+</tr>
+<tr BGColor="#88BBFF">
+<td align=center>MeV</td><td align=center>cm<sup>2</sup>/g</td><td align=center>cm<sup>2</sup>/g</td><td align=center>cm<sup>2</sup>/g</td><td align=center>cm<sup>2</sup>/g</td><td align=center>cm<sup>2</sup>/g</td><td align=center>cm<sup>2</sup>/g</td><td align=center>cm<sup>2</sup>/g</td>
+</tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>1.000E-03</td><td align=center>8.418E+00</td><td align=center>4.688E-03</td><td align=center>9.087E+03</td><td align=center>0.000E+00</td><td align=center>0.000E+00</td><td align=center>9.096E+03</td><td align=center>9.087E+03</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>1.035E-03</td><td align=center>8.388E+00</td><td align=center>4.972E-03</td><td align=center>8.450E+03</td><td align=center>0.000E+00</td><td align=center>0.000E+00</td><td align=center>8.458E+03</td><td align=center>8.450E+03</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>1.072E-03</td><td align=center>8.357E+00</td><td align=center>5.272E-03</td><td align=center>7.858E+03</td><td align=center>0.000E+00</td><td align=center>0.000E+00</td><td align=center>7.867E+03</td><td align=center>7.858E+03</td></tr>
+<tr BGColor="#FFFFCC">
+<td align=center>53&#160;M<sub>1</sub></td><td align=center> 1.072E-03</td><td align=center> 8.357E+00</td><td align=center> 5.272E-03</td><td align=center> 8.195E+03</td><td align=center> 0.000E+00</td><td align=center> 0.000E+00</td><td align=center> 8.204E+03</td><td align=center> 8.195E+03</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>1.500E-03</td><td align=center>7.958E+00</td><td align=center>8.969E-03</td><td align=center>3.911E+03</td><td align=center>0.000E+00</td><td align=center>0.000E+00</td><td align=center>3.919E+03</td><td align=center>3.911E+03</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>2.000E-03</td><td align=center>7.446E+00</td><td align=center>1.342E-02</td><td align=center>1.989E+03</td><td align=center>0.000E+00</td><td align=center>0.000E+00</td><td align=center>1.997E+03</td><td align=center>1.989E+03</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>3.000E-03</td><td align=center>6.463E+00</td><td align=center>2.190E-02</td><td align=center>7.355E+02</td><td align=center>0.000E+00</td><td align=center>0.000E+00</td><td align=center>7.420E+02</td><td align=center>7.356E+02</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>4.000E-03</td><td align=center>5.628E+00</td><td align=center>2.932E-02</td><td align=center>3.551E+02</td><td align=center>0.000E+00</td><td align=center>0.000E+00</td><td align=center>3.608E+02</td><td align=center>3.551E+02</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>4.557E-03</td><td align=center>5.229E+00</td><td align=center>3.296E-02</td><td align=center>2.539E+02</td><td align=center>0.000E+00</td><td align=center>0.000E+00</td><td align=center>2.591E+02</td><td align=center>2.539E+02</td></tr>
+<tr BGColor="#FFFFCC">
+<td align=center>53&#160;L<sub>3</sub></td><td align=center> 4.557E-03</td><td align=center> 5.229E+00</td><td align=center> 3.296E-02</td><td align=center> 7.498E+02</td><td align=center> 0.000E+00</td><td align=center> 0.000E+00</td><td align=center> 7.550E+02</td><td align=center> 7.498E+02</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>4.702E-03</td><td align=center>5.133E+00</td><td align=center>3.387E-02</td><td align=center>7.027E+02</td><td align=center>0.000E+00</td><td align=center>0.000E+00</td><td align=center>7.079E+02</td><td align=center>7.027E+02</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>4.852E-03</td><td align=center>5.035E+00</td><td align=center>3.479E-02</td><td align=center>6.587E+02</td><td align=center>0.000E+00</td><td align=center>0.000E+00</td><td align=center>6.637E+02</td><td align=center>6.587E+02</td></tr>
+<tr BGColor="#FFFFCC">
+<td align=center>53&#160;L<sub>2</sub></td><td align=center> 4.852E-03</td><td align=center> 5.035E+00</td><td align=center> 3.479E-02</td><td align=center> 8.883E+02</td><td align=center> 0.000E+00</td><td align=center> 0.000E+00</td><td align=center> 8.934E+02</td><td align=center> 8.884E+02</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>5.000E-03</td><td align=center>4.940E+00</td><td align=center>3.568E-02</td><td align=center>8.380E+02</td><td align=center>0.000E+00</td><td align=center>0.000E+00</td><td align=center>8.430E+02</td><td align=center>8.381E+02</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>5.188E-03</td><td align=center>4.821E+00</td><td align=center>3.679E-02</td><td align=center>7.616E+02</td><td align=center>0.000E+00</td><td align=center>0.000E+00</td><td align=center>7.665E+02</td><td align=center>7.617E+02</td></tr>
+<tr BGColor="#FFFFCC">
+<td align=center>53&#160;L<sub>1</sub></td><td align=center> 5.188E-03</td><td align=center> 4.821E+00</td><td align=center> 3.679E-02</td><td align=center> 8.788E+02</td><td align=center> 0.000E+00</td><td align=center> 0.000E+00</td><td align=center> 8.837E+02</td><td align=center> 8.789E+02</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>6.000E-03</td><td align=center>4.356E+00</td><td align=center>4.129E-02</td><td align=center>6.131E+02</td><td align=center>0.000E+00</td><td align=center>0.000E+00</td><td align=center>6.175E+02</td><td align=center>6.131E+02</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>8.000E-03</td><td align=center>3.446E+00</td><td align=center>5.106E-02</td><td align=center>2.886E+02</td><td align=center>0.000E+00</td><td align=center>0.000E+00</td><td align=center>2.921E+02</td><td align=center>2.887E+02</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>1.000E-02</td><td align=center>2.798E+00</td><td align=center>5.955E-02</td><td align=center>1.597E+02</td><td align=center>0.000E+00</td><td align=center>0.000E+00</td><td align=center>1.626E+02</td><td align=center>1.598E+02</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>1.500E-02</td><td align=center>1.843E+00</td><td align=center>7.578E-02</td><td align=center>5.320E+01</td><td align=center>0.000E+00</td><td align=center>0.000E+00</td><td align=center>5.511E+01</td><td align=center>5.327E+01</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>2.000E-02</td><td align=center>1.312E+00</td><td align=center>8.646E-02</td><td align=center>2.404E+01</td><td align=center>0.000E+00</td><td align=center>0.000E+00</td><td align=center>2.543E+01</td><td align=center>2.412E+01</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>3.000E-02</td><td align=center>7.455E-01</td><td align=center>9.908E-02</td><td align=center>7.716E+00</td><td align=center>0.000E+00</td><td align=center>0.000E+00</td><td align=center>8.561E+00</td><td align=center>7.815E+00</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>3.317E-02</td><td align=center>6.430E-01</td><td align=center>1.016E-01</td><td align=center>5.808E+00</td><td align=center>0.000E+00</td><td align=center>0.000E+00</td><td align=center>6.553E+00</td><td align=center>5.910E+00</td></tr>
+<tr BGColor="#FFFFCC">
+<td align=center>53&#160;K</td><td align=center> 3.317E-02</td><td align=center> 6.430E-01</td><td align=center> 1.016E-01</td><td align=center> 3.508E+01</td><td align=center> 0.000E+00</td><td align=center> 0.000E+00</td><td align=center> 3.583E+01</td><td align=center> 3.518E+01</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>4.000E-02</td><td align=center>4.859E-01</td><td align=center>1.057E-01</td><td align=center>2.151E+01</td><td align=center>0.000E+00</td><td align=center>0.000E+00</td><td align=center>2.210E+01</td><td align=center>2.161E+01</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>5.000E-02</td><td align=center>3.452E-01</td><td align=center>1.093E-01</td><td align=center>1.187E+01</td><td align=center>0.000E+00</td><td align=center>0.000E+00</td><td align=center>1.232E+01</td><td align=center>1.198E+01</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>6.000E-02</td><td align=center>2.577E-01</td><td align=center>1.110E-01</td><td align=center>7.208E+00</td><td align=center>0.000E+00</td><td align=center>0.000E+00</td><td align=center>7.577E+00</td><td align=center>7.319E+00</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>8.000E-02</td><td align=center>1.584E-01</td><td align=center>1.115E-01</td><td align=center>3.240E+00</td><td align=center>0.000E+00</td><td align=center>0.000E+00</td><td align=center>3.510E+00</td><td align=center>3.352E+00</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>1.000E-01</td><td align=center>1.073E-01</td><td align=center>1.100E-01</td><td align=center>1.725E+00</td><td align=center>0.000E+00</td><td align=center>0.000E+00</td><td align=center>1.942E+00</td><td align=center>1.835E+00</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>1.500E-01</td><td align=center>5.220E-02</td><td align=center>1.036E-01</td><td align=center>5.419E-01</td><td align=center>0.000E+00</td><td align=center>0.000E+00</td><td align=center>6.978E-01</td><td align=center>6.456E-01</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>2.000E-01</td><td align=center>3.087E-02</td><td align=center>9.709E-02</td><td align=center>2.383E-01</td><td align=center>0.000E+00</td><td align=center>0.000E+00</td><td align=center>3.663E-01</td><td align=center>3.354E-01</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>3.000E-01</td><td align=center>1.440E-02</td><td align=center>8.627E-02</td><td align=center>7.650E-02</td><td align=center>0.000E+00</td><td align=center>0.000E+00</td><td align=center>1.772E-01</td><td align=center>1.628E-01</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>4.000E-01</td><td align=center>8.295E-03</td><td align=center>7.811E-02</td><td align=center>3.525E-02</td><td align=center>0.000E+00</td><td align=center>0.000E+00</td><td align=center>1.217E-01</td><td align=center>1.134E-01</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>5.000E-01</td><td align=center>5.381E-03</td><td align=center>7.175E-02</td><td align=center>1.988E-02</td><td align=center>0.000E+00</td><td align=center>0.000E+00</td><td align=center>9.701E-02</td><td align=center>9.163E-02</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>6.000E-01</td><td align=center>3.771E-03</td><td align=center>6.663E-02</td><td align=center>1.274E-02</td><td align=center>0.000E+00</td><td align=center>0.000E+00</td><td align=center>8.313E-02</td><td align=center>7.936E-02</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>8.000E-01</td><td align=center>2.143E-03</td><td align=center>5.875E-02</td><td align=center>6.596E-03</td><td align=center>0.000E+00</td><td align=center>0.000E+00</td><td align=center>6.749E-02</td><td align=center>6.534E-02</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>1.000E+00</td><td align=center>1.379E-03</td><td align=center>5.291E-02</td><td align=center>4.120E-03</td><td align=center>0.000E+00</td><td align=center>0.000E+00</td><td align=center>5.841E-02</td><td align=center>5.703E-02</td></tr>
+<tr BGColor="#AADDFF">
+<td></td><td align=center>1.022E+00</td><td align=center>1.321E-03</td><td align=center>5.234E-02</td><td align=center>3.922E-03</td><td align=center>0.000E+00</td><td align=center>0.000E+00</td><td align=center>5.759E-02</td><td align=center>5.626E-02</td></tr>
+<tr BGColor="#AADDFF">
+<td></td><td align=center>1.050E+00</td><td align=center>1.253E-03</td><td align=center>5.165E-02</td><td align=center>3.697E-03</td><td align=center>7.260E-07</td><td align=center>0.000E+00</td><td align=center>5.660E-02</td><td align=center>5.534E-02</td></tr>
+<tr BGColor="#AADDFF">
+<td></td><td align=center>1.100E+00</td><td align=center>1.142E-03</td><td align=center>5.047E-02</td><td align=center>3.360E-03</td><td align=center>1.286E-05</td><td align=center>0.000E+00</td><td align=center>5.499E-02</td><td align=center>5.385E-02</td></tr>
+<tr BGColor="#AADDFF">
+<td></td><td align=center>1.200E+00</td><td align=center>9.609E-04</td><td align=center>4.835E-02</td><td align=center>2.850E-03</td><td align=center>1.059E-04</td><td align=center>0.000E+00</td><td align=center>5.227E-02</td><td align=center>5.131E-02</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>1.250E+00</td><td align=center>8.860E-04</td><td align=center>4.737E-02</td><td align=center>2.645E-03</td><td align=center>1.883E-04</td><td align=center>0.000E+00</td><td align=center>5.109E-02</td><td align=center>5.021E-02</td></tr>
+<tr BGColor="#AADDFF">
+<td></td><td align=center>1.300E+00</td><td align=center>8.195E-04</td><td align=center>4.644E-02</td><td align=center>2.461E-03</td><td align=center>2.921E-04</td><td align=center>0.000E+00</td><td align=center>5.001E-02</td><td align=center>4.919E-02</td></tr>
+<tr BGColor="#AADDFF">
+<td></td><td align=center>1.500E+00</td><td align=center>6.164E-04</td><td align=center>4.309E-02</td><td align=center>1.893E-03</td><td align=center>8.713E-04</td><td align=center>0.000E+00</td><td align=center>4.647E-02</td><td align=center>4.586E-02</td></tr>
+<tr BGColor="#AADDFF">
+<td></td><td align=center>1.750E+00</td><td align=center>4.536E-04</td><td align=center>3.965E-02</td><td align=center>1.443E-03</td><td align=center>1.836E-03</td><td align=center>0.000E+00</td><td align=center>4.338E-02</td><td align=center>4.293E-02</td></tr>
+<tr BGColor="#AADDFF">
+<td></td><td align=center>2.000E+00</td><td align=center>3.476E-04</td><td align=center>3.681E-02</td><td align=center>1.152E-03</td><td align=center>2.939E-03</td><td align=center>0.000E+00</td><td align=center>4.124E-02</td><td align=center>4.090E-02</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>2.044E+00</td><td align=center>3.329E-04</td><td align=center>3.635E-02</td><td align=center>1.111E-03</td><td align=center>3.139E-03</td><td align=center>0.000E+00</td><td align=center>4.094E-02</td><td align=center>4.061E-02</td></tr>
+<tr BGColor="#AADDFF">
+<td></td><td align=center>2.250E+00</td><td align=center>2.749E-04</td><td align=center>3.441E-02</td><td align=center>9.508E-04</td><td align=center>4.082E-03</td><td align=center>2.112E-07</td><td align=center>3.971E-02</td><td align=center>3.944E-02</td></tr>
+<tr BGColor="#AADDFF">
+<td></td><td align=center>2.500E+00</td><td align=center>2.227E-04</td><td align=center>3.235E-02</td><td align=center>8.055E-04</td><td align=center>5.218E-03</td><td align=center>1.755E-06</td><td align=center>3.860E-02</td><td align=center>3.837E-02</td></tr>
+<tr BGColor="#AADDFF">
+<td></td><td align=center>3.000E+00</td><td align=center>1.547E-04</td><td align=center>2.898E-02</td><td align=center>6.112E-04</td><td align=center>7.408E-03</td><td align=center>1.014E-05</td><td align=center>3.716E-02</td><td align=center>3.701E-02</td></tr>
+<tr BGColor="#AADDFF">
+<td></td><td align=center>3.500E+00</td><td align=center>1.138E-04</td><td align=center>2.633E-02</td><td align=center>4.884E-04</td><td align=center>9.454E-03</td><td align=center>2.400E-05</td><td align=center>3.641E-02</td><td align=center>3.629E-02</td></tr>
+<tr BGColor="#AADDFF">
+<td></td><td align=center>4.000E+00</td><td align=center>8.713E-05</td><td align=center>2.418E-02</td><td align=center>4.046E-04</td><td align=center>1.136E-02</td><td align=center>4.134E-05</td><td align=center>3.607E-02</td><td align=center>3.598E-02</td></tr>
+<tr BGColor="#AADDFF">
+<td></td><td align=center>4.500E+00</td><td align=center>6.884E-05</td><td align=center>2.239E-02</td><td align=center>3.444E-04</td><td align=center>1.312E-02</td><td align=center>6.107E-05</td><td align=center>3.599E-02</td><td align=center>3.592E-02</td></tr>
+<tr BGColor="#AADDFF">
+<td></td><td align=center>5.000E+00</td><td align=center>5.576E-05</td><td align=center>2.088E-02</td><td align=center>2.992E-04</td><td align=center>1.476E-02</td><td align=center>8.229E-05</td><td align=center>3.608E-02</td><td align=center>3.602E-02</td></tr>
+<tr BGColor="#AADDFF">
+<td></td><td align=center>6.000E+00</td><td align=center>3.873E-05</td><td align=center>1.846E-02</td><td align=center>2.361E-04</td><td align=center>1.769E-02</td><td align=center>1.262E-04</td><td align=center>3.655E-02</td><td align=center>3.651E-02</td></tr>
+<tr BGColor="#AADDFF">
+<td></td><td align=center>7.000E+00</td><td align=center>2.846E-05</td><td align=center>1.659E-02</td><td align=center>1.944E-04</td><td align=center>2.030E-02</td><td align=center>1.700E-04</td><td align=center>3.729E-02</td><td align=center>3.726E-02</td></tr>
+<tr BGColor="#AADDFF">
+<td></td><td align=center>8.000E+00</td><td align=center>2.179E-05</td><td align=center>1.510E-02</td><td align=center>1.650E-04</td><td align=center>2.265E-02</td><td align=center>2.123E-04</td><td align=center>3.815E-02</td><td align=center>3.813E-02</td></tr>
+<tr BGColor="#AADDFF">
+<td></td><td align=center>9.000E+00</td><td align=center>1.722E-05</td><td align=center>1.389E-02</td><td align=center>1.431E-04</td><td align=center>2.478E-02</td><td align=center>2.528E-04</td><td align=center>3.907E-02</td><td align=center>3.906E-02</td></tr>
+<tr BGColor="#AADDFF">
+<td></td><td align=center>1.000E+01</td><td align=center>1.395E-05</td><td align=center>1.286E-02</td><td align=center>1.262E-04</td><td align=center>2.673E-02</td><td align=center>2.913E-04</td><td align=center>4.002E-02</td><td align=center>4.001E-02</td></tr>
+<tr BGColor="#AADDFF">
+<td></td><td align=center>1.100E+01</td><td align=center>1.153E-05</td><td align=center>1.200E-02</td><td align=center>1.129E-04</td><td align=center>2.852E-02</td><td align=center>3.276E-04</td><td align=center>4.097E-02</td><td align=center>4.096E-02</td></tr>
+<tr BGColor="#AADDFF">
+<td></td><td align=center>1.200E+01</td><td align=center>9.685E-06</td><td align=center>1.125E-02</td><td align=center>1.021E-04</td><td align=center>3.019E-02</td><td align=center>3.619E-04</td><td align=center>4.192E-02</td><td align=center>4.191E-02</td></tr>
+<tr BGColor="#AADDFF">
+<td></td><td align=center>1.300E+01</td><td align=center>8.252E-06</td><td align=center>1.060E-02</td><td align=center>9.310E-05</td><td align=center>3.174E-02</td><td align=center>3.942E-04</td><td align=center>4.283E-02</td><td align=center>4.283E-02</td></tr>
+<tr BGColor="#AADDFF">
+<td></td><td align=center>1.400E+01</td><td align=center>7.118E-06</td><td align=center>1.003E-02</td><td align=center>8.556E-05</td><td align=center>3.316E-02</td><td align=center>4.249E-04</td><td align=center>4.371E-02</td><td align=center>4.370E-02</td></tr>
+<tr BGColor="#AADDFF">
+<td></td><td align=center>1.500E+01</td><td align=center>6.198E-06</td><td align=center>9.524E-03</td><td align=center>7.915E-05</td><td align=center>3.448E-02</td><td align=center>4.539E-04</td><td align=center>4.455E-02</td><td align=center>4.454E-02</td></tr>
+<tr BGColor="#AADDFF">
+<td></td><td align=center>1.600E+01</td><td align=center>5.448E-06</td><td align=center>9.068E-03</td><td align=center>7.365E-05</td><td align=center>3.571E-02</td><td align=center>4.817E-04</td><td align=center>4.534E-02</td><td align=center>4.533E-02</td></tr>
+<tr BGColor="#AADDFF">
+<td></td><td align=center>1.800E+01</td><td align=center>4.305E-06</td><td align=center>8.285E-03</td><td align=center>6.459E-05</td><td align=center>3.794E-02</td><td align=center>5.324E-04</td><td align=center>4.683E-02</td><td align=center>4.683E-02</td></tr>
+<tr BGColor="#AADDFF">
+<td></td><td align=center>2.000E+01</td><td align=center>3.487E-06</td><td align=center>7.640E-03</td><td align=center>5.751E-05</td><td align=center>3.995E-02</td><td align=center>5.789E-04</td><td align=center>4.823E-02</td><td align=center>4.823E-02</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>2.200E+01</td><td align=center>2.882E-06</td><td align=center>7.099E-03</td><td align=center>5.182E-05</td><td align=center>4.177E-02</td><td align=center>6.216E-04</td><td align=center>4.954E-02</td><td align=center>4.954E-02</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>2.400E+01</td><td align=center>2.422E-06</td><td align=center>6.634E-03</td><td align=center>4.717E-05</td><td align=center>4.342E-02</td><td align=center>6.606E-04</td><td align=center>5.076E-02</td><td align=center>5.076E-02</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>2.600E+01</td><td align=center>2.063E-06</td><td align=center>6.231E-03</td><td align=center>4.327E-05</td><td align=center>4.493E-02</td><td align=center>6.966E-04</td><td align=center>5.190E-02</td><td align=center>5.190E-02</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>2.800E+01</td><td align=center>1.779E-06</td><td align=center>5.875E-03</td><td align=center>3.996E-05</td><td align=center>4.631E-02</td><td align=center>7.298E-04</td><td align=center>5.295E-02</td><td align=center>5.295E-02</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>3.000E+01</td><td align=center>1.550E-06</td><td align=center>5.562E-03</td><td align=center>3.712E-05</td><td align=center>4.760E-02</td><td align=center>7.612E-04</td><td align=center>5.396E-02</td><td align=center>5.396E-02</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>4.000E+01</td><td align=center>8.717E-07</td><td align=center>4.421E-03</td><td align=center>2.738E-05</td><td align=center>5.272E-02</td><td align=center>8.893E-04</td><td align=center>5.806E-02</td><td align=center>5.806E-02</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>5.000E+01</td><td align=center>5.581E-07</td><td align=center>3.691E-03</td><td align=center>2.169E-05</td><td align=center>5.657E-02</td><td align=center>9.866E-04</td><td align=center>6.127E-02</td><td align=center>6.126E-02</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>6.000E+01</td><td align=center>3.875E-07</td><td align=center>3.180E-03</td><td align=center>1.795E-05</td><td align=center>5.955E-02</td><td align=center>1.064E-03</td><td align=center>6.382E-02</td><td align=center>6.382E-02</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>8.000E+01</td><td align=center>2.180E-07</td><td align=center>2.508E-03</td><td align=center>1.335E-05</td><td align=center>6.392E-02</td><td align=center>1.180E-03</td><td align=center>6.762E-02</td><td align=center>6.762E-02</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>1.000E+02</td><td align=center>1.395E-07</td><td align=center>2.082E-03</td><td align=center>1.062E-05</td><td align=center>6.705E-02</td><td align=center>1.264E-03</td><td align=center>7.041E-02</td><td align=center>7.041E-02</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>1.500E+02</td><td align=center>6.198E-08</td><td align=center>1.482E-03</td><td align=center>7.033E-06</td><td align=center>7.204E-02</td><td align=center>1.404E-03</td><td align=center>7.493E-02</td><td align=center>7.493E-02</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>2.000E+02</td><td align=center>3.487E-08</td><td align=center>1.162E-03</td><td align=center>5.258E-06</td><td align=center>7.502E-02</td><td align=center>1.491E-03</td><td align=center>7.768E-02</td><td align=center>7.768E-02</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>3.000E+02</td><td align=center>1.550E-08</td><td align=center>8.238E-04</td><td align=center>3.493E-06</td><td align=center>7.849E-02</td><td align=center>1.599E-03</td><td align=center>8.092E-02</td><td align=center>8.092E-02</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>4.000E+02</td><td align=center>8.717E-09</td><td align=center>6.454E-04</td><td align=center>2.615E-06</td><td align=center>8.048E-02</td><td align=center>1.663E-03</td><td align=center>8.279E-02</td><td align=center>8.279E-02</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>5.000E+02</td><td align=center>5.581E-09</td><td align=center>5.339E-04</td><td align=center>2.090E-06</td><td align=center>8.176E-02</td><td align=center>1.707E-03</td><td align=center>8.401E-02</td><td align=center>8.401E-02</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>6.000E+02</td><td align=center>3.874E-09</td><td align=center>4.573E-04</td><td align=center>1.740E-06</td><td align=center>8.271E-02</td><td align=center>1.739E-03</td><td align=center>8.491E-02</td><td align=center>8.491E-02</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>8.000E+02</td><td align=center>2.179E-09</td><td align=center>3.571E-04</td><td align=center>1.304E-06</td><td align=center>8.395E-02</td><td align=center>1.784E-03</td><td align=center>8.609E-02</td><td align=center>8.609E-02</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>1.000E+03</td><td align=center>1.395E-09</td><td align=center>2.938E-04</td><td align=center>1.043E-06</td><td align=center>8.475E-02</td><td align=center>1.813E-03</td><td align=center>8.686E-02</td><td align=center>8.686E-02</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>1.500E+03</td><td align=center>6.198E-10</td><td align=center>2.052E-04</td><td align=center>6.947E-07</td><td align=center>8.594E-02</td><td align=center>1.857E-03</td><td align=center>8.800E-02</td><td align=center>8.800E-02</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>2.000E+03</td><td align=center>3.487E-10</td><td align=center>1.588E-04</td><td align=center>5.206E-07</td><td align=center>8.660E-02</td><td align=center>1.882E-03</td><td align=center>8.864E-02</td><td align=center>8.864E-02</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>3.000E+03</td><td align=center>1.550E-10</td><td align=center>1.104E-04</td><td align=center>3.471E-07</td><td align=center>8.727E-02</td><td align=center>1.909E-03</td><td align=center>8.929E-02</td><td align=center>8.929E-02</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>4.000E+03</td><td align=center>8.717E-11</td><td align=center>8.523E-05</td><td align=center>2.603E-07</td><td align=center>8.765E-02</td><td align=center>1.924E-03</td><td align=center>8.966E-02</td><td align=center>8.966E-02</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>5.000E+03</td><td align=center>5.581E-11</td><td align=center>6.971E-05</td><td align=center>2.082E-07</td><td align=center>8.788E-02</td><td align=center>1.934E-03</td><td align=center>8.989E-02</td><td align=center>8.989E-02</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>6.000E+03</td><td align=center>3.874E-11</td><td align=center>5.908E-05</td><td align=center>1.735E-07</td><td align=center>8.803E-02</td><td align=center>1.941E-03</td><td align=center>9.003E-02</td><td align=center>9.003E-02</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>8.000E+03</td><td align=center>2.179E-11</td><td align=center>4.553E-05</td><td align=center>1.301E-07</td><td align=center>8.826E-02</td><td align=center>1.950E-03</td><td align=center>9.026E-02</td><td align=center>9.026E-02</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>1.000E+04</td><td align=center>1.395E-11</td><td align=center>3.718E-05</td><td align=center>1.041E-07</td><td align=center>8.841E-02</td><td align=center>1.956E-03</td><td align=center>9.040E-02</td><td align=center>9.040E-02</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>1.500E+04</td><td align=center>6.198E-12</td><td align=center>2.569E-05</td><td align=center>6.938E-08</td><td align=center>8.860E-02</td><td align=center>1.963E-03</td><td align=center>9.059E-02</td><td align=center>9.059E-02</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>2.000E+04</td><td align=center>3.487E-12</td><td align=center>1.975E-05</td><td align=center>5.201E-08</td><td align=center>8.869E-02</td><td align=center>1.968E-03</td><td align=center>9.068E-02</td><td align=center>9.068E-02</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>3.000E+04</td><td align=center>1.550E-12</td><td align=center>1.362E-05</td><td align=center>3.468E-08</td><td align=center>8.879E-02</td><td align=center>1.972E-03</td><td align=center>9.077E-02</td><td align=center>9.077E-02</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>4.000E+04</td><td align=center>8.717E-13</td><td align=center>1.046E-05</td><td align=center>2.601E-08</td><td align=center>8.883E-02</td><td align=center>1.975E-03</td><td align=center>9.082E-02</td><td align=center>9.082E-02</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>5.000E+04</td><td align=center>5.581E-13</td><td align=center>8.518E-06</td><td align=center>2.081E-08</td><td align=center>8.888E-02</td><td align=center>1.976E-03</td><td align=center>9.087E-02</td><td align=center>9.087E-02</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>6.000E+04</td><td align=center>3.874E-13</td><td align=center>7.199E-06</td><td align=center>1.734E-08</td><td align=center>8.888E-02</td><td align=center>1.977E-03</td><td align=center>9.087E-02</td><td align=center>9.087E-02</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>8.000E+04</td><td align=center>2.179E-13</td><td align=center>5.519E-06</td><td align=center>1.301E-08</td><td align=center>8.893E-02</td><td align=center>1.979E-03</td><td align=center>9.091E-02</td><td align=center>9.091E-02</td></tr>
+<tr BGColor="#FFFFCC">
+<td></td><td align=center>1.000E+05</td><td align=center>1.395E-13</td><td align=center>4.491E-06</td><td align=center>1.041E-08</td><td align=center>8.893E-02</td><td align=center>1.980E-03</td><td align=center>9.091E-02</td><td align=center>9.091E-02</td></tr>
+</table>
+</form><hr>
+Return to <a href="/PhysRefData/Xcom/html/xcom1.html">selection page</a>.
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a595012edd4b5e6c',t:'MTc5NDQ4MDkyOQ=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a595012edd4b5e6c',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092" integrity="sha512-UKNk8GbxkABxKcXYuLkO16EleLGUkcvJWtpSNmExE0Too3ZaFAxTscNWEc1OdAv5/BikHawapSCaiD2XCmp+Bw==" data-cf-beacon='{"version":"2024.11.0","token":"9ef5b487afff42a68917b2d63593a474","spa":2}' crossorigin="anonymous"></script>
+</body>

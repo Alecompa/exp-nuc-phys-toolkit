@@ -5,7 +5,8 @@ public struct SpectrumRegion: Sendable {
     public var photopeak: Double = 0
     public var compton: Double = 0
     public var background: Double = 0
-    public var total: Double { photopeak + compton + background }
+    public var escape: Double = 0
+    public var total: Double { photopeak + compton + background + escape }
 
     /// Partially intersected channels contribute in proportion to their overlap with the ROI.
     /// This assumes uniform counts within each channel; it does not re-integrate the response model.
@@ -18,6 +19,7 @@ public struct SpectrumRegion: Sendable {
             result.photopeak += fraction * bin.photopeak
             result.compton += fraction * bin.compton
             result.background += fraction * bin.background
+            result.escape += fraction * bin.escape
         }
         return result
     }
@@ -34,7 +36,7 @@ public enum SpectrumPlotSampling {
         for start in stride(from: 0, to: bins.count, by: size) {
             let end = min(bins.count, start + size)
             indices.insert(start); indices.insert(end - 1)
-            for key in [\SpectrumBin.total, \SpectrumBin.photopeak, \SpectrumBin.compton] {
+            for key in [\SpectrumBin.total, \SpectrumBin.photopeak, \SpectrumBin.compton, \SpectrumBin.escape] {
                 var low = start, high = start
                 for i in start..<end {
                     if bins[i][keyPath: key] < bins[low][keyPath: key] { low = i }

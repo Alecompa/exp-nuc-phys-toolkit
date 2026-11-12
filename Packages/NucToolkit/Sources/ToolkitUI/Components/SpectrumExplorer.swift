@@ -25,6 +25,7 @@ struct SpectrumExplorer: View {
     }
 
     var body: some View {
+        let hasEscapes = bins.contains { $0.escape > 0 }
         VStack(alignment: .leading, spacing: 12) {
             Chart {
                 ForEach(visible) { bin in
@@ -35,6 +36,10 @@ struct SpectrumExplorer: View {
                             .foregroundStyle(by: .value("Component", "Photopeaks"))
                         LineMark(x: .value("Energy", bin.energy), y: .value("Counts", plotted(bin.compton)))
                             .foregroundStyle(by: .value("Component", "Compton"))
+                        if hasEscapes {
+                            LineMark(x: .value("Energy", bin.energy), y: .value("Counts", plotted(bin.escape)))
+                                .foregroundStyle(by: .value("Component", "Escape"))
+                        }
                     }
                 }
                 if let bin = selectedBin, domain.contains(bin.energy) {
@@ -81,6 +86,7 @@ struct SpectrumExplorer: View {
                     ValueRow(label: "Total", value: Fmt.significant(roi.total, digits: 6))
                     ValueRow(label: "Photopeak", value: Fmt.significant(roi.photopeak, digits: 6))
                     ValueRow(label: "Compton", value: Fmt.significant(roi.compton, digits: 6))
+                    if hasEscapes { ValueRow(label: "Escape", value: Fmt.significant(roi.escape, digits: 6)) }
                     ValueRow(label: "Background", value: Fmt.significant(roi.background, digits: 6))
                 }
             }

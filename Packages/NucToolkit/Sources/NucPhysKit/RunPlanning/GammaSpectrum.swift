@@ -85,7 +85,130 @@ public struct SpectrumSetup: Hashable, Codable, Sendable {
     public var continuumRatio: Double = 2
     /// Flat recorded background, counts/keV; not attenuated by front foils.
     public var background: Double = 0
+    /// Single- and double-escape peaks (and an optional 511 keV line) above the pair threshold.
+    public var escape = EscapeModel()
     public init() {}
+
+    private enum CodingKeys: String, CodingKey {
+        case lines, foils, maximumEnergy, channels, continuumRatio, background, escape
+    }
+
+    /// Fields missing from older saved setups keep their defaults.
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        lines = try c.decodeIfPresent([SpectrumLine].self, forKey: .lines) ?? []
+        foils = try c.decodeIfPresent([DetectorFoil].self, forKey: .foils) ?? []
+        maximumEnergy = try c.decodeIfPresent(Double.self, forKey: .maximumEnergy) ?? 3000
+        channels = try c.decodeIfPresent(Int.self, forKey: .channels) ?? 4096
+        continuumRatio = try c.decodeIfPresent(Double.self, forKey: .continuumRatio) ?? 2
+        background = try c.decodeIfPresent(Double.self, forKey: .background) ?? 0
+        escape = try c.decodeIfPresent(EscapeModel.self, forKey: .escape) ?? EscapeModel()
+    }
+}
+
+/// Detector crystal, for the energy dependence of pair production.
+public enum DetectorCrystal: String, Hashable, Codable, CaseIterable, Sendable, Identifiable {
+    case hpge, nai, labr3, bgo, csi
+    public var id: String { rawValue }
+
+    public var name: String {
+        switch self {
+        case .hpge: "HPGe"
+        case .nai: "NaI(Tl)"
+        case .labr3: "LaBr₃(Ce)"
+        case .bgo: "BGO"
+        case .csi: "CsI(Tl)"
+        }
+    }
+
+    /// Mass fractions by Z.
+    var composition: [(z: Int, fraction: Double)] {
+        func mix(_ atoms: [(Int, Double, Double)]) -> [(z: Int, fraction: Double)] {     // (Z, count, atomic mass)
+            let total = atoms.reduce(0) { $0 + $1.1 * $1.2 }
+            return atoms.map { (z: $0.0, fraction: $0.1 * $0.2 / total) }
+        }
+        switch self {
+        case .hpge: return [(32, 1)]
+        case .nai: return mix([(11, 1, 22.990), (53, 1, 126.904)])
+        case .labr3: return mix([(57, 1, 138.905), (35, 3, 79.904)])
+        case .bgo: return mix([(83, 4, 208.980), (32, 3, 72.630), (8, 12, 15.999)])
+        case .csi: return mix([(55, 1, 132.905), (53, 1, 126.904)])
+        }
+    }
+
+    /// Typical single/double escape-to-photopeak ratios at 6 MeV for a mid-size crystal (rough planning defaults).
+    public var typicalEscape: (single: Double, double: Double) {
+        switch self {
+        case .hpge: (0.8, 0.5)
+        case .nai: (0.6, 0.25)
+        case .labr3: (0.6, 0.3)
+        case .bgo: (0.25, 0.08)
+        case .csi: (0.5, 0.2)
+        }
+    }
+
+    /// The crystal of a resolution preset, judged from its name.
+    public static func matching(_ presetName: String) -> DetectorCrystal? {
+        let n = presetName.lowercased()
+        if n.contains("ge") && !n.contains("bgo") { return .hpge }
+        if n.contains("nai") { return .nai }
+        if n.contains("labr") { return .labr3 }
+        if n.contains("bgo") { return .bgo }
+        if n.contains("csi") { return .csi }
+        return nil
+    }
+}
+
+/// NIST XCOM pair production (nuclear + electron field) and total attenuation, 1.022–20 MeV.
+public enum PairProduction {
+    private static let tables: [String: [[Double]]] = {
+        guard let url = Bundle.module.url(forResource: "pair_production", withExtension: "json"),
+              let data = try? Data(contentsOf: url),
+              let tables = try? JSONDecoder().decode([String: [[Double]]].self, from: data) else { return [:] }
+        return tables
+    }()
+
+    /// Pair-production share of the total attenuation, κ/μ, in a crystal (0 below 1022 keV).
+    public static func fraction(_ crystal: DetectorCrystal, energy: Double) -> Double {
+        guard energy > 1022 else { return 0 }
+        var pair = 0.0, total = 0.0
+        for (z, w) in crystal.composition {
+            guard let rows = tables[String(z)], let first = rows.first, let last = rows.last else { return 0 }
+            let e = min(max(energy, first[0]), last[0])
+            let i = min(rows.count - 2, rows.lastIndex(where: { $0[0] <= e }) ?? 0)
+            let f = (e - rows[i][0]) / (rows[i + 1][0] - rows[i][0])
+            pair += w * (rows[i][1] + f * (rows[i + 1][1] - rows[i][1]))
+            total += w * (rows[i][2] + f * (rows[i + 1][2] - rows[i][2]))
+        }
+        return total > 0 ? pair / total : 0
+    }
+}
+
+/// Escape peaks scaled from ratios at a reference energy by the crystal's pair-production share.
+public struct EscapeModel: Hashable, Codable, Sendable {
+    public static let referenceEnergy = 6000.0
+    public var enabled = true
+    public var crystal = DetectorCrystal.hpge
+    /// Single- and double-escape area / photopeak area at 6 MeV.
+    public var singleAtReference = 0.8
+    public var doubleAtReference = 0.5
+    /// Area of the 511 keV annihilation line per single-escape count (annihilation in the surroundings); 0 = off.
+    public var annihilation = 0.0
+    public init() {}
+
+    public mutating func useTypical(for crystal: DetectorCrystal) {
+        self.crystal = crystal
+        (singleAtReference, doubleAtReference) = crystal.typicalEscape
+    }
+
+    /// Escape / photopeak area ratios at `energy` keV.
+    public func ratios(at energy: Double) -> (single: Double, double: Double) {
+        guard enabled, energy > 1022 else { return (0, 0) }
+        let reference = PairProduction.fraction(crystal, energy: Self.referenceEnergy)
+        guard reference > 0 else { return (0, 0) }
+        let scale = PairProduction.fraction(crystal, energy: energy) / reference
+        return (min(20, singleAtReference * scale), min(20, doubleAtReference * scale))
+    }
 }
 
 public struct SpectrumBin: Identifiable, Sendable {
@@ -94,7 +217,9 @@ public struct SpectrumBin: Identifiable, Sendable {
     public var photopeak: Double
     public var compton: Double
     public var background: Double
-    public var total: Double { photopeak + compton + background }
+    /// Single and double escape peaks and the 511 keV line.
+    public var escape: Double = 0
+    public var total: Double { photopeak + compton + background + escape }
 }
 
 /// Deterministic expected spectrum, not a detector transport Monte Carlo.
@@ -106,16 +231,28 @@ public enum GammaSpectrum {
     public static func simulate(_ setup: SpectrumSetup, resolution: ResolutionModel) throws -> [SpectrumBin] {
         guard setup.maximumEnergy.isFinite, (1...20000).contains(setup.maximumEnergy),
               (128...8192).contains(setup.channels), setup.background.isFinite, setup.background >= 0,
-              setup.continuumRatio.isFinite, (0...100).contains(setup.continuumRatio) else { throw SpectrumError.invalidInput }
+              setup.continuumRatio.isFinite, (0...100).contains(setup.continuumRatio),
+              [setup.escape.singleAtReference, setup.escape.doubleAtReference, setup.escape.annihilation]
+                .allSatisfy({ $0.isFinite && (0...20).contains($0) }) else { throw SpectrumError.invalidInput }
         let width = setup.maximumEnergy / Double(setup.channels)
         var peak = [Double](repeating: 0, count: setup.channels)
         var continuum = peak
+        var escapes = peak
         for line in setup.lines where line.enabled {
             try Task.checkCancellation()
             guard line.energy.isFinite, (1...20000).contains(line.energy), line.counts.isFinite,
                   (0...1e12).contains(line.counts) else { throw SpectrumError.invalidInput }
             let area = try setup.foils.reduce(line.counts) { $0 * (try $1.transmission(at: line.energy)) }
             try deposit(energy: line.energy, area: area, width: width, resolution: resolution, into: &peak)
+            let (single, double) = setup.escape.ratios(at: line.energy)
+            if single > 0 || double > 0, area > 0 {
+                try deposit(energy: line.energy - 510.99895, area: area * single, width: width, resolution: resolution, into: &escapes)
+                try deposit(energy: line.energy - 1021.9979, area: area * double, width: width, resolution: resolution, into: &escapes)
+                if setup.escape.annihilation > 0 {
+                    try deposit(energy: 510.99895, area: area * single * setup.escape.annihilation,
+                                width: width, resolution: resolution, into: &escapes)
+                }
+            }
             guard setup.continuumRatio > 0, area > 0 else { continue }
             let edge = comptonEdge(energy: line.energy)
             // Midpoint integration in deposited energy. dσ/dT ∝ k + 1/k − sin²θ;
@@ -139,7 +276,7 @@ public enum GammaSpectrum {
         }
         return (0..<setup.channels).map {
             SpectrumBin(id: $0, energy: (Double($0) + 0.5) * width,
-                        photopeak: peak[$0], compton: continuum[$0], background: setup.background * width)
+                        photopeak: peak[$0], compton: continuum[$0], background: setup.background * width, escape: escapes[$0])
         }
     }
 
@@ -161,8 +298,8 @@ public enum GammaSpectrum {
     }
 
     public static func csv(_ bins: [SpectrumBin]) -> String {
-        "energy_keV,total_counts,photopeak_counts,compton_counts,background_counts\n" + bins.map {
-            "\($0.energy),\($0.total),\($0.photopeak),\($0.compton),\($0.background)"
+        "energy_keV,total_counts,photopeak_counts,compton_counts,background_counts,escape_counts\n" + bins.map {
+            "\($0.energy),\($0.total),\($0.photopeak),\($0.compton),\($0.background),\($0.escape)"
         }.joined(separator: "\n")
     }
 }

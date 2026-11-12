@@ -26,6 +26,10 @@ struct DetectorSpectrumView: View {
                     .pickerStyle(.segmented)
                 }
                 .padding(.vertical, 4)
+                if let r = workbench.reaction {
+                    ResidualLevelField(residual: r.residual, keV: Bindable(workbench).residualExcitation,
+                                       unit: workbench.energyUnit, maximum: availableEnergy(r))
+                }
             }
             switch mode {
             case .gamma: GammaSpectrumSections()
@@ -40,6 +44,11 @@ struct DetectorSpectrumView: View {
         .sheet(isPresented: $editingSetup) { ReactionSetupSheet() }
     }
 
+    /// Energy available to excite the residual: E_cm + Q₀.
+    private func availableEnergy(_ r: Reaction) -> Double {
+        TwoBodyKinematics(reaction: r, beamEnergy: workbench.reactionEnergy).centerOfMassEnergy + r.qValue
+    }
+
     /// Particles for a charged ejectile, γ rays for capture and neutron channels.
     private var defaultMode: Mode {
         guard let r = workbench.reaction, case .nuclide(let e) = r.ejectile, e.z > 0 else { return .gamma }
@@ -51,9 +60,12 @@ struct DetectorSpectrumView: View {
 
 private struct GammaSpectrumSections: View {
     @Environment(Workbench.self) private var workbench
+    @AppStorage("spectrum.reactionLines") private var includeReaction = true
+    @AppStorage("spectrum.reactions") private var reactions = 1e4
+    @AppStorage("spectrum.applyEfficiency") private var applyEfficiency = false
     @State private var bins: [SpectrumBin] = []
     @State private var error: String?
-    @State private var calculating = false
+    @State private var scheme: LevelScheme?
 
     private struct Input: Hashable {
         let setup: SpectrumSetup
@@ -62,11 +74,13 @@ private struct GammaSpectrumSections: View {
 
     var body: some View {
         @Bindable var workbench = workbench
-        let input = Input(setup: workbench.spectrumSetup, resolution: workbench.resolutionModel)
-        let suggestions = reactionLines
-        Group {
+        let fromReaction = reactionGammas
+        var setup = workbench.spectrumSetup
+        if includeReaction { setup.lines += fromReaction.lines.map { line(for: $0) } }
+        let input = Input(setup: setup, resolution: workbench.resolutionModel)
+        return Group {
             Section {
-                if workbench.spectrumSetup.lines.contains(where: \.enabled) {
+                if setup.lines.contains(where: \.enabled) {
                     if let error {
                         Label(error, systemImage: "exclamationmark.triangle").foregroundStyle(.orange)
                     } else if bins.isEmpty {
@@ -79,10 +93,32 @@ private struct GammaSpectrumSections: View {
                         }
                     }
                 } else {
-                    ContentUnavailableView("No γ lines", systemImage: "waveform.path",
-                                           description: Text(suggestions.isEmpty ? noGammaText : "Add the reaction lines below."))
+                    ContentUnavailableView("No γ lines", systemImage: "waveform.path", description: Text(noGammaText))
                 }
             } header: { Text("Spectrum") }
+
+            if !fromReaction.lines.isEmpty {
+                Section {
+                    Toggle("Include in spectrum", isOn: $includeReaction)
+                    ScientificField(title: "Reactions", value: $reactions)
+                    Toggle("Apply efficiency curve", isOn: $applyEfficiency)
+                    ForEach(fromReaction.lines) { g in
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("\(Fmt.keV(g.energy, digits: 6)) keV").monospacedDigit()
+                                Text(g.label).font(.caption).foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            VStack(alignment: .trailing, spacing: 2) {
+                                Text("\(Fmt.significant(100 * g.intensity, digits: 3)) %").monospacedDigit()
+                                Text("\(Fmt.significant(line(for: g).counts, digits: 3)) counts").font(.caption).foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                } header: { Text("From the reaction") } footer: {
+                    Text(fromReaction.note)
+                }
+            }
 
             Section {
                 ForEach($workbench.spectrumSetup.lines) { $line in
@@ -100,23 +136,14 @@ private struct GammaSpectrumSections: View {
                     .padding(.vertical, 2)
                 }
                 .onDelete { workbench.spectrumSetup.lines.remove(atOffsets: $0) }
-                ForEach(suggestions.filter { s in !workbench.spectrumSetup.lines.contains { abs($0.energy - s.energy) < 0.05 } },
-                        id: \.name) { s in
-                    Button("Add \(s.name), \(Fmt.keV(s.energy)) keV", systemImage: "plus.circle") {
-                        workbench.spectrumSetup.lines.append(SpectrumLine(name: s.name, energy: s.energy, counts: 1000))
-                        if s.energy > workbench.spectrumSetup.maximumEnergy {
-                            workbench.spectrumSetup.maximumEnergy = min(20000, (s.energy * 1.15 / 500).rounded(.up) * 500)
-                        }
-                    }
-                }
                 Menu {
                     Button("Custom line") { workbench.spectrumSetup.lines.append(.init(name: "Line", counts: 1000)) }
                     Menu("Calibration source") {
                         ForEach(CalibrationSources.all) { source in Button(source.label) { addSource(source) } }
                     }
                 } label: { Label("Add line", systemImage: "plus") }
-            } header: { Text("Lines") } footer: {
-                Text("Counts are photopeak areas before the foils. Swipe to delete.")
+            } header: { Text("Other lines") } footer: {
+                Text("Contaminants and sources. Counts are photopeak areas before the foils.")
             }
 
             Section("Window") {
@@ -128,12 +155,21 @@ private struct GammaSpectrumSections: View {
                 NumberField(title: "Compton / peak", value: $workbench.spectrumSetup.continuumRatio, range: 0...100)
             }
 
+            EscapeSection(escape: $workbench.spectrumSetup.escape)
+
             Section {
                 Picker("Detector", selection: $workbench.resolutionModel) {
                     if !ResolutionModel.presets.contains(where: { $0.model == workbench.resolutionModel }) {
                         Text("Custom").tag(workbench.resolutionModel)
                     }
                     ForEach(ResolutionModel.presets) { Text($0.name).tag($0.model) }
+                }
+                .onChange(of: workbench.resolutionModel) { _, model in
+                    // Follow the crystal of a chosen preset with typical escape ratios.
+                    if let name = ResolutionModel.presets.first(where: { $0.model == model })?.name,
+                       let crystal = DetectorCrystal.matching(name), crystal != workbench.spectrumSetup.escape.crystal {
+                        workbench.spectrumSetup.escape.useTypical(for: crystal)
+                    }
                 }
                 ValueRow(label: "FWHM at 1332 keV", value: Fmt.significant(workbench.resolutionModel.fwhm(at: 1332.5), digits: 3), unit: "keV")
                 NavigationLink("Resolution & efficiency") { DetectorView() }
@@ -144,7 +180,17 @@ private struct GammaSpectrumSections: View {
             Section {
                 Link("NIST attenuation tables", destination: URL(string: "https://physics.nist.gov/PhysRefData/XrayMassCoef/chap2.html")!)
             } footer: {
-                Text("Gaussian peaks and a single-scatter Compton continuum; no escape peaks, summing or pile-up.")
+                Text("No summing, pile-up or multiple scattering.")
+            }
+        }
+        .task(id: workbench.reaction?.residual) {
+            scheme = nil
+            if let residual = workbench.reaction?.residual { scheme = await LevelSchemeLoader.load(residual) }
+        }
+        .onChange(of: fromReaction.lines.map(\.energy).max() ?? 0, initial: true) { _, top in
+            // Keep the reaction's highest γ ray inside the window.
+            if includeReaction, top > workbench.spectrumSetup.maximumEnergy * 0.95 {
+                workbench.spectrumSetup.maximumEnergy = min(20000, (top * 1.1 / 500).rounded(.up) * 500)
             }
         }
         .task(id: input) {
@@ -162,25 +208,52 @@ private struct GammaSpectrumSections: View {
         }
     }
 
-    /// γ rays the current reaction produces: the primary capture γ and the residual's level → ground state.
-    private var reactionLines: [(name: String, energy: Double)] {
-        guard let r = workbench.reaction else { return [] }
-        var out: [(String, Double)] = []
+    private struct ReactionGamma: Identifiable {
+        let energy: Double
+        /// γ rays per reaction.
+        let intensity: Double
+        let label: String
+        var id: String { "\(label)-\(energy)" }
+    }
+
+    /// Primary capture γ (capture reactions) and the de-excitation cascade of the residual level, from ENSDF.
+    private var reactionGammas: (lines: [ReactionGamma], note: String) {
+        guard let r = workbench.reaction else { return ([], "") }
         let ex = workbench.residualExcitation
+        var out: [ReactionGamma] = []
+        var notes: [String] = []
         if r.ejectile.isPhoton, let ecm = workbench.reactionEnergyCM {
             let e = ecm + r.qValue(residualExcitation: ex)
-            if e > 1 { out.append(("primary γ", e.rounded(toPlaces: 1))) }
+            if e > 1 { out.append(ReactionGamma(energy: e, intensity: 1, label: ex > 0 ? "primary → \(Fmt.keV(ex, digits: 5))" : "primary → g.s.")) }
         }
         if ex > 1 {
-            let e = GammaDoppler.recoilCorrected(transition: ex, mass: r.residual.kinematicMass)
-            out.append(("\(r.residual.label) \(Fmt.keV(ex, digits: 5)) → 0", e.rounded(toPlaces: 1)))
+            let cascade = scheme.map { GammaCascade.from(excitation: ex, scheme: $0) }
+            if let c = cascade, !c.lines.isEmpty {
+                out += c.lines.map {
+                    ReactionGamma(energy: $0.energy, intensity: $0.intensity,
+                                  label: "\(r.residual.label) \(Fmt.keV($0.initialLevel, digits: 5)) → \(Fmt.keV($0.finalLevel, digits: 5))")
+                }
+                notes.append("Cascade from ENSDF branching ratios")
+                if c.unresolved > 0.01 { notes.append("\(Fmt.significant(100 * c.unresolved, digits: 2)) % reaches levels without γ data") }
+            } else {
+                let e = GammaDoppler.recoilCorrected(transition: ex, mass: r.residual.kinematicMass)
+                out.append(ReactionGamma(energy: e, intensity: 1, label: "\(r.residual.label) \(Fmt.keV(ex, digits: 5)) → 0"))
+                notes.append(scheme == nil ? "No level scheme loaded: direct decay to the ground state assumed"
+                                           : "Eₓ is not an ENSDF level: direct decay to the ground state assumed")
+            }
         }
-        return out
+        notes.append(applyEfficiency ? "Counts = reactions × γ per reaction × efficiency" : "Counts = reactions × γ per reaction")
+        return (out, notes.joined(separator: ". ") + ".")
+    }
+
+    private func line(for g: ReactionGamma) -> SpectrumLine {
+        let eff = applyEfficiency ? (workbench.efficiencyCurve.fit()?.efficiency(at: g.energy) ?? 0) : 1
+        return SpectrumLine(name: g.label, energy: min(20000, max(1, g.energy)), counts: max(0, reactions * g.intensity * eff))
     }
 
     private var noGammaText: String {
         guard let r = workbench.reaction else { return "Set a reaction first." }
-        return "\(r.label) to the ground state emits no γ ray. Set a residual Eₓ in the setup, or switch to Particles."
+        return "\(r.label) to the ground state emits no γ ray. Choose a residual level above, or switch to Particles."
     }
 
     private func transmission(at energy: Double) -> Double? {
@@ -331,5 +404,31 @@ private struct FoilsSection: View {
                     }
                 }
         } header: { Text("Foils") } footer: { Text(footer) }
+    }
+}
+
+/// Single/double escape peaks: ratios at 6 MeV, scaled with the crystal's pair-production share.
+private struct EscapeSection: View {
+    @Binding var escape: EscapeModel
+
+    var body: some View {
+        Section {
+            Toggle("Escape peaks", isOn: $escape.enabled)
+            if escape.enabled {
+                Picker("Crystal", selection: Binding(get: { escape.crystal }, set: { escape.useTypical(for: $0) })) {
+                    ForEach(DetectorCrystal.allCases) { Text($0.name).tag($0) }
+                }
+                NumberField(title: "SE / peak at 6 MeV", value: $escape.singleAtReference, range: 0...20)
+                NumberField(title: "DE / peak at 6 MeV", value: $escape.doubleAtReference, range: 0...20)
+                NumberField(title: "511 keV / SE", value: $escape.annihilation, range: 0...20)
+                let r3 = escape.ratios(at: 3000), r10 = escape.ratios(at: 10000)
+                ValueRow(label: "SE · DE / peak at 3 MeV", value: "\(Fmt.significant(r3.single, digits: 2)) · \(Fmt.significant(r3.double, digits: 2))")
+                ValueRow(label: "SE · DE / peak at 10 MeV", value: "\(Fmt.significant(r10.single, digits: 2)) · \(Fmt.significant(r10.double, digits: 2))")
+            }
+        } footer: {
+            if escape.enabled {
+                Text("Single (SE) and double (DE) escape at E − 511 and E − 1022 keV, scaled by pair production (NIST XCOM). Ratios depend on crystal size: prefer measured ones.")
+            }
+        }
     }
 }

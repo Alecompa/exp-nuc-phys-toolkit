@@ -64,7 +64,8 @@ struct ReactionSetupSheet: View {
 
                 Section("Energies") {
                     EnergyField(title: "Beam energy (lab)", keV: $beam, unit: workbench.energyUnit)
-                    EnergyField(title: "Residual Eₓ", keV: $excitation, unit: workbench.energyUnit)
+                    ResidualLevelField(residual: reaction?.residual, keV: $excitation, unit: workbench.energyUnit,
+                                       maximum: reaction.map { TwoBodyKinematics(reaction: $0, beamEnergy: beam).centerOfMassEnergy + $0.qValue } ?? .infinity)
                 }
 
                 targetSection

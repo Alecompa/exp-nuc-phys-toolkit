@@ -77,11 +77,18 @@ counts the particle itself (efficiency = solid-angle fraction) and the Doppler t
 - Background is a flat, recorded counts/keV contribution, not attenuated by the foils. Spectrum
   values are expected counts, not random Poisson realizations. Counts outside the displayed window
   (including broadening below zero) are lost, never redistributed into it.
-- Multiple scattering, foil fluorescence/scatter-in, target self-absorption, escape peaks, pair
-  production response, coincidence summing, pile-up and Doppler broadening are omitted. The model
+- Above 1022 keV, single- and double-escape Gaussians are added at E − 511 and E − 1022 keV with
+  areas `SE/peak(E) = SE/peak(6 MeV) × f(E)/f(6 MeV)` (same for DE), where `f = κ/μ` is the
+  pair-production share of the total attenuation in the crystal (NIST XCOM, mass-fraction mix for
+  HPGe, NaI, LaBr₃, BGO, CsI). The 6 MeV ratios are user inputs with typical defaults per crystal;
+  they depend strongly on crystal size and geometry. An optional 511 keV line, proportional to the
+  single-escape area, stands in for annihilation photons from the surroundings. The escape
+  continuum (partial pair-energy deposition) is not modelled.
+- Multiple scattering, foil fluorescence/scatter-in, target self-absorption, coincidence summing,
+  pile-up and Doppler broadening are omitted. The model
   cannot determine detector efficiency or continuum/peak ratio from crystal material alone.
 
-CSV export includes channel centers, total, photopeak, Compton and background counts. Changing the
+CSV export includes channel centers, total, photopeak, Compton, background and escape counts. Changing the
 channel width changes counts per channel, while a fully contained peak retains its integrated area.
 
 ## Data and validation
@@ -89,6 +96,9 @@ channel width changes counts per channel, while a fully contained peak retains i
 The [NIST elemental tables](https://physics.nist.gov/PhysRefData/XrayMassCoef/tab3.html), Hubbell and
 Seltzer, NISTIR 5632, are bundled for Z=1–92. Source HTML is retained under `Data/NIST`.
 Rebuild the JSON offline with `python3 Tools/fetch_photon_attenuation.py`; add `--download` to refresh.
+Pair-production and total attenuation coefficients for the escape-peak scaling come from
+[NIST XCOM](https://physics.nist.gov/PhysRefData/Xcom/html/xcom1.html) (Berger et al.), cached under
+`Data/NIST/xcom`; rebuild `pair_production.json` with `python3 Tools/fetch_pair_production.py`.
 The [NIST attenuation definition](https://physics.nist.gov/PhysRefData/XrayMassCoef/chap2.html) and
 [Geant4 Klein–Nishina reference](https://geant4.web.cern.ch/documentation/pipelines/master/prm_html/PhysicsReferenceManual/electromagnetic/gamma_incident/compton/compton.html)
 document the underlying formulas; this implementation does not use Geant4 transport.

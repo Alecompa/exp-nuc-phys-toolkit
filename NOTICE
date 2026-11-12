@@ -18,3 +18,7 @@ Third-party data and code are not covered by the licence above and keep their ow
 Photon attenuation tables (Data/NIST and photon_attenuation.json):
 J. H. Hubbell and S. M. Seltzer, NISTIR 5632 (1995), NIST elemental tables.
 Public-domain US government data; https://physics.nist.gov/PhysRefData/XrayMassCoef/
+
+Pair-production cross sections (Data/NIST/xcom and pair_production.json):
+M. J. Berger et al., XCOM: Photon Cross Sections Database, NIST Standard Reference Database 8.
+Public-domain US government data; https://physics.nist.gov/PhysRefData/Xcom/html/xcom1.html
