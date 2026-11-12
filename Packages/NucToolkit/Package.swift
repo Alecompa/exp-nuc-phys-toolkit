@@ -24,5 +24,6 @@ let package = Package(
             dependencies: ["NucPhysKit"],
             resources: [.process("Resources")]
         ),
+        .testTarget(name: "ToolkitUITests", dependencies: ["ToolkitUI", "NucPhysKit"]),
     ]
 )

@@ -278,8 +278,8 @@ struct TargetEditor: View {
                 MaterialLibrary(elementsOnly: true) { picked in
                     guard let z = picked.components.first?.z else { return }
                     var comps = draft.components
-                    if let k = comps.firstIndex(where: { $0.z == z && abs($0.mass - picked.components[0].mass) < 0.5 }) {
-                        comps[k] = .init(z: z, stoichiometry: comps[k].stoichiometry + 1, mass: comps[k].mass)
+                    if let k = comps.firstIndex(where: { $0.z == z && $0.isotopeMassNumber == picked.components[0].isotopeMassNumber && abs($0.mass - picked.components[0].mass) < 0.5 }) {
+                        comps[k] = .init(z: z, stoichiometry: comps[k].stoichiometry + 1, mass: comps[k].mass, massNumber: comps[k].massNumber)
                     } else {
                         comps.append(.init(z: z, stoichiometry: 1, mass: picked.components[0].mass))
                     }
@@ -411,7 +411,7 @@ struct TargetEditor: View {
     private func updateComponent(_ index: Int, stoichiometry: Double) {
         var comps = draft.components
         guard comps.indices.contains(index), stoichiometry > 0 else { return }
-        comps[index] = .init(z: comps[index].z, stoichiometry: stoichiometry, mass: comps[index].mass)
+        comps[index] = .init(z: comps[index].z, stoichiometry: stoichiometry, mass: comps[index].mass, massNumber: comps[index].massNumber)
         setComponents(comps)
     }
 

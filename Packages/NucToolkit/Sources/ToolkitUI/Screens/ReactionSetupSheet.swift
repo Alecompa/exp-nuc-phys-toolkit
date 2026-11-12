@@ -7,34 +7,56 @@ struct ReactionSetupSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var text = ""
+    @State private var guided = true
+    @State private var targetText = "12C"
+    @State private var projectileText = "p"
+    @State private var ejectileText = "g"
+    @State private var residualText = ""
+    private var notation: String {
+        guided ? "\(targetText)(\(projectileText),\(ejectileText))\(residualText)" : text
+    }
     @State private var beam: Double = 0
     @State private var excitation: Double = 0
     @State private var pickedPreset = 0
     @FocusState private var notationFocused: Bool
 
-    private var parsed: Result<Reaction, ReactionError> { Workbench.parse(text) }
+    private var parsed: Result<Reaction, ReactionError> { Workbench.parse(notation) }
     private var reaction: Reaction? { try? parsed.get() }
 
     var body: some View {
         NavigationStack {
             Form {
                 Section {
+                    Picker("Reaction entry", selection: $guided) {
+                        Text("Builder").tag(true)
+                        Text("Notation").tag(false)
+                    }.pickerStyle(.segmented)
+                    .onChange(of: guided) { old, _ in
+                        if old { text = "\(targetText)(\(projectileText),\(ejectileText))\(residualText)" }
+                        else { loadFields(text) }
+                    }
+                    if guided {
+                        LabeledContent("Target isotope") { TextField("14N", text: $targetText).notationInput().multilineTextAlignment(.trailing) }
+                        LabeledContent("Projectile") { TextField("p or 12C", text: $projectileText).notationInput().multilineTextAlignment(.trailing) }
+                        LabeledContent("Ejectile") { TextField("g, n or a", text: $ejectileText).notationInput().multilineTextAlignment(.trailing) }
+                        LabeledContent("Residual") { TextField("Automatic", text: $residualText).notationInput().multilineTextAlignment(.trailing) }
+                    }
                     VStack(alignment: .leading, spacing: 10) {
-                        TextField("12C(p,g)13N", text: $text)
+                        if !guided { TextField("12C(p,g)13N", text: $text)
                             .font(.system(.title3, design: .monospaced))
                             .notationInput()
                             .focused($notationFocused)
-                            .submitLabel(.done)
+                            .submitLabel(.done) }
                         preview
                     }
                     .padding(.vertical, 4)
                 } header: {
-                    Text("Reaction")
+                    Text("Custom reaction")
                 } footer: {
                     Text("Target(projectile,ejectile)Residual. Light ions: p d t h a n, photon g. The residual may be omitted.")
                 }
 
-                Section("Common reactions") {
+                Section("Examples — optional starting points") {
                     ForEach(Presets.groups, id: \.title) { group in
                         VStack(alignment: .leading, spacing: 8) {
                             Text(group.title)
@@ -69,7 +91,7 @@ struct ReactionSetupSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done", role: .confirm) { commit() }
-                        .disabled(reaction == nil)
+                        .disabled(reaction == nil || !beam.isFinite || beam < 0 || !excitation.isFinite || excitation < 0)
                 }
             }
             .sensoryFeedback(.selection, trigger: pickedPreset)
@@ -77,6 +99,7 @@ struct ReactionSetupSheet: View {
         .presentationDetents([.large])
         .onAppear {
             text = workbench.reactionText
+            loadFields(text)
             beam = workbench.beamEnergy
             excitation = workbench.residualExcitation
         }
@@ -109,7 +132,10 @@ struct ReactionSetupSheet: View {
         let r = try? Reaction(notation: notation)
         let selected = r != nil && r == reaction
         return Button {
-            withAnimation(.smooth) { text = r?.plainLabel ?? notation }
+            withAnimation(.smooth) {
+                text = r?.plainLabel ?? notation
+                loadFields(text)
+            }
             pickedPreset += 1
         } label: {
             Text(r?.label ?? notation)
@@ -121,6 +147,15 @@ struct ReactionSetupSheet: View {
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+
+    private func loadFields(_ notation: String) {
+        guard let open = notation.firstIndex(of: "("), let close = notation.firstIndex(of: ")"), open < close else { return }
+        let pair = notation[notation.index(after: open)..<close].split(separator: ",", omittingEmptySubsequences: false)
+        guard pair.count == 2 else { return }
+        targetText = String(notation[..<open])
+        projectileText = String(pair[0]); ejectileText = String(pair[1])
+        residualText = String(notation[notation.index(after: close)...])
     }
 
     private func commit() {

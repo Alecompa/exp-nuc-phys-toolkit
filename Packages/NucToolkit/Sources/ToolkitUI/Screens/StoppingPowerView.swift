@@ -4,6 +4,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct StoppingPowerView: View {
+    @State private var focusedPlot = false
     @Environment(Workbench.self) private var workbench
     @State private var editingSetup = false
     @State private var editingTarget = false
@@ -73,9 +74,10 @@ struct StoppingPowerView: View {
             }
 
             Section {
-                StoppingChart(calc: calc, unit: unit, beamEnergy: energy, selection: $selection)
-                    .frame(height: 260)
-                    .padding(.vertical, 8)
+                Toggle("Focus around beam energy", isOn: $focusedPlot)
+                ExpandablePlot(title: "Stopping power") {
+                    StoppingChart(calc: calc, unit: unit, beamEnergy: energy, selection: $selection, focused: focusedPlot)
+                }.padding(.vertical, 8)
             } header: {
                 Text("vs ion energy")
             } footer: {
@@ -169,6 +171,7 @@ private struct StoppingChart: View {
     let unit: StoppingUnit
     let beamEnergy: Double
     @Binding var selection: Double?
+    var focused = false
 
     private struct Point: Identifiable {
         let id: Int
@@ -190,8 +193,8 @@ private struct StoppingChart: View {
     }
 
     private var domain: ClosedRange<Double> {
-        let lo = 1.0
-        let hi = max(1e5, 1e4 * calc.ion.mass, beamEnergy * 10)
+        let lo = focused ? max(1, beamEnergy / 10) : 1.0
+        let hi = focused ? max(lo * 10, beamEnergy * 10) : max(1e5, 1e4 * calc.ion.mass, beamEnergy * 10)
         return lo...hi
     }
 

@@ -3,6 +3,7 @@ import NucPhysKit
 import SwiftUI
 
 struct KinematicsView: View {
+    @State private var focusedPlot = false
     @Environment(Workbench.self) private var workbench
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var angle: Double = 45 // ejectile lab angle, degrees
@@ -85,10 +86,11 @@ struct KinematicsView: View {
                     .pickerStyle(.segmented)
                     .listRowSeparator(.hidden)
 
-                    KinematicsChart(kin: k, quantity: quantity, unit: unit, angle: angle,
-                                    solutions: solutions, selection: $chartSelection)
-                        .frame(height: 260)
-                        .padding(.vertical, 6)
+                    Toggle("Focus around selected angle", isOn: $focusedPlot)
+                    ExpandablePlot(title: "Kinematics") {
+                        KinematicsChart(kin: k, quantity: quantity, unit: unit, angle: angle,
+                                        solutions: solutions, selection: $chartSelection, focused: focusedPlot)
+                    }.padding(.vertical, 6)
                 } header: {
                     Text("vs \(ejectileName) lab angle")
                 } footer: {
@@ -197,6 +199,7 @@ private struct KinematicsChart: View {
     let angle: Double
     let solutions: [KinematicSolution]
     @Binding var selection: Double?
+    var focused = false
 
     private struct Point: Identifiable { let id: Int; let x: Double; let y: Double }
 
@@ -237,7 +240,8 @@ private struct KinematicsChart: View {
                     }
             }
         }
-        .chartXScale(domain: 0...xMax(points))
+        .chartXScale(domain: focused ? max(0, min(angle - 10, max(0, xMax(points) - 20)))...min(xMax(points), max(20, angle + 10)) : 0...xMax(points))
+        .chartPlotStyle { $0.clipped() }
         .chartYScale(domain: .automatic(includesZero: false))
         .chartYAxis {
             AxisMarks { _ in

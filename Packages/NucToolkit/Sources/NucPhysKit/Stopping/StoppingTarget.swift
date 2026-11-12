@@ -29,11 +29,19 @@ public struct StoppingTarget: Hashable, Sendable, Codable {
         public let stoichiometry: Double
         /// Mass in u (SRIM default: natural atomic weight).
         public let mass: Double
+        /// Explicit isotope from a formula; nil means a natural-element component.
+        public var massNumber: Int?
 
-        public init(z: Int, stoichiometry: Double, mass: Double) {
+        public init(z: Int, stoichiometry: Double, mass: Double, massNumber: Int? = nil) {
             self.z = z
             self.stoichiometry = stoichiometry
             self.mass = mass
+            self.massNumber = massNumber
+        }
+
+        /// Recover isotope tags from older saved targets when their mass differs clearly from natural mass.
+        public var isotopeMassNumber: Int? {
+            massNumber ?? (abs(mass - SRIMData.shared.element(z).naturalMass) > 0.5 ? Int(mass.rounded()) : nil)
         }
     }
 
@@ -80,6 +88,24 @@ public struct StoppingTarget: Hashable, Sendable, Codable {
 
     public var meanMass: Double { zip(components, fractions).reduce(0) { $0 + $1.0.mass * $1.1 } }
     public var meanZ: Double { zip(components, fractions).reduce(0) { $0 + Double($1.0.z) * $1.1 } }
+
+    /// Explicit isotopes contribute only to their own channel; abundance applies to untagged components.
+    public func activeFraction(z: Int, a: Int, abundance: Double) -> Double {
+        guard abundance.isFinite, (0...1).contains(abundance) else { return 0 }
+        return zip(components, fractions).reduce(0) { sum, pair in
+            let (component, fraction) = pair
+            guard component.z == z else { return sum }
+            if let isotope = component.isotopeMassNumber { return sum + (isotope == a ? fraction : 0) }
+            return sum + fraction * abundance
+        }
+    }
+
+    /// Active nuclei/cm² along the beam path through the complete homogeneous layer.
+    public func activeArealDensity(z: Int, a: Int, abundance: Double, thickness: Double, angle: Double) -> Double? {
+        guard thickness.isFinite, thickness >= 0, angle.isFinite, abs(angle) < 90,
+              density.isFinite, density > 0 else { return nil }
+        return thickness * 1e-8 * atomDensity * activeFraction(z: z, a: a, abundance: abundance) / cos(angle * .pi / 180)
+    }
 
     /// Atomic density, atoms/cm³ (SRIM's Avogadro constant 6.022·10²³).
     public var atomDensity: Double { 6.022e23 * density / meanMass }
