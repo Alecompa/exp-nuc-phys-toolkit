@@ -23,9 +23,9 @@ struct ToolsHomeView: View {
                         .listRowBackground(Color.clear)
                 }
 
-                ForEach(ToolCatalog.sections.filter { $0.tools.contains(where: matches) }) { section in
+                ForEach(ToolCatalog.sections.filter { $0.tools.contains(where: shows) }) { section in
                     Section(section.title) {
-                        ForEach(section.tools.filter(matches)) { tool in
+                        ForEach(section.tools.filter(shows)) { tool in
                             NavigationLink(value: Route.tool(tool)) {
                                 ToolRow(tool: tool)
                             }
@@ -46,6 +46,19 @@ struct ToolsHomeView: View {
             .sheet(isPresented: $editingSetup) {
                 ReactionSetupSheet()
             }
+        }
+    }
+    /// Tools that make no sense for the current setup are left out of the list; a search still finds them.
+    private func shows(_ tool: Tool) -> Bool {
+        toolQuery.isEmpty ? isRelevant(tool) : matches(tool)
+    }
+    private func isRelevant(_ tool: Tool) -> Bool {
+        switch tool {
+        case .gammaDoppler:
+            // No γ when a particle ejectile leaves the residual in its ground state.
+            guard let r = workbench.reaction else { return true }
+            return r.ejectile.isPhoton || workbench.residualExcitation > 0
+        default: return true
         }
     }
     private func matches(_ tool: Tool) -> Bool {
