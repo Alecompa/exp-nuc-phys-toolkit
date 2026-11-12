@@ -17,6 +17,12 @@ struct ReactionSetupSheet: View {
     }
     @State private var beam: Double = 0
     @State private var excitation: Double = 0
+    /// nil: the reaction's target element.
+    @State private var material: StoppingTarget?
+    @State private var thickness: Double = 0
+    @State private var tilt: Double = 0
+    @State private var abundance: Double = 100
+    @State private var editingMaterial = false
     @State private var pickedPreset = 0
     @FocusState private var notationFocused: Bool
 
@@ -51,12 +57,19 @@ struct ReactionSetupSheet: View {
                     }
                     .padding(.vertical, 4)
                 } header: {
-                    Text("Custom reaction")
+                    Text("Reaction")
                 } footer: {
-                    Text("Target(projectile,ejectile)Residual. Light ions: p d t h a n, photon g. The residual may be omitted.")
+                    Text("Light ions p d t h a n, photon g. Leave the residual empty to infer it.")
                 }
 
-                Section("Examples — optional starting points") {
+                Section("Energies") {
+                    EnergyField(title: "Beam energy (lab)", keV: $beam, unit: workbench.energyUnit)
+                    EnergyField(title: "Residual Eₓ", keV: $excitation, unit: workbench.energyUnit)
+                }
+
+                targetSection
+
+                Section("Examples") {
                     ForEach(Presets.groups, id: \.title) { group in
                         VStack(alignment: .leading, spacing: 8) {
                             Text(group.title)
@@ -72,14 +85,6 @@ struct ReactionSetupSheet: View {
                     }
                 }
 
-                Section {
-                    EnergyField(title: "Beam energy", keV: $beam, unit: workbench.energyUnit)
-                    EnergyField(title: "Residual Eₓ", keV: $excitation, unit: workbench.energyUnit)
-                } header: {
-                    Text("Energies")
-                } footer: {
-                    Text("Laboratory kinetic energy of the projectile; excitation energy of the residual nucleus.")
-                }
             }
             .scrollDismissesKeyboard(.interactively)
             .keyboardDoneButton()
@@ -102,6 +107,59 @@ struct ReactionSetupSheet: View {
             loadFields(text)
             beam = workbench.beamEnergy
             excitation = workbench.residualExcitation
+            material = workbench.customTarget
+            thickness = workbench.layerThickness
+            tilt = workbench.layerAngle
+            abundance = workbench.isotopicAbundance
+        }
+        .sheet(isPresented: $editingMaterial) {
+            if let current = currentMaterial {
+                TargetEditor(title: "Target material", initial: current, thickness: nil, reactionTarget: reactionElement) { t, _ in
+                    material = t == reactionElement ? nil : t
+                }
+            }
+        }
+    }
+
+    // MARK: Target
+
+    private var reactionElement: StoppingTarget? {
+        guard let z = reaction?.target.z, (1...92).contains(z) else { return nil }
+        return .element(z)
+    }
+
+    private var currentMaterial: StoppingTarget? { material ?? reactionElement }
+
+    @ViewBuilder
+    private var targetSection: some View {
+        if let t = currentMaterial {
+            Section {
+                Button { editingMaterial = true } label: {
+                    LabeledContent {
+                        Image(systemName: "chevron.right").font(.caption).foregroundStyle(.tertiary)
+                    } label: {
+                        Text(t.name).foregroundStyle(.primary)
+                        Text(TargetSummary.line(t, reaction: material == nil))
+                    }
+                }
+                .tint(.primary)
+                if let r = reaction, !t.components.contains(where: { $0.z == r.target.z }) {
+                    HStack {
+                        Label("No \(r.target.symbol) in \(t.name)", systemImage: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.orange)
+                        Spacer()
+                        Button("Use \(r.target.symbol)") { material = nil }.buttonStyle(.bordered).controlSize(.small)
+                    }
+                    .font(.subheadline)
+                }
+                ThicknessField(angstrom: $thickness, target: t, unit: Bindable(workbench).thicknessUnit)
+                NumberField(title: "Tilt", value: $tilt, unit: "°", range: 0...89)
+                NumberField(title: "\(reaction?.target.label ?? "Isotope") abundance", value: $abundance, unit: "%", range: 0...100)
+            } header: {
+                Text("Target")
+            } footer: {
+                Text("Backings and covers: Energy Loss tool.")
+            }
         }
     }
 
@@ -159,9 +217,14 @@ struct ReactionSetupSheet: View {
     }
 
     private func commit() {
-        workbench.reactionText = reaction?.plainLabel ?? text
+        guard let reaction else { return }
+        workbench.reactionText = reaction.plainLabel
         workbench.beamEnergy = beam
         workbench.residualExcitation = excitation
+        workbench.customTarget = material
+        workbench.layerThickness = thickness
+        workbench.layerAngle = tilt
+        workbench.isotopicAbundance = abundance
         dismiss()
     }
 }

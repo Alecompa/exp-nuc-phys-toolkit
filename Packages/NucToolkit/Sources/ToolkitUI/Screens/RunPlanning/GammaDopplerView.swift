@@ -42,6 +42,11 @@ struct GammaDopplerView: View {
             }
 
             Section {
+                if let r = reaction, !r.ejectile.isPhoton, workbench.residualExcitation == 0 {
+                    Label("\(r.label) to the ground state emits no γ. Set a residual Eₓ in the setup.",
+                          systemImage: "info.circle")
+                        .font(.footnote).foregroundStyle(.secondary)
+                }
                 NumberField(title: "γ energy at rest", value: $e0, unit: "keV", range: 0...1e5)
                 if let r = reaction, let ecm = workbench.reactionEnergyCM, r.ejectile.isPhoton {
                     let primary = ecm + r.qValue(residualExcitation: workbench.residualExcitation)
@@ -64,7 +69,7 @@ struct GammaDopplerView: View {
             } header: {
                 Text("Emitter")
             } footer: {
-                Text("For capture reactions the γ is emitted by the compound nucleus moving with the centre of mass. With a particle ejectile the recoil velocity depends on the ejectile angle; the centre-of-mass velocity is the average.")
+                Text(reaction?.ejectile.isPhoton == false ? "The recoil velocity depends on the ejectile angle; β is its average." : "The compound nucleus moves with the centre of mass.")
             }
 
             Section {
@@ -102,8 +107,11 @@ struct GammaDopplerView: View {
         .inlineTitle()
         .sheet(isPresented: $editingSetup) { ReactionSetupSheet() }
         .onAppear {
-            if e0 == 0, let r = reaction, let ecm = workbench.reactionEnergyCM {
+            guard e0 == 0, let r = reaction else { return }
+            if r.ejectile.isPhoton, let ecm = workbench.reactionEnergyCM {
                 e0 = max(1, ecm + r.qValue(residualExcitation: workbench.residualExcitation)).rounded(toPlaces: 2)
+            } else if workbench.residualExcitation > 0 {
+                e0 = GammaDoppler.recoilCorrected(transition: workbench.residualExcitation, mass: r.residual.kinematicMass).rounded(toPlaces: 2)
             }
         }
         .notebookSnapshot {

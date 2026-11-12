@@ -82,6 +82,7 @@ struct GammaSpectrumTests {
 
     @Test func invalidInputsAndPersistence() throws {
         var setup = SpectrumSetup()
+        setup.lines = [.init(energy: 661.657, counts: 10000)]
         setup.foils = [.init()]
         let decoded = try JSONDecoder().decode(SpectrumSetup.self, from: JSONEncoder().encode(setup))
         #expect(decoded == setup)

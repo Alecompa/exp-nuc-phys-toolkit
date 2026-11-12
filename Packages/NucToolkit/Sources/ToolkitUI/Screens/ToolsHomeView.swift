@@ -13,7 +13,6 @@ struct ToolsHomeView: View {
     @State private var path: [Route] = []
     @State private var toolQuery = ""
     @State private var editingSetup = false
-    @State private var editingTarget = false
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -22,21 +21,6 @@ struct ToolsHomeView: View {
                     SetupCard { editingSetup = true }
                         .listRowInsets(EdgeInsets())
                         .listRowBackground(Color.clear)
-                }
-
-                Section("Build your experiment") {
-                    Button("Construct a reaction", systemImage: "atom") { editingSetup = true }
-                    if let target = workbench.stoppingTarget {
-                        Button { editingTarget = true } label: {
-                            VStack(alignment: .leading) {
-                                Label("Target material & compounds", systemImage: "square.stack.3d.up")
-                                Text(TargetSummary.line(target, reaction: workbench.customTarget == nil))
-                                    .font(.caption).foregroundStyle(.secondary)
-                            }
-                        }
-                    }
-                    NavigationLink("Target thickness & beam layers", value: Route.tool(.energyLoss))
-                    NavigationLink("Detector foils & gamma spectrum", value: Route.tool(.spectrum))
                 }
 
                 ForEach(ToolCatalog.sections.filter { $0.tools.contains(where: matches) }) { section in
@@ -61,9 +45,6 @@ struct ToolsHomeView: View {
             .appDestinations(namespace: zoom)
             .sheet(isPresented: $editingSetup) {
                 ReactionSetupSheet()
-            }
-            .sheet(isPresented: $editingTarget) {
-                if let target = workbench.stoppingTarget { TargetSheet(initial: target) }
             }
         }
     }
@@ -138,6 +119,15 @@ private struct SetupCard: View {
                     fact("Q", Fmt.energy(r.qValue, unit: workbench.energyUnit, uncertainty: r.qValueUncertainty))
                 }
             }
+
+            if let t = workbench.stoppingTarget {
+                HStack(spacing: 6) {
+                    Image(systemName: "square.stack.3d.up.fill")
+                    Text(targetLine(t)).lineLimit(1).minimumScaleFactor(0.8)
+                }
+                .font(.footnote.weight(.medium))
+                .foregroundStyle(.white.opacity(0.85))
+            }
         }
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -147,6 +137,14 @@ private struct SetupCard: View {
         }
         .padding(.vertical, 4)
         .animation(.smooth, value: workbench.reactionText)
+    }
+
+    private func targetLine(_ t: StoppingTarget) -> String {
+        var parts = [t.name]
+        let unit = workbench.thicknessUnit
+        parts.append("\(Fmt.significant(unit.fromAngstrom(workbench.layerThickness, target: t), digits: 3)) \(unit.rawValue)")
+        if workbench.layerAngle != 0 { parts.append("\(Fmt.number(workbench.layerAngle, decimals: 0))° tilt") }
+        return parts.joined(separator: " · ")
     }
 
     private func fact(_ title: String, _ value: String) -> some View {

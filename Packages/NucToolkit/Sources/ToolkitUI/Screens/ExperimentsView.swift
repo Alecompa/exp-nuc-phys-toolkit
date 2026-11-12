@@ -44,7 +44,7 @@ struct ExperimentsView: View {
             List {
                 Section {
                     Button("Save current setup / log a run", systemImage: "plus.circle.fill") { adding = true }
-                    Text("Keep named setups and run notes with a copy of the reaction, beam, target layers, detector, foils and spectrum inputs.")
+                    Text("Saves the current setup with run notes.")
                         .font(.footnote).foregroundStyle(.secondary)
                 }
                 ForEach(records.filter { query.isEmpty || ($0.title + $0.note + ($0.setup?.reactionText ?? "")).localizedCaseInsensitiveContains(query) }) { record in
@@ -60,7 +60,7 @@ struct ExperimentsView: View {
                     }
                 }
                 if records.isEmpty {
-                    ContentUnavailableView("No saved experiments", systemImage: "flask", description: Text("Configure an experiment in Tools, then save it here before changing inputs for the next run."))
+                    ContentUnavailableView("No saved experiments", systemImage: "flask", description: Text("Save the current setup to keep it for a run."))
                 }
             }
             .navigationTitle("Experiments")
@@ -93,7 +93,7 @@ private struct NewExperimentSheet: View {
                     NumberField(title: "Integrated charge", value: $charge, unit: "µC", range: 0...1e15)
                     NumberField(title: "Elapsed time", value: $seconds, unit: "s", range: 0...1e12)
                 } header: { Text("Measured run totals (optional)") } footer: {
-                    Text("Leave zero for a setup without measured totals. These are recorded values, not inferred from the planned beam current. Individual calculator inputs outside the shared setup are saved separately through Notebook.")
+                    Text("Measured totals; leave zero if not measured.")
                 }
                 if let error { Text(error).foregroundStyle(.red) }
             }
@@ -174,7 +174,7 @@ private struct ExperimentDetail: View {
                               preview: SharePreview(record.title)) { Label("Export run & setup JSON", systemImage: "square.and.arrow.up") }
                 }
             } else {
-                Text("The saved setup could not be decoded. The run notes remain available.").foregroundStyle(.orange)
+                Text("The saved setup could not be read; the notes are kept.").foregroundStyle(.orange)
             }
             if let error { Text(error).foregroundStyle(.red) }
             Button("Delete record", role: .destructive) { deleting = true }

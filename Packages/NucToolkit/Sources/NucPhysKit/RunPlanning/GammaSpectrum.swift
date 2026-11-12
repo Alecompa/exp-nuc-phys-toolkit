@@ -77,7 +77,7 @@ public struct SpectrumLine: Identifiable, Hashable, Codable, Sendable {
 }
 
 public struct SpectrumSetup: Hashable, Codable, Sendable {
-    public var lines: [SpectrumLine] = [.init(name: "Example line", energy: 661.657, counts: 10000)]
+    public var lines: [SpectrumLine] = []
     public var foils: [DetectorFoil] = []
     public var maximumEnergy: Double = 3000
     public var channels: Int = 4096

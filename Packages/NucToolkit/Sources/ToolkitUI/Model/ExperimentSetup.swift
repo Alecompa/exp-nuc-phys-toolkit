@@ -22,6 +22,7 @@ struct ExperimentSetup: Codable, Equatable, Sendable {
     var beamCurrent: Double
     var chargeState: Int
     var spectrumSetup: SpectrumSetup
+    var particleDetector: ParticleDetectorSetup?
     var resolutionModel: ResolutionModel
     var efficiencyCurve: EfficiencyCurve
 
@@ -44,6 +45,7 @@ struct ExperimentSetup: Codable, Equatable, Sendable {
         beamCurrent = workbench.beamCurrent
         chargeState = workbench.chargeState
         spectrumSetup = workbench.spectrumSetup
+        particleDetector = workbench.particleDetector
         resolutionModel = workbench.resolutionModel
         efficiencyCurve = workbench.efficiencyCurve
     }
@@ -69,6 +71,7 @@ struct ExperimentSetup: Codable, Equatable, Sendable {
         workbench.beamCurrent = beamCurrent
         workbench.chargeState = chargeState
         workbench.spectrumSetup = spectrumSetup
+        if let particleDetector { workbench.particleDetector = particleDetector }
         workbench.resolutionModel = resolutionModel
         workbench.efficiencyCurve = efficiencyCurve
     }

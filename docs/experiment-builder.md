@@ -45,35 +45,26 @@ interval. A resonance close to the boundary still requires a finite-width treatm
 
 ## Building an experiment
 
-From **Tools → Build your experiment**:
+Everything shared lives in **Tools → Current Setup → Edit**: the reaction (builder fields or notation),
+beam energy and residual Eₓ, and the target — material (formula, compound library or mixture), thickness,
+tilt and isotope abundance. The sheet warns when the material does not contain the reaction's target
+element. Backings and covers stay in the **Energy Loss** tool.
 
-1. **Construct a reaction** opens separate target-isotope, projectile, ejectile and residual fields.
-   Leave the residual blank to infer it by charge/mass-number conservation. Any two-body channel
-   supported by AME2020 is allowed, including heavy ions. The notation editor is still available;
-   examples are optional starting points. Done commits the draft; Cancel discards it.
-2. **Target material & compounds** opens the existing composition editor. Enter a formula such as
-   `Ta2O5`, `TiD2`, `Ca(OH)2` or `Ta2[17O]5`, or build a mixture by adding elements and changing
-   their stoichiometries. Supply the actual density. The reaction's target isotope and the bulk
-   stopping material are distinct inputs.
-3. **Target thickness & beam layers** controls the incident-beam stack. These layers are independent
-   of the gamma detector's front foils.
-4. **Detector foils & gamma spectrum** opens a saved, editable spectrum setup. Add lines for the
-   reaction and for each contaminant, enter their energies and expected unattenuated photopeak counts,
-   and choose HPGe, NaI, BGO or another resolution preset. Detector selection changes broadening only.
-   Toggle contributions to compare scenarios; swipe to remove lines or foils.
+**Detector Spectrum** adapts to the exit channel:
 
-Source-line templates reuse the bundled ENSDF energies and intensities. Their strongest line starts
-at 1000 counts with other counts scaled by emission intensity, assuming equal efficiency. These are
-editable templates, not predicted yields. Set actual counts using your live time, source strength or
-reaction yield, solid angle and full-energy efficiency. No reaction cascade or contaminant abundance
-is converted automatically to a yield.
+- **Particles** (default for a charged ejectile): the ejectile and the beam elastically scattered by each
+  element of the target material, at the detector's laboratory angle. Energies come from relativistic
+  two-body kinematics; absorber foils slow them with SRIM stopping and straggling, and a particle that stops
+  in a foil is flagged. Peak widths add the detector resolution, foil straggling and the kinematic spread over
+  the detector opening. Peaks are drawn with equal areas; energy loss in the target is not included.
+- **γ rays** (default for capture and neutron channels): offers the reaction's own lines — the primary
+  capture γ and the residual level → ground state — plus custom lines and calibration-source templates.
+  A channel with no γ ray (e.g. (p,α) to the ground state) says so instead of showing a placeholder.
 
-Foils reuse the compound editor, support physical or areal thickness units, and have individual
-angles relative to their normals. All foils belong to the one detector being modeled. Set up another
-scenario by editing this stack and exporting its spectrum; simultaneous multiple detectors are not
-modeled. Configuration, foil identities, line enable states and resolution survive app restart.
+Gamma Doppler and Yield & Beam Time follow the same rule: with a charged ejectile and Eₓ = 0 the yield
+counts the particle itself (efficiency = solid-angle fraction) and the Doppler tool notes that no γ is emitted.
 
-## Response model
+## γ response model
 
 - Photopeaks are Gaussian, integrated over each channel using the selected energy-dependent FWHM.
 - The continuum is the free-electron Klein–Nishina single-scatter distribution in deposited energy,

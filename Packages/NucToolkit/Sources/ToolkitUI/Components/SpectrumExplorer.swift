@@ -47,19 +47,14 @@ struct SpectrumExplorer: View {
             .chartYScale(type: logarithmic ? .log : .linear)
             .chartXSelection(value: $selection)
             .chartXAxisLabel("Energy (keV)")
-            .chartYAxisLabel("Expected counts / channel")
+            .chartYAxisLabel("Counts / channel")
             .chartPlotStyle { $0.clipped() }
             .frame(height: expanded ? 420 : 260)
-            .accessibilityLabel("Gamma spectrum. Select an energy for channel counts; use range and zoom controls to navigate.")
+            .accessibilityLabel("Gamma spectrum")
 
-            if let bin = selectedBin {
-                Text("\(Fmt.keV(bin.energy)) keV · \(Fmt.significant(bin.total, digits: 5)) counts/channel")
-                    .font(.subheadline.monospacedDigit())
-            } else { Text("Touch and drag on the plot to inspect a channel.").font(.caption).foregroundStyle(.secondary) }
-            if bins.count > 1200 {
-                Text("Overview retains peak extrema; zoom in for channel detail. Readouts, ROI counts and export use all channels.")
-                    .font(.caption).foregroundStyle(.secondary)
-            }
+            Text(selectedBin.map { "\(Fmt.keV($0.energy)) keV · \(Fmt.significant($0.total, digits: 5)) counts" } ?? "Drag on the plot to read a channel")
+                .font(.caption.monospacedDigit())
+                .foregroundStyle(selectedBin == nil ? .secondary : .primary)
             HStack {
                 Button { move(-0.5) } label: { Image(systemName: "arrow.left") }.accessibilityLabel("Pan to lower energy")
                 Button { zoom(0.5) } label: { Image(systemName: "plus.magnifyingglass") }.accessibilityLabel("Zoom in")
@@ -70,24 +65,23 @@ struct SpectrumExplorer: View {
                     Button { fullScreen = true } label: { Image(systemName: "arrow.up.left.and.arrow.down.right") }.accessibilityLabel("Expand spectrum")
                 }
             }.buttonStyle(.bordered)
-            NumberField(title: "View from", value: $lower, unit: "keV", range: 0...max(0, upper - width))
-            NumberField(title: "View to", value: $upper, unit: "keV", range: min(maximumEnergy, lower + width)...maximumEnergy)
-            Toggle("Logarithmic counts", isOn: $logarithmic)
-            if logarithmic { Text("Log display floor: 0.01 counts. Readouts and areas use unmodified counts.").font(.caption).foregroundStyle(.secondary) }
-            Toggle("Show response components", isOn: $components)
+            Toggle("Log scale", isOn: $logarithmic)
+            Toggle("Components", isOn: $components)
+            DisclosureGroup("View range") {
+                NumberField(title: "From", value: $lower, unit: "keV", range: 0...max(0, upper - width))
+                NumberField(title: "To", value: $upper, unit: "keV", range: min(maximumEnergy, lower + width)...maximumEnergy)
+            }
             DisclosureGroup("Region of interest") {
                 NumberField(title: "ROI from", value: $roiLower, unit: "keV", range: 0...maximumEnergy)
                 NumberField(title: "ROI to", value: $roiUpper, unit: "keV", range: 0...maximumEnergy)
                 Button("Use visible range") { roiLower = lower; roiUpper = upper }
-                if roiUpper <= roiLower { Text("ROI upper energy must exceed lower energy.").foregroundStyle(.orange) }
+                if roiUpper <= roiLower { Text("Upper limit must exceed the lower one.").foregroundStyle(.orange) }
                 else {
                     let roi = SpectrumRegion.integrate(bins, binWidth: width, lower: roiLower, upper: roiUpper)
-                    ValueRow(label: "Total expected counts", value: Fmt.significant(roi.total, digits: 6))
-                    ValueRow(label: "Photopeak component", value: Fmt.significant(roi.photopeak, digits: 6))
-                    ValueRow(label: "Compton component", value: Fmt.significant(roi.compton, digits: 6))
-                    ValueRow(label: "Background component", value: Fmt.significant(roi.background, digits: 6))
-                    Text("Fractional boundary channels are weighted by overlap. These are predicted components, not a measured net-peak extraction.")
-                        .font(.caption).foregroundStyle(.secondary)
+                    ValueRow(label: "Total", value: Fmt.significant(roi.total, digits: 6))
+                    ValueRow(label: "Photopeak", value: Fmt.significant(roi.photopeak, digits: 6))
+                    ValueRow(label: "Compton", value: Fmt.significant(roi.compton, digits: 6))
+                    ValueRow(label: "Background", value: Fmt.significant(roi.background, digits: 6))
                 }
             }
         }
@@ -96,7 +90,7 @@ struct SpectrumExplorer: View {
         .sheet(isPresented: $fullScreen) {
             NavigationStack {
                 ScrollView { AnyView(SpectrumExplorer(bins: bins, maximumEnergy: maximumEnergy, expanded: true)).padding() }
-                    .navigationTitle("Explore spectrum")
+                    .navigationTitle("Spectrum")
                     .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { fullScreen = false } } }
             }
         }

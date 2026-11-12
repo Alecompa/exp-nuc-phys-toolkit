@@ -50,7 +50,7 @@ struct YieldEstimateView: View {
         }
         .onAppear {
             if resonanceLab == 0 { resonanceLab = workbench.beamEnergy }
-            if gammaEnergy == 0, let r = workbench.reaction, let e = workbench.reactionEnergyCM {
+            if gammaEnergy == 0, let r = workbench.reaction, r.ejectile.isPhoton, let e = workbench.reactionEnergyCM {
                 gammaEnergy = max(1, (e + r.qValue(residualExcitation: workbench.residualExcitation)).rounded(toPlaces: 1))
             }
         }
@@ -99,8 +99,14 @@ struct YieldEstimateView: View {
         }
     }
 
+    /// The detected radiation is the charged ejectile itself (no γ ray in the exit channel).
+    private var detectsParticle: Bool {
+        guard let r = workbench.reaction, case .nuclide(let e) = r.ejectile else { return false }
+        return e.z > 0 && workbench.residualExcitation == 0
+    }
+
     private var efficiency: Double {
-        useCurve ? (workbench.efficiencyCurve.fit()?.efficiency(at: gammaEnergy) ?? 0) : efficiencyPercent / 100
+        useCurve && !detectsParticle ? (workbench.efficiencyCurve.fit()?.efficiency(at: gammaEnergy) ?? 0) : efficiencyPercent / 100
     }
 
     @ViewBuilder
@@ -198,21 +204,31 @@ struct YieldEstimateView: View {
             }
 
             Section {
-                NumberField(title: "γ-ray energy", value: $gammaEnergy, unit: "keV", range: 1...1e5)
-                if let e = workbench.reactionEnergyCM, r.ejectile.isPhoton {
-                    Button("Capture to ground state, \(Fmt.keV(e + r.qValue, digits: 5)) keV") {
-                        gammaEnergy = (e + r.qValue).rounded(toPlaces: 1)
-                    }
-                    .font(.callout)
-                }
-                Toggle("Efficiency from detector curve", isOn: $useCurve.animation(.smooth))
-                if useCurve {
-                    ValueRow(label: "Full-energy efficiency", value: Fmt.significant(100 * efficiency, digits: 3), unit: "%",
-                             note: "Detector Response fit")
+                if detectsParticle, case .nuclide(let e) = r.ejectile {
+                    LabeledContent("Detected", value: ParticleSpectrum.particleLabel(e))
+                    NumberField(title: "Efficiency (Ω/4π)", value: $efficiencyPercent, unit: "%", range: 0...100)
                 } else {
-                    NumberField(title: "Efficiency", value: $efficiencyPercent, unit: "%", range: 0...100)
+                    NumberField(title: "γ-ray energy", value: $gammaEnergy, unit: "keV", range: 1...1e5)
+                    if let e = workbench.reactionEnergyCM, r.ejectile.isPhoton {
+                        Button("Capture to ground state, \(Fmt.keV(e + r.qValue, digits: 5)) keV") {
+                            gammaEnergy = (e + r.qValue).rounded(toPlaces: 1)
+                        }
+                        .font(.callout)
+                    } else if workbench.residualExcitation > 0 {
+                        Button("\(r.residual.label) level → ground state, \(Fmt.keV(workbench.residualExcitation, digits: 5)) keV") {
+                            gammaEnergy = workbench.residualExcitation.rounded(toPlaces: 1)
+                        }
+                        .font(.callout)
+                    }
+                    Toggle("Efficiency from detector curve", isOn: $useCurve.animation(.smooth))
+                    if useCurve {
+                        ValueRow(label: "Full-energy efficiency", value: Fmt.significant(100 * efficiency, digits: 3), unit: "%",
+                                 note: "Detector Response fit")
+                    } else {
+                        NumberField(title: "Efficiency", value: $efficiencyPercent, unit: "%", range: 0...100)
+                    }
                 }
-                NumberField(title: "Branching / γ intensity", value: $branchingPercent, unit: "%", range: 0...100)
+                NumberField(title: detectsParticle ? "Branching" : "Branching / γ intensity", value: $branchingPercent, unit: "%", range: 0...100)
                 ValueRow(label: "Signal", value: Fmt.significant(signal * 3600), unit: "counts/h")
                 ValueRow(label: "Per charge", value: Fmt.significant(signal / (workbench.beamCurrent * 1e-6) ), unit: "counts/C")
             } header: {
@@ -252,7 +268,7 @@ struct YieldEstimateView: View {
             if let e = est.effectiveEnergy { s.add("Yield", "Effective energy (c.m.)", Fmt.keV(e), "keV") }
             s.add("Beam", "Current", Fmt.significant(workbench.beamCurrent), "µA")
             s.add("Beam", "Reactions", Fmt.significant(reactions), "per s")
-            s.add("Detection", "γ energy", Fmt.keV(gammaEnergy), "keV")
+            if !detectsParticle { s.add("Detection", "γ energy", Fmt.keV(gammaEnergy), "keV") }
             s.add("Detection", "Efficiency", Fmt.significant(100 * efficiency, digits: 3), "%")
             s.add("Detection", "Signal", Fmt.significant(signal * 3600), "counts/h")
             s.add("Statistics", "Background", Fmt.significant(backgroundPerHour), "counts/h")

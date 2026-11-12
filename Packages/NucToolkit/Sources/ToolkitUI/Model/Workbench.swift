@@ -100,6 +100,9 @@ public final class Workbench {
     public var spectrumSetup: SpectrumSetup {
         didSet { save(spectrumSetup, Keys.spectrum) }
     }
+    public var particleDetector: ParticleDetectorSetup {
+        didSet { save(particleDetector, Keys.particleDetector) }
+    }
     public var resolutionModel: ResolutionModel {
         didSet { save(resolutionModel, Keys.resolution) }
     }
@@ -144,7 +147,11 @@ public final class Workbench {
         beamCurrent = defaults.object(forKey: Keys.current) == nil ? 100 : max(0, i)
         let q = defaults.integer(forKey: Keys.charge)
         chargeState = q > 0 ? q : 1
-        spectrumSetup = Self.load(defaults, Keys.spectrum) ?? SpectrumSetup()
+        var spectrum: SpectrumSetup = Self.load(defaults, Keys.spectrum) ?? SpectrumSetup()
+        // Drop the placeholder line that early builds stored.
+        if spectrum.lines.count == 1, spectrum.lines[0].name == "Example line" { spectrum.lines = [] }
+        spectrumSetup = spectrum
+        particleDetector = Self.load(defaults, Keys.particleDetector) ?? ParticleDetectorSetup()
         resolutionModel = Self.load(defaults, Keys.resolution) ?? ResolutionModel.presets[0].model
         efficiencyCurve = Self.load(defaults, Keys.efficiency) ?? .example
         sources = Self.load(defaults, Keys.sources) ?? []
@@ -298,6 +305,7 @@ public final class Workbench {
         static let current = "run.beamCurrent"
         static let charge = "run.chargeState"
         static let spectrum = "detector.spectrumSetup"
+        static let particleDetector = "detector.particleSetup"
         static let resolution = "detector.resolution"
         static let efficiency = "detector.efficiency"
         static let sources = "sources.certificates"
