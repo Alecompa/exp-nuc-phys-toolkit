@@ -3,7 +3,7 @@
 ![Platform](https://img.shields.io/badge/platform-iOS%20%7C%20iPadOS%2026-blue)
 ![Swift](https://img.shields.io/badge/Swift-6-orange)
 ![SwiftUI](https://img.shields.io/badge/UI-SwiftUI%20%2B%20Liquid%20Glass-purple)
-![Tests](https://img.shields.io/badge/tests-73%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-90%20passing-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
 Gamow is a native iPhone and iPad app for the numbers an experimental nuclear physicist needs at the
@@ -41,6 +41,25 @@ the target updates every screen.
   <img src="docs/screenshots/detector.png" width="200" alt="Detector response model">
   <img src="docs/screenshots/notebook.png" width="200" alt="Notebook of saved calculations">
 </p>
+
+## Experiments and interactive plots
+
+The **Experiments** tab stores named shared setups and run notes with measured charge and elapsed
+time, restores setups for another calculation, and exports run records as JSON. Spectrum plots support
+zoom/pan, energy cursors, ROI component counts and expanded views; kinematics and stopping plots have
+expanded/focused views too. Calculator search is available on Tools.
+
+The [calculation audit](docs/calculation-audit-2026-11-11.md) documents corrected target/yield behavior,
+independent checks and validation limits.
+
+## Custom experiment builder
+
+Use **Tools → Build your experiment** to construct an arbitrary two-body reaction, edit compound
+materials and beam layers, or open the gamma-spectrum tool. Add custom reaction/contaminant lines,
+choose HPGe/BGO/NaI resolution, and insert compound foils in front of the detector. The spectrum
+combines Gaussian photopeaks and a simplified Compton continuum with NIST foil attenuation;
+line counts and continuum/peak ratio are experimental inputs. Export the expected spectrum as CSV.
+See [the experiment-builder guide](docs/experiment-builder.md) for workflow, assumptions and validation.
 
 ## Install on your iPhone
 
@@ -153,6 +172,7 @@ publication against the primary references.
 | Measured cross sections | EXFOR, N. Otuka et al., Nucl. Data Sheets 120, 272 (2014), as tabulated in [IAEA-NDS/exfortables_py](https://github.com/IAEA-NDS/exfortables_py) (S. Okumura, G. Schnabel, A. Koning) | CC BY-SA 4.0 (the bundled index too) |
 | Stopping powers | SRIM-2013, J. F. Ziegler, M. D. Ziegler, J. P. Biersack, NIM B 268, 1818 (2010) | **Non-commercial use only** |
 | Stopping code | [LunaSRIM](https://github.com/skowrons94/LunaSRIM) by J. Skowronski, ported to Swift | MIT (`Data/SRIM2013/LunaSRIM-LICENSE`) |
+| Photon foil μ/ρ | J. H. Hubbell and S. M. Seltzer, NISTIR 5632, elemental tables Z=1–92 | Public domain |
 | Air μ_en/ρ | J. H. Hubbell and S. M. Seltzer, NISTIR 5632 | Public domain |
 | Constants | CODATA 2018 | Public domain |
 

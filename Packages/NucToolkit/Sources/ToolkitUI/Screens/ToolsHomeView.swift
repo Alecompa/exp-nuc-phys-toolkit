@@ -11,7 +11,9 @@ struct ToolsHomeView: View {
     @Environment(Workbench.self) private var workbench
     @Namespace private var zoom
     @State private var path: [Route] = []
+    @State private var toolQuery = ""
     @State private var editingSetup = false
+    @State private var editingTarget = false
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -22,9 +24,24 @@ struct ToolsHomeView: View {
                         .listRowBackground(Color.clear)
                 }
 
-                ForEach(ToolCatalog.sections) { section in
+                Section("Build your experiment") {
+                    Button("Construct a reaction", systemImage: "atom") { editingSetup = true }
+                    if let target = workbench.stoppingTarget {
+                        Button { editingTarget = true } label: {
+                            VStack(alignment: .leading) {
+                                Label("Target material & compounds", systemImage: "square.stack.3d.up")
+                                Text(TargetSummary.line(target, reaction: workbench.customTarget == nil))
+                                    .font(.caption).foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                    NavigationLink("Target thickness & beam layers", value: Route.tool(.energyLoss))
+                    NavigationLink("Detector foils & gamma spectrum", value: Route.tool(.spectrum))
+                }
+
+                ForEach(ToolCatalog.sections.filter { $0.tools.contains(where: matches) }) { section in
                     Section(section.title) {
-                        ForEach(section.tools) { tool in
+                        ForEach(section.tools.filter(matches)) { tool in
                             NavigationLink(value: Route.tool(tool)) {
                                 ToolRow(tool: tool)
                             }
@@ -39,12 +56,19 @@ struct ToolsHomeView: View {
             }
             .groupedList()
             .navigationTitle("Tools")
+            .searchable(text: $toolQuery, prompt: "Find a calculator")
             .largeTitle()
             .appDestinations(namespace: zoom)
             .sheet(isPresented: $editingSetup) {
                 ReactionSetupSheet()
             }
+            .sheet(isPresented: $editingTarget) {
+                if let target = workbench.stoppingTarget { TargetSheet(initial: target) }
+            }
         }
+    }
+    private func matches(_ tool: Tool) -> Bool {
+        toolQuery.isEmpty || (tool.title + " " + tool.subtitle).localizedCaseInsensitiveContains(toolQuery)
     }
 }
 

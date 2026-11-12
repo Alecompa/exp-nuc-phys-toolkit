@@ -97,6 +97,9 @@ public final class Workbench {
     public var chargeState: Int {
         didSet { defaults.set(chargeState, forKey: Keys.charge) }
     }
+    public var spectrumSetup: SpectrumSetup {
+        didSet { save(spectrumSetup, Keys.spectrum) }
+    }
     public var resolutionModel: ResolutionModel {
         didSet { save(resolutionModel, Keys.resolution) }
     }
@@ -117,7 +120,7 @@ public final class Workbench {
         self.defaults = defaults
         reactionText = defaults.string(forKey: Keys.reaction) ?? "12C(p,g)13N"
         let e = defaults.double(forKey: Keys.beamEnergy)
-        beamEnergy = e > 0 ? e : 400
+        beamEnergy = defaults.object(forKey: Keys.beamEnergy) == nil ? 400 : max(0, e)
         residualExcitation = defaults.double(forKey: Keys.excitation)
         energyUnit = EnergyUnit(rawValue: defaults.string(forKey: Keys.unit) ?? "") ?? .keV
         customTarget = defaults.data(forKey: Keys.target).flatMap { try? JSONDecoder().decode(StoppingTarget.self, from: $0) }
@@ -138,9 +141,10 @@ public final class Workbench {
         let r0 = defaults.double(forKey: Keys.r0)
         channelRadiusR0 = r0 > 0 ? r0 : 1.25
         let i = defaults.double(forKey: Keys.current)
-        beamCurrent = i > 0 ? i : 100
+        beamCurrent = defaults.object(forKey: Keys.current) == nil ? 100 : max(0, i)
         let q = defaults.integer(forKey: Keys.charge)
         chargeState = q > 0 ? q : 1
+        spectrumSetup = Self.load(defaults, Keys.spectrum) ?? SpectrumSetup()
         resolutionModel = Self.load(defaults, Keys.resolution) ?? ResolutionModel.presets[0].model
         efficiencyCurve = Self.load(defaults, Keys.efficiency) ?? .example
         sources = Self.load(defaults, Keys.sources) ?? []
@@ -258,9 +262,9 @@ public final class Workbench {
     /// Atom fraction of the reaction's target isotope in the stopping target (element fraction ×
     /// isotopic abundance), or nil when the target material does not contain that element.
     public var activeAtomFraction: Double? {
-        guard let z = reaction?.target.z, let t = stoppingTarget else { return nil }
-        let f = zip(t.components, t.fractions).filter { $0.0.z == z }.map(\.1).reduce(0, +)
-        return f > 0 ? f * isotopicAbundance / 100 : nil
+        guard let nucleus = reaction?.target, let t = stoppingTarget else { return nil }
+        let f = t.activeFraction(z: nucleus.z, a: nucleus.a, abundance: isotopicAbundance / 100)
+        return f > 0 ? f : nil
     }
 
     /// Beam particles per second on target.
@@ -270,8 +274,9 @@ public final class Workbench {
 
     /// Active target nuclei per cm² in the Energy Loss target layer (element fraction × abundance).
     public var activeArealDensity: Double? {
-        guard let t = stoppingTarget, let f = activeAtomFraction else { return nil }
-        return layerThickness * 1e-8 * t.atomDensity * f
+        guard let t = stoppingTarget, let nucleus = reaction?.target, activeAtomFraction != nil else { return nil }
+        return t.activeArealDensity(z: nucleus.z, a: nucleus.a, abundance: isotopicAbundance / 100,
+                                   thickness: layerThickness, angle: layerAngle)
     }
 
     /// Laboratory stopping per active target nucleus, eV cm², at a laboratory energy (keV).
@@ -292,6 +297,7 @@ public final class Workbench {
     private enum Keys {
         static let current = "run.beamCurrent"
         static let charge = "run.chargeState"
+        static let spectrum = "detector.spectrumSetup"
         static let resolution = "detector.resolution"
         static let efficiency = "detector.efficiency"
         static let sources = "sources.certificates"

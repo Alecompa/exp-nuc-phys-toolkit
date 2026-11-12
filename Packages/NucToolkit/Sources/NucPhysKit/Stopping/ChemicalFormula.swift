@@ -186,7 +186,7 @@ extension StoppingTarget {
                        components: f.parts.map { p in
                            let mass = p.massNumber.flatMap { MassTable.ame2020.nuclide(z: p.z, a: $0) }
                                .map { $0.atomicMass / PhysicalConstants.atomicMassUnit } ?? data.element(p.z).naturalMass
-                           return Component(z: p.z, stoichiometry: p.count, mass: mass)
+                           return Component(z: p.z, stoichiometry: p.count, mass: mass, massNumber: p.massNumber)
                        },
                        density: density, isGas: gas)
     }
@@ -204,12 +204,11 @@ extension StoppingTarget {
         return s
     }
 
-    /// The composition written as a formula ("Ta₂N₃", "TiD₂"); isotopes are marked when the mass is
-    /// more than 0.5 u from SRIM's natural weight.
+    /// The composition written as a formula ("Ta₂N₃", "TiD₂"), preserving explicit isotope tags.
+    /// Legacy entries recover isotope tags when their mass is >0.5 u from natural weight.
     public func formulaLabel(data: SRIMData = .shared) -> String {
         zip(components, displayStoichiometries).map { c, n in
-            let natural = data.element(c.z).naturalMass
-            let a: Int? = abs(c.mass - natural) > 0.5 ? Int(c.mass.rounded()) : nil
+            let a = c.isotopeMassNumber
             return ChemicalFormula.symbol(z: c.z, massNumber: a) + ChemicalFormula.subscriptCount(n)
         }.joined()
     }
@@ -217,11 +216,9 @@ extension StoppingTarget {
     /// The composition as plain text that `ChemicalFormula` parses back ("Ta2N3", "TiD2", "[17O]").
     public func formulaText(data: SRIMData = .shared) -> String {
         zip(components, displayStoichiometries).map { c, n in
-            let natural = data.element(c.z).naturalMass
             let sym = Elements.symbol(z: c.z) ?? "?"
             var s = sym
-            if abs(c.mass - natural) > 0.5 {
-                let a = Int(c.mass.rounded())
+            if let a = c.isotopeMassNumber {
                 s = c.z == 1 && a == 2 ? "D" : c.z == 1 && a == 3 ? "T" : "[\(a)\(sym)]"
             }
             if abs(n - 1) > 1e-9 {

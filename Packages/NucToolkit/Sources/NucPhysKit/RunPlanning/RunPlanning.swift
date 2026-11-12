@@ -61,7 +61,7 @@ extension ChargedChannel {
     public func targetYield(sFactor model: SFactorModel, entranceEnergy e1: Double, exitEnergy e0: Double,
                             screening ue: Double = 0, steps: Int = 200,
                             stopping eps: (Double) -> Double) -> Double {
-        guard e1 > e0, e0 >= 0 else { return 0 }
+        guard e1.isFinite, e0.isFinite, e1 > e0, e0 >= 0, steps > 0 else { return 0 }
         let n = steps % 2 == 0 ? steps : steps + 1
         let h = (e1 - e0) / Double(n)
         var sum = 0.0
@@ -80,7 +80,7 @@ extension ChargedChannel {
     public func effectiveEnergy(sFactor model: SFactorModel, entranceEnergy e1: Double, exitEnergy e0: Double,
                                 screening ue: Double = 0, steps: Int = 200,
                                 stopping eps: (Double) -> Double) -> Double? {
-        guard e1 > e0 else { return nil }
+        guard e1.isFinite, e0.isFinite, e1 > e0, e0 >= 0, steps > 0 else { return nil }
         var num = 0.0, den = 0.0
         let h = (e1 - e0) / Double(steps)
         for i in 0..<steps {

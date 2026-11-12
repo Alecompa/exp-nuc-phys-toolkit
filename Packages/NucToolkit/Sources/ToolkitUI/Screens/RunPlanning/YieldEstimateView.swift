@@ -72,12 +72,24 @@ struct YieldEstimateView: View {
                                         screening: workbench.screeningPotential, steps: 120, stopping: eps)
             return Estimate(yieldPerIon: y, effectiveEnergy: eff)
         case .crossSection:
+            guard let target = workbench.stackOutcome?.target else {
+                return Estimate(note: "The beam does not reach the target layer.")
+            }
+            guard !target.stopped else {
+                return Estimate(note: "The beam stops inside the target. Use the energy-dependent S-factor integration instead of the thin-target approximation.")
+            }
             guard let n = workbench.activeArealDensity else {
                 return Estimate(note: "The target material contains no \(workbench.reaction?.target.label ?? "target nuclei").")
             }
             return Estimate(yieldPerIon: ChargedChannel.thinTargetYield(crossSection: sigma * sigmaUnit.scale, arealDensity: n),
                             effectiveEnergy: workbench.stackOutcome?.target.map { c.cmEnergy(lab: $0.meanEnergy) })
         case .resonance:
+            guard let target = workbench.stackOutcome?.target else {
+                return Estimate(note: "The beam does not reach the target layer.")
+            }
+            guard resonanceLab > target.energyOut, resonanceLab < target.energyIn else {
+                return Estimate(note: "The resonance must lie inside the target's traversed energy interval for the thick-target plateau approximation.")
+            }
             guard let eps = workbench.effectiveStopping(at: resonanceLab) else {
                 return Estimate(note: "No stopping for the target material at E_R.")
             }
@@ -121,6 +133,9 @@ struct YieldEstimateView: View {
             }
 
             Section {
+                NumberField(title: "Isotope abundance in untagged material", value: $workbench.isotopicAbundance, unit: "%", range: 0...100)
+                Text("Explicit isotope formulas such as [17O] contribute only to that isotope and do not use this abundance factor.")
+                    .font(.caption).foregroundStyle(.secondary)
                 Picker("Cross section from", selection: $source.animation(.smooth)) {
                     ForEach(Source.allCases) { Text($0.rawValue).tag($0) }
                 }

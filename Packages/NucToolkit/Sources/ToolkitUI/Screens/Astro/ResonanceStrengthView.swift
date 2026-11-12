@@ -104,7 +104,7 @@ struct ResonanceStrengthView: View {
                     LabeledContent("Target material", value: workbench.stoppingTarget?.name ?? "None")
                 }
                 .foregroundStyle(.primary)
-                NumberField(title: "\(r.target.label) abundance", value: $workbench.isotopicAbundance, unit: "%", range: 1e-6...100)
+                NumberField(title: "\(r.target.label) abundance in untagged material", value: $workbench.isotopicAbundance, unit: "%", range: 1e-6...100)
                 if let stopping {
                     ValueRow(label: "Stopping per atom", value: Fmt.significant(stopping),
                              note: "eV/(10¹⁵ at/cm²), compound mean at E_R")
@@ -113,7 +113,7 @@ struct ResonanceStrengthView: View {
                     ValueRow(label: "ε_eff", value: Fmt.significant(eps / 1e-15),
                              note: "eV/(10¹⁵ at/cm²) per \(r.target.label) nucleus")
                 } else if fraction == nil {
-                    Label("The target material contains no \(r.target.elementName.lowercased()).", systemImage: "exclamationmark.triangle.fill")
+                    Label("The target material contains no active \(r.target.label) nuclei.", systemImage: "exclamationmark.triangle.fill")
                         .foregroundStyle(.orange)
                         .font(.callout)
                 }
@@ -122,7 +122,7 @@ struct ResonanceStrengthView: View {
             } header: {
                 Text("Target")
             } footer: {
-                Text("Y_max = (λ²/2) · (m₁+m₂)/m₂ · ωγ/ε_eff, for an infinitely thick target. ε_eff is the laboratory stopping per active nucleus: the compound's mean stopping divided by the active atom fraction (element fraction × abundance). SRIM-2013 stopping, from the Energy Loss target.")
+                Text("Y_max = (λ²/2) · (m₁+m₂)/m₂ · ωγ/ε_eff, for an infinitely thick target. ε_eff is the laboratory stopping per active nucleus: the compound's mean stopping divided by the active atom fraction (explicit isotope fractions plus untagged element fraction × abundance). SRIM-2013 stopping, from the Energy Loss target.")
             }
 
             Section {

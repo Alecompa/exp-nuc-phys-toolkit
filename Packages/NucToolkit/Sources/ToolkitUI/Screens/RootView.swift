@@ -17,6 +17,9 @@ public struct RootView: View {
             Tab("Nuclides", systemImage: "atom", value: AppTab.nuclides) {
                 NuclidesView()
             }
+            Tab("Experiments", systemImage: "flask", value: AppTab.experiments) {
+                ExperimentsView()
+            }
             Tab("Notebook", systemImage: "book.pages.fill", value: AppTab.notebook) {
                 NotebookView()
             }
@@ -28,11 +31,11 @@ public struct RootView: View {
         .minimizingTabBar()
         .environment(workbench)
         .tint(.accent)
-        .modelContainer(for: NotebookEntry.self)
+        .modelContainer(for: [NotebookEntry.self, ExperimentRecord.self])
     }
 }
 
-enum AppTab: Hashable { case tools, nuclides, notebook, settings }
+enum AppTab: Hashable { case tools, nuclides, experiments, notebook, settings }
 
 enum Route: Hashable {
     case tool(Tool)
@@ -75,6 +78,8 @@ extension View {
                 YieldEstimateView().zoomTransition(id: Tool.yieldEstimate, in: namespace)
             case .tool(.beamCurrent):
                 BeamCurrentView().zoomTransition(id: Tool.beamCurrent, in: namespace)
+            case .tool(.spectrum):
+                GammaSpectrumView().zoomTransition(id: Tool.spectrum, in: namespace)
             case .tool(.detector):
                 DetectorView().zoomTransition(id: Tool.detector, in: namespace)
             case .tool(.sources):

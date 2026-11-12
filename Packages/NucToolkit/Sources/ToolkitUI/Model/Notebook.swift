@@ -79,7 +79,7 @@ final class NotebookEntry {
             }
             t = String(t[..<r.lowerBound]) + "e" + String(exp)
         }
-        return t.contains(",") || t.contains("\"") ? "\"" + t.replacingOccurrences(of: "\"", with: "\"\"") + "\"" : t
+        return t.contains(",") || t.contains("\"") || t.contains("\n") || t.contains("\r") ? "\"" + t.replacingOccurrences(of: "\"", with: "\"\"") + "\"" : t
     }
 }
 
@@ -105,12 +105,19 @@ struct SaveToNotebookButton: View {
     let snapshot: () -> NotebookSnapshot?
     @State private var saved = 0
     @State private var showsCheck = false
+    @State private var saveError: String?
 
     var body: some View {
         Button {
             guard let s = snapshot() else { return }
-            context.insert(NotebookEntry(tool: s.tool, title: s.title, subtitle: s.subtitle, items: s.items))
-            try? context.save()
+            let entry = NotebookEntry(tool: s.tool, title: s.title, subtitle: s.subtitle, items: s.items)
+            context.insert(entry)
+            do { try context.save() }
+            catch {
+                context.delete(entry)
+                saveError = error.localizedDescription
+                return
+            }
             saved += 1
             withAnimation(.smooth) { showsCheck = true }
             Task {
@@ -122,6 +129,9 @@ struct SaveToNotebookButton: View {
                 .contentTransition(.symbolEffect(.replace))
         }
         .sensoryFeedback(.success, trigger: saved)
+        .alert("Could not save calculation", isPresented: Binding(get: { saveError != nil }, set: { if !$0 { saveError = nil } })) {
+            Button("OK") { saveError = nil }
+        } message: { Text(saveError ?? "") }
         .accessibilityHint("Saves the inputs and results of this tool to the Notebook tab")
     }
 }
