@@ -61,18 +61,29 @@ public final class MassTable: Sendable {
 }
 
 public enum NuclideNotation {
-    private static let aliases: [String: (Int, Int)] = [
-        "n": (0, 1), "p": (1, 1), "d": (1, 2), "t": (1, 3),
-        "a": (2, 4), "α": (2, 4), "alpha": (2, 4), "h": (2, 3),
+    /// Single-letter light-ion names. Matched case-sensitively: "H" (hydrogen), "N" (nitrogen) or "P"
+    /// (phosphorus) without a mass number are not silently read as ³He, a neutron or a proton.
+    private static let letters: [String: (Int, Int)] = [
+        "n": (0, 1), "p": (1, 1), "d": (1, 2), "t": (1, 3), "a": (2, 4), "h": (2, 3), "α": (2, 4),
+    ]
+    /// Spelled-out names, matched case-insensitively.
+    private static let words: [String: (Int, Int)] = [
+        "alpha": (2, 4), "proton": (1, 1), "neutron": (0, 1), "deuteron": (1, 2), "triton": (1, 3),
+        "helion": (2, 3),
+    ]
+    private static let superscripts: [Character: Character] = [
+        "⁰": "0", "¹": "1", "²": "2", "³": "3", "⁴": "4", "⁵": "5", "⁶": "6", "⁷": "7", "⁸": "8", "⁹": "9",
     ]
 
     /// Returns (Z, A) for a nuclide string, or nil. Photons are not nuclides; see `ReactionParticle`.
+    /// Accepts "12C", "C12", "c-12", "¹²C", "p", "α", "alpha", "proton".
     public static func parse(_ raw: String) -> (z: Int, a: Int)? {
-        let s = raw.trimmingCharacters(in: .whitespaces)
+        let s = String(raw.trimmingCharacters(in: .whitespaces)
             .replacingOccurrences(of: "-", with: "")
             .replacingOccurrences(of: " ", with: "")
+            .map { superscripts[$0] ?? $0 })
         guard !s.isEmpty else { return nil }
-        if let alias = aliases[s.lowercased()] { return alias }
+        if let alias = letters[s] ?? words[s.lowercased()] { return alias }
         // "12C" style
         let leadingDigits = s.prefix { $0.isNumber }
         if !leadingDigits.isEmpty {

@@ -63,7 +63,7 @@ struct KinematicsView: View {
         List {
             Section {
                 VStack(alignment: .leading, spacing: 14) {
-                    ReactionHeader(reaction: r) { editingSetup = true }
+                    ReactionHeader(reaction: r, edit: { editingSetup = true }, showsBeam: false)
                     if let first = solutions.first {
                         HeroNumber(
                             value: Fmt.energy(first.ejectileEnergy, unit: unit, decimals: unit == .keV ? 2 : 5),

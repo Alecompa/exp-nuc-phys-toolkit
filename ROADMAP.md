@@ -144,12 +144,29 @@ EXFOR comes from the tables the IAEA publishes as [IAEA-NDS/exfortables_py](http
 - [ ] Rate uncertainties by Monte Carlo (lognormal), REACLIB 7-parameter fit and export
 - [ ] Stellar screening and stellar enhancement factor; inverse rates by detailed balance
 - [x] Import S-factor data from EXFOR for comparison plots (milestone 5b)
+- [x] EXFOR explorer: S factor at c.m. energies by default, tap-to-identify points, pinch zoom with y auto-fit,
+      Gamow window band, S(E) model overlay, inverse-kinematics lookup (p(⁷Be,γ) finds ⁷Be(p,γ))
+- [x] S(E), resonances, U_e and isotopic abundance stored per reaction; placeholder S(E) flagged in Rate and Yield
+- [x] Recent and saved reactions ("My reactions") in the setup sheet and on the Tools home card
 
 ### Detectors and data
 
+- [x] In-beam γ energies with recoil and Doppler shift at a γ-detector angle; lifetime-dependent emission in flight
+      (Doppler box) vs at rest; library of beam-induced contaminants (¹⁹F(p,αγ), ¹⁵N(p,αγ), ¹¹B/¹³C/¹²C/²H/¹⁴N/²³Na/²⁷Al(p,γ),
+      inelastic lines, (α,nγ)) and room background (⁴⁰K, ²⁰⁸Tl, ²¹⁴Bi, 511 keV), recomputed for the beam energy
+- [x] Elastic peaks from natural isotopes (NUBASE abundances), both kinematic branches, Rutherford weights
+- [ ] Particle spectrum: all open ejectile groups (α₀, α₁, …) from the residual's ENSDF levels; target depth and
+      backing (RBS-like plateaus); kinematic spread carried through foils
+- [ ] Energy-dependent Compton/peak ratio (from a peak-to-total curve)
+
 - [ ] True-coincidence summing corrections from the decay scheme and peak/total efficiency
 - [ ] Efficiency transfer between source geometries; H*(10) dose rates and simple shielding
-- [ ] Spectrum viewer for exported histograms (peak position, FWHM, area)
+- [x] Spectrum analysis: import ORTEC .Spe/.Chn or text/CSV, second-derivative peak search with SNIP background,
+      automatic energy calibration against source, room-background and in-beam lines (pair voting + weighted
+      least squares), peak identification including escape peaks, peak CSV export
+- [ ] Photo of a spectrum (DAQ screen or printout): axis picking and trace extraction feeding the same peak search
+- [ ] Proper peak fits (Gaussian + step + linear background, multiplets) instead of moment estimates
+- [ ] Measured-spectrum overlay on the simulated spectrum; efficiency points straight from source peak areas
 - [ ] Notebook in iCloud (CloudKit) and a widget listing the user's saved sources (needs an App Group)
 - [ ] Native macOS version (the app already runs as "Designed for iPad" on Apple silicon)
 

@@ -62,7 +62,7 @@ struct PenetrabilityView: View {
         List {
             Section {
                 VStack(alignment: .leading, spacing: 14) {
-                    ReactionHeader(reaction: r) { editingSetup = true }
+                    ReactionHeader(reaction: r, edit: { editingSetup = true }, showsBeam: false)
                     HeroNumber(value: Fmt.significant(p.penetrability), unit: "",
                                caption: "P\(Fmt.subscript(l)) for \(c.label) at \(Fmt.keV(e, digits: 4)) keV")
                     HStack(spacing: 8) {
@@ -130,9 +130,12 @@ struct PenetrabilityView: View {
             .task(id: CurveKey(channel: c, radius: rc, energy: e)) {
                 let barrier = c.coulombBarrier(radius: rc)
                 let lo = max(e / 20, 1), hi = max(barrier * 1.5, e * 4)
-                curves = await Task.detached(priority: .userInitiated) {
+                do { try await Task.sleep(for: .milliseconds(120)) } catch { return }
+                let computed = await Task.detached(priority: .userInitiated) {
                     PenetrabilityCurve.compute(channel: c, radius: rc, range: lo...hi)
                 }.value
+                guard !Task.isCancelled else { return }
+                curves = computed
             }
         }
         .groupedList()

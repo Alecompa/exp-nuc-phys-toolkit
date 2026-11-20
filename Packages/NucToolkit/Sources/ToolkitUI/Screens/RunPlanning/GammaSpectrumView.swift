@@ -76,7 +76,8 @@ private struct GammaSpectrumSections: View {
         @Bindable var workbench = workbench
         let fromReaction = reactionGammas
         var setup = workbench.spectrumSetup
-        if includeReaction { setup.lines += fromReaction.lines.map { line(for: $0) } }
+        if includeReaction { setup.lines += fromReaction.lines.flatMap { lines(for: $0) } }
+        setup.lines += workbench.spectrumSetup.backgroundLines(beamEnergy: workbench.reactionEnergy)
         let input = Input(setup: setup, resolution: workbench.resolutionModel)
         return Group {
             Section {
@@ -105,13 +106,14 @@ private struct GammaSpectrumSections: View {
                     ForEach(fromReaction.lines) { g in
                         HStack {
                             VStack(alignment: .leading, spacing: 2) {
-                                Text("\(Fmt.keV(g.energy, digits: 6)) keV").monospacedDigit()
+                                Text("\(Fmt.keV(g.meanEnergy, digits: 6)) keV").monospacedDigit()
                                 Text(g.label).font(.caption).foregroundStyle(.secondary)
+                                if let d = dopplerText(g) { Text(d).font(.caption2).foregroundStyle(.secondary) }
                             }
                             Spacer()
                             VStack(alignment: .trailing, spacing: 2) {
                                 Text("\(Fmt.significant(100 * g.intensity, digits: 3)) %").monospacedDigit()
-                                Text("\(Fmt.significant(line(for: g).counts, digits: 3)) counts").font(.caption).foregroundStyle(.secondary)
+                                Text("\(Fmt.significant(counts(for: g), digits: 3)) counts").font(.caption).foregroundStyle(.secondary)
                             }
                         }
                     }
@@ -119,6 +121,9 @@ private struct GammaSpectrumSections: View {
                     Text(fromReaction.note)
                 }
             }
+
+            BackgroundSection(setup: $workbench.spectrumSetup, beamEnergy: workbench.reactionEnergy,
+                              projectile: workbench.reaction?.projectile)
 
             Section {
                 ForEach($workbench.spectrumSetup.lines) { $line in
@@ -143,7 +148,7 @@ private struct GammaSpectrumSections: View {
                     }
                 } label: { Label("Add line", systemImage: "plus") }
             } header: { Text("Other lines") } footer: {
-                Text("Contaminants and sources. Counts are photopeak areas before the foils.")
+                Text("Custom lines and calibration sources. Counts are photopeak areas before the foils.")
             }
 
             Section("Window") {
@@ -173,23 +178,37 @@ private struct GammaSpectrumSections: View {
                 }
                 ValueRow(label: "FWHM at 1332 keV", value: Fmt.significant(workbench.resolutionModel.fwhm(at: 1332.5), digits: 3), unit: "keV")
                 NavigationLink("Resolution & efficiency") { DetectorView() }
-            } header: { Text("Detector") }
+                LabeledContent("Angle to beam") { Text("\(Fmt.number(workbench.spectrumSetup.geometry.angle, decimals: 1))°").monospacedDigit() }
+                Slider(value: Binding(get: { workbench.spectrumSetup.geometry.angle },
+                                      set: { workbench.spectrumSetup.geometry.angle = ($0 * 2).rounded() / 2 }), in: 0...180)
+                NumberField(title: "Half-opening", value: $workbench.spectrumSetup.geometry.halfOpening, unit: "°", range: 0...90)
+                Toggle("Recoils stop in the target", isOn: $workbench.spectrumSetup.geometry.recoilsStop)
+                if workbench.spectrumSetup.geometry.recoilsStop {
+                    NumberField(title: "Stopping time", value: Binding(get: { workbench.spectrumSetup.geometry.stoppingTime * 1e12 },
+                                                                       set: { workbench.spectrumSetup.geometry.stoppingTime = $0 * 1e-12 }),
+                                unit: "ps", range: 0.01...100)
+                }
+            } header: { Text("Detector") } footer: {
+                Text("In-beam γ rays are Doppler shifted by the c.m. velocity at this angle. A level that lives longer than the recoil's stopping time (solid targets, 0.1–1 ps) decays mostly at rest; in a gas target every recoil decays in flight.")
+            }
 
             FoilsSection(foils: $workbench.spectrumSetup.foils)
 
             Section {
                 Link("NIST attenuation tables", destination: URL(string: "https://physics.nist.gov/PhysRefData/XrayMassCoef/chap2.html")!)
             } footer: {
-                Text("No summing, pile-up or multiple scattering.")
+                Text("One Compton/peak ratio for all lines (in reality it rises with energy); emission in flight is a flat Doppler box at full recoil velocity (no slowing-down shape). No summing, pile-up or multiple scattering.")
             }
         }
         .task(id: workbench.reaction?.residual) {
             scheme = nil
             if let residual = workbench.reaction?.residual { scheme = await LevelSchemeLoader.load(residual) }
         }
-        .onChange(of: fromReaction.lines.map(\.energy).max() ?? 0, initial: true) { _, top in
-            // Keep the reaction's highest γ ray inside the window.
-            if includeReaction, top > workbench.spectrumSetup.maximumEnergy * 0.95 {
+        .onChange(of: ((includeReaction ? fromReaction.lines.map(\.meanEnergy) : [])
+                       + workbench.spectrumSetup.backgroundLines(beamEnergy: workbench.reactionEnergy).map(\.energy)).max() ?? 0,
+                   initial: true) { _, top in
+            // Keep the highest reaction or contaminant γ ray inside the window.
+            if top > workbench.spectrumSetup.maximumEnergy * 0.95 {
                 workbench.spectrumSetup.maximumEnergy = min(20000, (top * 1.1 / 500).rounded(.up) * 500)
             }
         }
@@ -208,47 +227,66 @@ private struct GammaSpectrumSections: View {
         }
     }
 
-    private struct ReactionGamma: Identifiable {
-        let energy: Double
-        /// γ rays per reaction.
-        let intensity: Double
-        let label: String
-        var id: String { "\(label)-\(energy)" }
-    }
-
-    /// Primary capture γ (capture reactions) and the de-excitation cascade of the residual level, from ENSDF.
-    private var reactionGammas: (lines: [ReactionGamma], note: String) {
+    /// Primary capture γ (capture reactions) and the de-excitation cascade of the residual level, from ENSDF,
+    /// with recoil and Doppler corrections for the detector angle.
+    private var reactionGammas: (lines: [InBeamLine], note: String) {
         guard let r = workbench.reaction else { return ([], "") }
         let ex = workbench.residualExcitation
-        var out: [ReactionGamma] = []
+        let geo = workbench.spectrumSetup.geometry
+        let beam = workbench.reactionEnergy
+        var out: [InBeamLine] = []
         var notes: [String] = []
-        if r.ejectile.isPhoton, let ecm = workbench.reactionEnergyCM {
-            let e = ecm + r.qValue(residualExcitation: ex)
-            if e > 1 { out.append(ReactionGamma(energy: e, intensity: 1, label: ex > 0 ? "primary → \(Fmt.keV(ex, digits: 5))" : "primary → g.s.")) }
+        if r.ejectile.isPhoton, let p = InBeamGamma.primary(r, beamEnergy: beam, finalLevel: ex, geometry: geo) {
+            out.append(p)
         }
         if ex > 1 {
             let cascade = scheme.map { GammaCascade.from(excitation: ex, scheme: $0) }
-            if let c = cascade, !c.lines.isEmpty {
-                out += c.lines.map {
-                    ReactionGamma(energy: $0.energy, intensity: $0.intensity,
-                                  label: "\(r.residual.label) \(Fmt.keV($0.initialLevel, digits: 5)) → \(Fmt.keV($0.finalLevel, digits: 5))")
+            if let c = cascade, let scheme, !c.lines.isEmpty {
+                // Mean time since the reaction, feeding included (one exponential with the same mean).
+                let times = GammaCascade.meanDecayTimes(c.lines) { level in
+                    scheme.levels.first { abs($0.energy - level) < 0.5 }?.halfLifeSeconds.map { $0 / log(2.0) }
                 }
-                notes.append("Cascade from ENSDF branching ratios")
+                for g in c.lines {
+                    if let line = InBeamGamma.residualLevel(r, beamEnergy: beam, level: c.startLevel ?? ex, transition: g.energy,
+                                                            finalLevel: g.finalLevel, meanLife: times[g.initialLevel],
+                                                            intensity: g.intensity, geometry: geo,
+                                                            label: "\(r.residual.label) \(Fmt.keV(g.initialLevel, digits: 5)) → \(Fmt.keV(g.finalLevel, digits: 5))") {
+                        out.append(line)
+                    }
+                }
+                notes.append("Cascade from ENSDF branching ratios; lifetimes from ENSDF")
                 if c.unresolved > 0.01 { notes.append("\(Fmt.significant(100 * c.unresolved, digits: 2)) % reaches levels without γ data") }
-            } else {
-                let e = GammaDoppler.recoilCorrected(transition: ex, mass: r.residual.kinematicMass)
-                out.append(ReactionGamma(energy: e, intensity: 1, label: "\(r.residual.label) \(Fmt.keV(ex, digits: 5)) → 0"))
-                notes.append(scheme == nil ? "No level scheme loaded: direct decay to the ground state assumed"
-                                           : "Eₓ is not an ENSDF level: direct decay to the ground state assumed")
+                if c.withoutIntensity > 0 { notes.append("\(c.withoutIntensity) ENSDF transition\(c.withoutIntensity == 1 ? " has" : "s have") no intensity and \(c.withoutIntensity == 1 ? "is" : "are") left out") }
+            } else if let line = InBeamGamma.residualLevel(r, beamEnergy: beam, level: ex, meanLife: nil, geometry: geo) {
+                out.append(line)
+                notes.append(scheme == nil ? "No level scheme loaded: direct decay to the ground state, emitted in flight"
+                                           : "Eₓ is not an ENSDF level: direct decay to the ground state, emitted in flight")
             }
         }
+        notes.append("Energies at \(Fmt.number(geo.angle, decimals: 1))° with recoil and Doppler corrections")
         notes.append(applyEfficiency ? "Counts = reactions × γ per reaction × efficiency" : "Counts = reactions × γ per reaction")
         return (out, notes.joined(separator: ". ") + ".")
     }
 
-    private func line(for g: ReactionGamma) -> SpectrumLine {
-        let eff = applyEfficiency ? (workbench.efficiencyCurve.fit()?.efficiency(at: g.energy) ?? 0) : 1
-        return SpectrumLine(name: g.label, energy: min(20000, max(1, g.energy)), counts: max(0, reactions * g.intensity * eff))
+    private func counts(for g: InBeamLine) -> Double {
+        let eff = applyEfficiency ? (workbench.efficiencyCurve.fit()?.efficiency(at: g.meanEnergy) ?? 0) : 1
+        return max(0, reactions * g.intensity * eff)
+    }
+
+    private func lines(for g: InBeamLine) -> [SpectrumLine] {
+        g.spectrumLines(counts: counts(for: g)).map {
+            var l = $0; l.energy = min(20000, max(1, l.energy)); return l
+        }
+    }
+
+    private func dopplerText(_ g: InBeamLine) -> String? {
+        var parts: [String] = []
+        if abs(g.shiftedEnergy - g.restEnergy) > 0.05 && g.fractionInFlight > 0.01 {
+            parts.append("at rest \(Fmt.keV(g.restEnergy, digits: 6)) keV")
+        }
+        if g.halfWidth > 0.05 && g.fractionInFlight > 0.01 { parts.append("Doppler ±\(Fmt.significant(g.halfWidth, digits: 3)) keV") }
+        if g.fractionInFlight < 0.99 { parts.append("\(Fmt.significant(100 * g.fractionInFlight, digits: 2)) % in flight") }
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
 
     private var noGammaText: String {
@@ -294,7 +332,7 @@ private struct ParticleSpectrumSections: View {
                 }
                 ForEach(groups) { g in ParticleGroupRow(group: g) }
             } header: { Text("At the detector") } footer: {
-                if !groups.isEmpty { Text("Equal-area peaks: heights are not yields. Energy loss in the target is not included.") }
+                if !groups.isEmpty { Text("Reaction peaks have unit area (no cross section); elastic peaks are scaled among themselves by the Rutherford cross section per target atom. Energy loss in the target is not included.") }
             }
 
             Section {
@@ -324,6 +362,9 @@ private struct ParticleGroupRow: View {
                 if group.detected.map({ abs($0 - group.emitted) > 0.05 }) ?? true {
                     Text("\(Fmt.keV(group.emitted)) keV before foils").font(.caption).foregroundStyle(.secondary)
                 }
+                if let r = group.rutherford {
+                    Text("Rutherford \(Fmt.significant(r, digits: 3)) b/sr per target atom").font(.caption2).foregroundStyle(.secondary)
+                }
             }
             Spacer()
             VStack(alignment: .trailing, spacing: 2) {
@@ -347,11 +388,13 @@ private struct ParticleChart: View {
     var body: some View {
         let seen = groups.filter { $0.detected != nil }
         let top = (seen.map { $0.detected! + 2 * $0.fwhm }.max() ?? 1000) * 1.05
+        let maxRuth = seen.compactMap(\.rutherford).max() ?? 1
         Chart {
             ForEach(seen) { g in
                 let e = g.detected!, s = max(g.fwhm, 0.5) / 2.3548
+                let area = g.rutherford.map { $0 / maxRuth } ?? 1
                 ForEach(Array(stride(from: max(0, e - 4 * s), through: e + 4 * s, by: s / 6).enumerated()), id: \.offset) { _, x in
-                    AreaMark(x: .value("Energy", x), y: .value("Counts", exp(-0.5 * pow((x - e) / s, 2)) / s),
+                    AreaMark(x: .value("Energy", x), y: .value("Counts", area * exp(-0.5 * pow((x - e) / s, 2)) / s),
                              series: .value("Group", g.id))
                         .foregroundStyle(by: .value("Kind", g.kind == .reaction ? "Reaction" : "Elastic"))
                         .opacity(0.75)
@@ -429,6 +472,57 @@ private struct EscapeSection: View {
             if escape.enabled {
                 Text("Single (SE) and double (DE) escape at E − 511 and E − 1022 keV, scaled by pair production (NIST XCOM). Ratios depend on crystal size: prefer measured ones.")
             }
+        }
+    }
+}
+
+// MARK: - Contaminants and room background
+
+/// Beam-induced contaminant reactions and room-background lines, with energies computed for the current beam.
+private struct BackgroundSection: View {
+    @Binding var setup: SpectrumSetup
+    let beamEnergy: Double
+    let projectile: Nuclide?
+
+    var body: some View {
+        Section {
+            ForEach($setup.backgrounds) { $entry in
+                if let source = BackgroundLibrary.source(id: entry.id) {
+                    let lines = source.lines(beamEnergy: beamEnergy, geometry: setup.geometry)
+                    VStack(alignment: .leading, spacing: 6) {
+                        Toggle(isOn: $entry.enabled) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(source.name).font(.body.weight(.medium))
+                                Text(lines.isEmpty ? "Channel closed at this beam energy"
+                                     : lines.map { "\(Fmt.keV($0.meanEnergy, digits: 5))" + ($0.halfWidth > 1 && $0.fractionInFlight > 0.05 ? "±\(Fmt.significant($0.halfWidth, digits: 2))" : "") }
+                                        .joined(separator: ", ") + " keV")
+                                    .font(.caption).monospacedDigit().foregroundStyle(lines.isEmpty ? .orange : .secondary)
+                            }
+                        }
+                        NumberField(title: source.notation == nil ? "Counts, strongest line" : "Counts per γ ray", value: $entry.counts, range: 0...1e12)
+                        Text(source.note).font(.caption2).foregroundStyle(.secondary)
+                    }
+                    .padding(.vertical, 2)
+                }
+            }
+            .onDelete { setup.backgrounds.remove(atOffsets: $0) }
+            Menu {
+                let available = BackgroundLibrary.beamInduced.filter { s in
+                    !setup.backgrounds.contains { $0.id == s.id } &&
+                        (projectile.map { s.applies(projectile: $0, beamEnergy: beamEnergy) } ?? false)
+                }
+                Section("Beam-induced, open at this energy") {
+                    ForEach(available) { s in Button(s.name) { setup.backgrounds.append(BackgroundEntry(id: s.id)) } }
+                    if available.isEmpty { Text("None for this beam") }
+                }
+                Section("Room background") {
+                    ForEach(BackgroundLibrary.room.filter { s in !setup.backgrounds.contains { $0.id == s.id } }) { s in
+                        Button(s.name) { setup.backgrounds.append(BackgroundEntry(id: s.id, counts: 300)) }
+                    }
+                }
+            } label: { Label("Add contaminant or background", systemImage: "plus") }
+        } header: { Text("Contaminants & background") } footer: {
+            Text("Energies follow the beam energy and the detector angle (capture primaries from AME2020 Q values, residual levels and lifetimes from ENSDF). Each contaminant lists one cascade; branchings to other levels depend on the resonance and are left out.")
         }
     }
 }

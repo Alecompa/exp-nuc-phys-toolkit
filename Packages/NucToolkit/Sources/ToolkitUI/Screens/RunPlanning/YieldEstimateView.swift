@@ -25,6 +25,8 @@ struct YieldEstimateView: View {
     @AppStorage("yield.goal") private var goalPercent = 5.0
     @AppStorage("yield.plannedHours") private var plannedHours = 24.0
     @AppStorage("yield.equalBackground") private var equalBackground = true
+    /// Reaction and level the stored E_γ and E_R were set for; they are reset when the setup changes.
+    @AppStorage("yield.inputsFor") private var inputsFor = ""
 
     private var sigmaUnit: CrossSectionUnit { CrossSectionUnit(rawValue: sigmaUnitRaw) ?? .nb }
 
@@ -48,11 +50,25 @@ struct YieldEstimateView: View {
         .sheet(isPresented: $editingTarget) {
             if let t = workbench.stoppingTarget { TargetSheet(initial: t) }
         }
-        .onAppear {
-            if resonanceLab == 0 { resonanceLab = workbench.beamEnergy }
-            if gammaEnergy == 0, let r = workbench.reaction, r.ejectile.isPhoton, let e = workbench.reactionEnergyCM {
-                gammaEnergy = max(1, (e + r.qValue(residualExcitation: workbench.residualExcitation)).rounded(toPlaces: 1))
-            }
+        .onAppear(perform: followSetup)
+        .onChange(of: workbench.reaction) { _, _ in followSetup() }
+        .onChange(of: workbench.residualExcitation) { _, _ in followSetup() }
+    }
+
+    /// E_γ and E_R follow the reaction: a value typed for another reaction would silently give the wrong efficiency.
+    private func followSetup() {
+        guard let r = workbench.reaction else { return }
+        let key = "\(r.plainLabel)@\(workbench.residualExcitation)"
+        // First run after the update: adopt the values saved earlier instead of resetting them.
+        if inputsFor.isEmpty, gammaEnergy > 0, resonanceLab > 0 { inputsFor = key; return }
+        guard key != inputsFor || gammaEnergy <= 0 || resonanceLab <= 0 else { return }
+        inputsFor = key
+        resonanceLab = workbench.beamEnergy
+        let ex = workbench.residualExcitation
+        if r.ejectile.isPhoton, let e = workbench.reactionEnergyCM {
+            gammaEnergy = max(1, (e + r.qValue(residualExcitation: ex)).rounded(toPlaces: 1))
+        } else if ex > 0 {
+            gammaEnergy = ex.rounded(toPlaces: 1)
         }
     }
 
@@ -107,6 +123,16 @@ struct YieldEstimateView: View {
 
     private var efficiency: Double {
         useCurve && !detectsParticle ? (workbench.efficiencyCurve.fit()?.efficiency(at: gammaEnergy) ?? 0) : efficiencyPercent / 100
+    }
+
+    /// Flags an efficiency taken outside the calibration points of the fit.
+    private var efficiencyNote: String {
+        let es = workbench.efficiencyCurve.points.map(\.energy)
+        guard let lo = es.min(), let hi = es.max() else { return "Detector Response fit" }
+        if gammaEnergy > hi * 1.05 || gammaEnergy < lo * 0.95 {
+            return "Extrapolated: calibration points span \(Fmt.keV(lo, digits: 4))–\(Fmt.keV(hi, digits: 4)) keV"
+        }
+        return "Detector Response fit"
     }
 
     @ViewBuilder
@@ -181,6 +207,14 @@ struct YieldEstimateView: View {
                 if let note = est.note {
                     Label(note, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.orange).font(.callout)
                 }
+                if source == .sFactor, workbench.sFactorIsPlaceholder {
+                    Label("No S(E) set for \(r.label): S = 1 keV b is a placeholder. Set it in Reaction Rate or take it from EXFOR.",
+                          systemImage: "exclamationmark.triangle.fill").foregroundStyle(.orange).font(.callout)
+                }
+                if source == .sFactor, workbench.sFactorModel.kind == .table, workbench.screeningPotential > 0 {
+                    Label("A measured S(E) table already contains laboratory screening; U_e = \(Fmt.significant(workbench.screeningPotential, digits: 3)) eV is applied on top.",
+                          systemImage: "info.circle").foregroundStyle(.secondary).font(.callout)
+                }
                 if let y = est.yieldPerIon {
                     ValueRow(label: "Yield", value: Fmt.significant(y), unit: "per ion")
                 }
@@ -195,7 +229,7 @@ struct YieldEstimateView: View {
 
             Section {
                 NumberField(title: "Current", value: $workbench.beamCurrent, unit: "µA", range: 1e-9...1e6)
-                Stepper(value: $workbench.chargeState, in: 1...92) {
+                Stepper(value: $workbench.chargeState, in: 1...max(1, r.projectile.z)) {
                     LabeledContent("Charge state") { Text("\(workbench.chargeState)+").monospacedDigit() }
                 }
                 ValueRow(label: "Reactions", value: Fmt.significant(reactions), unit: "per s")
@@ -223,7 +257,7 @@ struct YieldEstimateView: View {
                     Toggle("Efficiency from detector curve", isOn: $useCurve.animation(.smooth))
                     if useCurve {
                         ValueRow(label: "Full-energy efficiency", value: Fmt.significant(100 * efficiency, digits: 3), unit: "%",
-                                 note: "Detector Response fit")
+                                 note: efficiencyNote)
                     } else {
                         NumberField(title: "Efficiency", value: $efficiencyPercent, unit: "%", range: 0...100)
                     }
@@ -245,7 +279,7 @@ struct YieldEstimateView: View {
                 NumberField(title: "Planned time", value: $plannedHours, unit: "h", range: 1e-3...1e6)
                 ValueRow(label: "Statistical uncertainty", value: Fmt.significant(100 * after, digits: 3), unit: "%",
                          note: "After the planned time")
-                ValueRow(label: "Detection limit (Currie)", value: Fmt.significant(CountingStatistics.detectionLimit(backgroundCounts: background * plannedHours * 3600), digits: 3),
+                ValueRow(label: "Detection limit (Currie)", value: Fmt.significant(CountingStatistics.detectionLimit(backgroundCounts: background * plannedHours * 3600, backgroundFromEqualTime: equalBackground), digits: 3),
                          unit: "counts", note: "L_D in the planned time")
                 if signal > 0 {
                     UncertaintyChart(signal: signal, background: background, equal: equalBackground, goal: goalPercent / 100)

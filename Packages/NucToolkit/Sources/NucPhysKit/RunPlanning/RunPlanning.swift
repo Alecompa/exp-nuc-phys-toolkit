@@ -45,8 +45,11 @@ public enum CountingStatistics {
         return ((s + k * b) * t).squareRoot() / (s * t)
     }
 
-    /// Currie's detection limit L_D = 2.71 + 4.65 √B (counts) for a background of B counts.
-    public static func detectionLimit(backgroundCounts b: Double) -> Double { 2.71 + 4.65 * b.squareRoot() }
+    /// Currie's detection limit (counts) for a background of B counts: L_D = 2.71 + 4.65 √B when the background is
+    /// measured in an equal-time blank (paired observations), 2.71 + 3.29 √B when it is known exactly.
+    public static func detectionLimit(backgroundCounts b: Double, backgroundFromEqualTime: Bool = true) -> Double {
+        2.71 + (backgroundFromEqualTime ? 4.65 : 3.29) * b.squareRoot()
+    }
 }
 
 extension ChargedChannel {

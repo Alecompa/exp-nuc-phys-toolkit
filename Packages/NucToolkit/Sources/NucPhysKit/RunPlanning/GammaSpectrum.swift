@@ -15,7 +15,7 @@ public enum PhotonAttenuation {
             throw SpectrumError.attenuationRange
         }
         // Last row at or below E selects the high-energy side at an exact edge.
-        let i = rows.lastIndex(where: { $0[0] <= energy })!
+        guard let i = rows.lastIndex(where: { $0[0] <= energy }) else { throw SpectrumError.attenuationRange }
         let lo = rows[i]
         if lo[0] == energy || i == rows.count - 1 { return lo[1] }
         let hi = rows[i + 1]
@@ -71,8 +71,24 @@ public struct SpectrumLine: Identifiable, Hashable, Codable, Sendable {
     /// Expected photopeak area without foils, after geometry/efficiency/live time.
     public var counts: Double
     public var enabled: Bool
-    public init(id: UUID = UUID(), name: String = "Custom gamma", energy: Double = 1000, counts: Double = 1000, enabled: Bool = true) {
+    /// Half-width of a flat Doppler distribution around `energy` (γ rays emitted in flight), keV; 0 = sharp line.
+    public var dopplerHalfWidth: Double = 0
+    public init(id: UUID = UUID(), name: String = "Custom gamma", energy: Double = 1000, counts: Double = 1000,
+                enabled: Bool = true, dopplerHalfWidth: Double = 0) {
         self.id = id; self.name = name; self.energy = energy; self.counts = counts; self.enabled = enabled
+        self.dopplerHalfWidth = dopplerHalfWidth
+    }
+
+    private enum CodingKeys: String, CodingKey { case id, name, energy, counts, enabled, dopplerHalfWidth }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(UUID.self, forKey: .id)
+        name = try c.decode(String.self, forKey: .name)
+        energy = try c.decode(Double.self, forKey: .energy)
+        counts = try c.decode(Double.self, forKey: .counts)
+        enabled = try c.decode(Bool.self, forKey: .enabled)
+        dopplerHalfWidth = try c.decodeIfPresent(Double.self, forKey: .dopplerHalfWidth) ?? 0
     }
 }
 
@@ -87,10 +103,14 @@ public struct SpectrumSetup: Hashable, Codable, Sendable {
     public var background: Double = 0
     /// Single- and double-escape peaks (and an optional 511 keV line) above the pair threshold.
     public var escape = EscapeModel()
+    /// γ-detector angle and recoil stopping, for Doppler shifts of in-beam lines.
+    public var geometry = GammaGeometry()
+    /// Beam-induced contaminants and room-background sources switched on (see `BackgroundLibrary`).
+    public var backgrounds: [BackgroundEntry] = []
     public init() {}
 
     private enum CodingKeys: String, CodingKey {
-        case lines, foils, maximumEnergy, channels, continuumRatio, background, escape
+        case lines, foils, maximumEnergy, channels, continuumRatio, background, escape, geometry, backgrounds
     }
 
     /// Fields missing from older saved setups keep their defaults.
@@ -103,6 +123,18 @@ public struct SpectrumSetup: Hashable, Codable, Sendable {
         continuumRatio = try c.decodeIfPresent(Double.self, forKey: .continuumRatio) ?? 2
         background = try c.decodeIfPresent(Double.self, forKey: .background) ?? 0
         escape = try c.decodeIfPresent(EscapeModel.self, forKey: .escape) ?? EscapeModel()
+        geometry = try c.decodeIfPresent(GammaGeometry.self, forKey: .geometry) ?? GammaGeometry()
+        backgrounds = try c.decodeIfPresent([BackgroundEntry].self, forKey: .backgrounds) ?? []
+    }
+
+    /// Spectrum lines of the enabled background sources at a beam energy (lab, keV).
+    /// `counts` of an entry is the photopeak area of each γ ray of its cascade (room lines: of the strongest).
+    public func backgroundLines(beamEnergy: Double) -> [SpectrumLine] {
+        backgrounds.filter(\.enabled).flatMap { entry -> [SpectrumLine] in
+            guard let source = BackgroundLibrary.source(id: entry.id) else { return [] }
+            return source.lines(beamEnergy: beamEnergy, geometry: geometry)
+                .flatMap { $0.spectrumLines(counts: entry.counts * $0.intensity) }
+        }
     }
 }
 
@@ -243,11 +275,13 @@ public enum GammaSpectrum {
             guard line.energy.isFinite, (1...20000).contains(line.energy), line.counts.isFinite,
                   (0...1e12).contains(line.counts) else { throw SpectrumError.invalidInput }
             let area = try setup.foils.reduce(line.counts) { $0 * (try $1.transmission(at: line.energy)) }
-            try deposit(energy: line.energy, area: area, width: width, resolution: resolution, into: &peak)
+            guard line.dopplerHalfWidth.isFinite, line.dopplerHalfWidth >= 0 else { throw SpectrumError.invalidInput }
+            let h = line.dopplerHalfWidth
+            try deposit(energy: line.energy, area: area, width: width, resolution: resolution, halfWidth: h, into: &peak)
             let (single, double) = setup.escape.ratios(at: line.energy)
             if single > 0 || double > 0, area > 0 {
-                try deposit(energy: line.energy - 510.99895, area: area * single, width: width, resolution: resolution, into: &escapes)
-                try deposit(energy: line.energy - 1021.9979, area: area * double, width: width, resolution: resolution, into: &escapes)
+                try deposit(energy: line.energy - 510.99895, area: area * single, width: width, resolution: resolution, halfWidth: h, into: &escapes)
+                try deposit(energy: line.energy - 1021.9979, area: area * double, width: width, resolution: resolution, halfWidth: h, into: &escapes)
                 if setup.escape.annihilation > 0 {
                     try deposit(energy: 510.99895, area: area * single * setup.escape.annihilation,
                                 width: width, resolution: resolution, into: &escapes)
@@ -282,18 +316,33 @@ public enum GammaSpectrum {
 
     /// Integrate the Gaussian across channel boundaries, including sub-channel narrow peaks.
     /// Out-of-window counts are lost, never renormalized back into the displayed range.
-    private static func deposit(energy: Double, area: Double, width: Double, resolution: ResolutionModel,
-                                into bins: inout [Double]) throws {
+    /// A flat distribution of half-width `halfWidth` (Doppler broadening) is folded with the Gaussian exactly:
+    /// with G(t) = t Φ(t/σ) + σ φ(t/σ), the antiderivative of Φ(t/σ), a bin [a, b] receives
+    /// area/(2h) · [G(b−E+h) − G(b−E−h) − G(a−E+h) + G(a−E−h)].
+    static func deposit(energy: Double, area: Double, width: Double, resolution: ResolutionModel,
+                        halfWidth h: Double = 0, into bins: inout [Double]) throws {
         let sigma = resolution.fwhm(at: energy) / (2 * sqrt(2 * log(2.0)))
         guard sigma.isFinite, sigma > 0, sigma < 1e6 else { throw SpectrumError.invalidInput }
-        let lo = max(0, Int(floor((energy - 6 * sigma) / width)))
-        let hi = min(bins.count - 1, Int(floor((energy + 6 * sigma) / width)))
+        let lo = max(0, Int(floor((energy - h - 6 * sigma) / width)))
+        let hi = min(bins.count - 1, Int(floor((energy + h + 6 * sigma) / width)))
         guard lo <= hi else { return }
-        let scale = sqrt(2.0) * sigma
+        if h < 0.01 * sigma {
+            let scale = sqrt(2.0) * sigma
+            for i in lo...hi {
+                let left = (Double(i) * width - energy) / scale
+                let right = (Double(i + 1) * width - energy) / scale
+                bins[i] += area * 0.5 * (erf(right) - erf(left))
+            }
+            return
+        }
+        func g(_ t: Double) -> Double {
+            let u = t / sigma
+            return t * 0.5 * erfc(-u / 2.0.squareRoot()) + sigma * exp(-0.5 * u * u) / (2 * Double.pi).squareRoot()
+        }
         for i in lo...hi {
-            let left = (Double(i) * width - energy) / scale
-            let right = (Double(i + 1) * width - energy) / scale
-            bins[i] += area * 0.5 * (erf(right) - erf(left))
+            let a = Double(i) * width - energy, b = Double(i + 1) * width - energy
+            let w = g(b + h) - g(b - h) - g(a + h) + g(a - h)
+            bins[i] += area * max(0, w) / (2 * h)
         }
     }
 

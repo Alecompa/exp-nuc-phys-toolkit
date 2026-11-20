@@ -35,6 +35,9 @@ public struct ParticleGroup: Identifiable, Hashable, Sendable {
     public let stoppedIn: Int?
     /// Neutral particles are not slowed by the foils and are usually not seen by a silicon detector.
     public let neutral: Bool
+    /// Elastic groups: Rutherford dσ/dΩ (lab, b/sr) per atom of the target material, i.e. weighted by the
+    /// element's atom fraction and the isotope's abundance. nil for reaction groups.
+    public var rutherford: Double? = nil
 }
 
 public enum ParticleSpectrum {
@@ -57,33 +60,101 @@ public enum ParticleSpectrum {
         }
 
         if setup.showElastic, let material {
+            let totalAtoms = material.components.reduce(0) { $0 + $1.stoichiometry }
             var seen = Set<Int>()
             for c in material.components where seen.insert(c.z).inserted {
-                let a = c.isotopeMassNumber ?? Int(c.mass.rounded())
-                guard let nucleus = table.nuclide(z: c.z, a: a) ?? table.nuclide(z: c.z, a: a + 1) ?? table.nuclide(z: c.z, a: a - 1),
-                      let elastic = try? Reaction(target: nucleus, projectile: reaction.projectile,
-                                                  ejectile: .nuclide(reaction.projectile), residual: nucleus) else { continue }
-                let k = TwoBodyKinematics(reaction: elastic, beamEnergy: beamEnergy)
-                // Forward-only branch for a heavier projectile; the slow branch would be the recoil-like one.
-                guard let s = k.solutions(labAngle: theta).first else { continue }
-                out.append(group(id: "e\(c.z)", kind: .elastic, particle: reaction.projectile,
-                                 origin: "elastic on \(nucleus.symbol)", solution: s, setup: setup))
+                let same = material.components.filter { $0.z == c.z }
+                let elementAtoms = same.reduce(0) { $0 + $1.stoichiometry }
+                let atomFraction = elementAtoms / max(totalAtoms, 1e-300)
+                // Each component of the element with its own share: a named isotope (enriched ¹³C next to ¹²C),
+                // else the natural isotopes (NUBASE2020 abundances).
+                var isotopes: [(Nuclide, Double)] = []
+                for comp in same {
+                    let share = comp.stoichiometry / max(elementAtoms, 1e-300)
+                    if let a = comp.isotopeMassNumber, let n = table.nuclide(z: c.z, a: a) {
+                        isotopes.append((n, share))
+                    } else {
+                        var natural = naturalIsotopes(z: c.z, table: table)
+                        if natural.isEmpty, let n = table.nuclide(z: c.z, a: Int(comp.mass.rounded())) { natural = [(n, 1)] }
+                        isotopes += natural.map { ($0.0, $0.1 * share) }
+                    }
+                }
+                // The same isotope from two components is one scatterer.
+                isotopes = Dictionary(isotopes.map { ($0.0, $0.1) }, uniquingKeysWith: +).map { ($0.key, $0.value) }
+                    .sorted { $0.0.a < $1.0.a }
+                out += elasticGroups(element: c.z, isotopes: isotopes, atomFraction: atomFraction,
+                                     projectile: reaction.projectile, beamEnergy: beamEnergy, theta: theta, setup: setup)
             }
         }
         return out.sorted { ($0.detected ?? -1) > ($1.detected ?? -1) }
     }
 
+    /// Stable isotopes of an element with their natural abundance fractions.
+    public static func naturalIsotopes(z: Int, table: MassTable = .ame2020) -> [(Nuclide, Double)] {
+        table.isotopes(z: z).compactMap { n in
+            guard let ab = Nubase.nubase2020.groundState(z: z, a: n.a)?.abundance, ab > 0 else { return nil }
+            return (n, ab / 100)
+        }
+    }
+
+    /// Elastic scattering of the beam on one element: one group per isotope and kinematic branch, merged into
+    /// a single abundance-weighted group when the isotopes are closer than half the detector resolution.
+    private static func elasticGroups(element z: Int, isotopes: [(Nuclide, Double)], atomFraction: Double,
+                                      projectile: Nuclide, beamEnergy: Double, theta: Double,
+                                      setup: ParticleDetectorSetup) -> [ParticleGroup] {
+        struct Hit { let nucleus: Nuclide; let weight: Double; let solution: KinematicSolution; let sigma: Double; let branch: Int }
+        var hits: [Hit] = []
+        for (n, w) in isotopes {
+            let ruth = RutherfordScattering(projectile: projectile, target: n, beamEnergy: beamEnergy)
+            let k = ruth.kinematics
+            // Both branches when the projectile is heavier than the target: the slow one is the projectile
+            // scattered at large c.m. angle, not the recoil. Equal masses: the θ* = π branch has no energy.
+            for (i, s) in k.solutions(labAngle: theta).enumerated() where s.ejectileEnergy > 1e-6 * beamEnergy {
+                let sigma = ruth.crossSectionCM(thetaCM: s.thetaCM) * s.jacobian
+                hits.append(Hit(nucleus: n, weight: w, solution: s, sigma: sigma, branch: i))
+            }
+        }
+        guard !hits.isEmpty else { return [] }
+        let symbol = Elements.symbol(z: z) ?? "?"
+        var out: [ParticleGroup] = []
+        for branch in Set(hits.map(\.branch)).sorted() {
+            let hs = hits.filter { $0.branch == branch }
+            let es = hs.map(\.solution.ejectileEnergy)
+            let suffix = branch > 0 ? " (slow branch)" : ""
+            if hs.count > 1, (es.max()! - es.min()!) < setup.resolution / 2 {
+                // Merge: the weighted mean energy, the main isotope's kinematics for the width.
+                let wsum = hs.reduce(0) { $0 + $1.weight }
+                let mean = hs.reduce(0) { $0 + $1.weight * $1.solution.ejectileEnergy } / wsum
+                let main = hs.max { $0.weight < $1.weight }!
+                var g = group(id: "e\(z)b\(branch)", kind: .elastic, particle: projectile, origin: "elastic on \(symbol)\(suffix)",
+                              solution: main.solution, setup: setup, energy: mean)
+                g.rutherford = atomFraction * hs.reduce(0) { $0 + $1.weight * $1.sigma }
+                out.append(g)
+            } else {
+                for h in hs where h.weight >= 0.01 {
+                    let pct = h.weight < 1 ? " (\(Int((100 * h.weight).rounded())) %)" : ""
+                    var g = group(id: "e\(z)-\(h.nucleus.a)b\(branch)", kind: .elastic, particle: projectile,
+                                  origin: "elastic on \(h.nucleus.label)\(pct)\(suffix)", solution: h.solution, setup: setup)
+                    g.rutherford = atomFraction * h.weight * h.sigma
+                    out.append(g)
+                }
+            }
+        }
+        return out
+    }
+
     private static func group(id: String, kind: ParticleGroup.Kind, particle: Nuclide, origin: String,
-                              solution s: KinematicSolution, setup: ParticleDetectorSetup) -> ParticleGroup {
+                              solution s: KinematicSolution, setup: ParticleDetectorSetup, energy: Double? = nil) -> ParticleGroup {
         let kinematic = abs(s.energySlope) * 2 * setup.halfOpening * .pi / 180
+        let emitted = energy ?? s.ejectileEnergy
         let label = particleLabel(particle)
         guard particle.z > 0 else {
             let fwhm = (setup.resolution * setup.resolution + pow(0.68 * kinematic, 2)).squareRoot()
-            return ParticleGroup(id: id, kind: kind, particle: label, origin: origin, emitted: s.ejectileEnergy,
-                                 detected: s.ejectileEnergy, fwhm: fwhm, stoppedIn: nil, neutral: true)
+            return ParticleGroup(id: id, kind: kind, particle: label, origin: origin, emitted: emitted,
+                                 detected: emitted, fwhm: fwhm, stoppedIn: nil, neutral: true)
         }
         let ion = StoppingIon(nuclide: particle)
-        var e = s.ejectileEnergy, sigma = 0.0
+        var e = emitted, sigma = 0.0
         var stoppedIn: Int?
         for (i, foil) in setup.foils.enumerated() where foil.thickness > 0 {
             guard e > 0, let r = try? StoppingCalculator(ion: ion, target: foil.material)
@@ -93,7 +164,7 @@ public enum ParticleSpectrum {
         }
         let straggling = 2 * (2 * log(2)).squareRoot() * sigma
         let fwhm = (setup.resolution * setup.resolution + straggling * straggling + pow(0.68 * kinematic, 2)).squareRoot()
-        return ParticleGroup(id: id, kind: kind, particle: label, origin: origin, emitted: s.ejectileEnergy,
+        return ParticleGroup(id: id, kind: kind, particle: label, origin: origin, emitted: emitted,
                              detected: stoppedIn == nil ? e : nil, fwhm: fwhm, stoppedIn: stoppedIn, neutral: false)
     }
 

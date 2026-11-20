@@ -41,9 +41,12 @@ struct ReactionRateView: View {
                 content(r, c)
                     .task(id: Key(channel: c, model: workbench.sFactorModel, resonances: workbench.resonances)) {
                         let model = workbench.sFactorModel, res = workbench.resonances
+                        // Debounce typing; a superseded run must not overwrite a newer table.
+                        do { try await Task.sleep(for: .milliseconds(150)) } catch { return }
                         let t = await Task.detached(priority: .userInitiated) {
                             RateTable(channel: c, model: model, resonances: res)
                         }.value
+                        guard !Task.isCancelled else { return }
                         withAnimation(.smooth) { table = t }
                     }
             } else {
@@ -80,7 +83,7 @@ struct ReactionRateView: View {
         List {
             Section {
                 VStack(alignment: .leading, spacing: 14) {
-                    ReactionHeader(reaction: r) { editingSetup = true }
+                    ReactionHeader(reaction: r, edit: { editingSetup = true }, showsBeam: false)
                     HeroNumber(value: Fmt.significant(total), unit: "cm³/(mol s)",
                                caption: "Nₐ⟨σv⟩ at T₉ = \(Fmt.significant(t9, digits: 3))")
                     HStack(spacing: 8) {
@@ -143,6 +146,16 @@ struct ReactionRateView: View {
             }
 
             Section {
+                if workbench.sFactorIsPlaceholder {
+                    Label("No S(E) set for \(r.label) yet: S(0) = 1 keV b is a placeholder. Enter it, or take a measured table from EXFOR.",
+                          systemImage: "exclamationmark.triangle.fill")
+                        .font(.subheadline).foregroundStyle(.orange)
+                }
+                NavigationLink {
+                    ExforToolView()
+                } label: {
+                    Label("Compare S(E) with EXFOR data", systemImage: "chart.dots.scatter")
+                }
                 Picker("S factor", selection: $workbench.sFactorModel.kind.animation(.smooth)) {
                     Text("Polynomial").tag(SFactorModel.Kind.polynomial)
                     Text("Table").tag(SFactorModel.Kind.table)

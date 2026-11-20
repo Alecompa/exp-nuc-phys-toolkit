@@ -198,7 +198,7 @@ struct FormulaSheetView: View {
             .init(title: "Activity", formula: "A(t) = A₀ e^(−λt);  λ = ln 2 / T½"),
             .init(title: "Specific activity", formula: "a = λ Nₐ / M"),
             .init(title: "Counting statistics", formula: "t = (S + kB) / (S² u²)", note: "S, B rates; u target relative uncertainty; k = t_bg ratio"),
-            .init(title: "Currie limit", formula: "L_D = 2.71 + 4.65 √B (counts)"),
+            .init(title: "Currie limit", formula: "L_D = 2.71 + 4.65 √B (paired blank), 2.71 + 3.29 √B (known background)"),
             .init(title: "Point-source air kerma", formula: "K̇ = Γ_δ A / d²"),
         ]),
         ("Detectors", [

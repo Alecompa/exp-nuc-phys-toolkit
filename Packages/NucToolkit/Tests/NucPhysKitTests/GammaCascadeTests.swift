@@ -38,4 +38,26 @@ struct GammaCascadeTests {
         #expect(r.lines.isEmpty && r.unresolved == 1)
         #expect(GammaCascade.from(excitation: 0, scheme: scheme).lines.isEmpty)
     }
+
+    @Test func missingFinalLevelIsReportedNotDropped() {
+        // 3000 → 1500 (a level absent from the list) must show up as unresolved flux.
+        var gammas = scheme.gammas
+        gammas.append(GammaTransition(initialLevel: 3000, finalLevel: 1500, initialSpinParity: "2+", finalSpinParity: "",
+                                      energy: 1500, energyUncertainty: nil, relativeIntensity: 100, multipolarity: ""))
+        gammas.append(GammaTransition(initialLevel: 3000, finalLevel: 500, initialSpinParity: "2+", finalSpinParity: "",
+                                      energy: 2500, energyUncertainty: nil, relativeIntensity: nil, multipolarity: ""))
+        let s = LevelScheme(levels: scheme.levels, gammas: gammas, reference: "test", retrieved: Date())
+        let r = GammaCascade.from(excitation: 3000, scheme: s)
+        #expect(abs(r.unresolved - 0.5) < 1e-12)          // 100 of 25 + 75 + 100
+        #expect(r.withoutIntensity == 1)
+    }
+
+    @Test func feedingDelaysShortLivedLevels() {
+        // 3000 (τ = 10 ps) feeds 1000 (τ = 50 fs) with 75 %: the 1000 keV γ comes ≈ 10 ps after the reaction.
+        let r = GammaCascade.from(excitation: 3000, scheme: scheme)
+        let tau: [Double: Double] = [3000: 10e-12, 1000: 50e-15]
+        let t = GammaCascade.meanDecayTimes(r.lines) { tau[$0] }
+        #expect(abs(t[3000]! - 10e-12) < 1e-20)
+        #expect(abs(t[1000]! - (10e-12 + 50e-15)) < 1e-20)
+    }
 }
