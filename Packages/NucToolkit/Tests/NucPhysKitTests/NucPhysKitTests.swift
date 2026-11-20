@@ -28,6 +28,23 @@ struct MassTableTests {
         #expect(NuclideNotation.parse("1n")! == (0, 1))
     }
 
+    @Test func singleCapitalLettersAreElementsNotLightIons() {
+        // Without a mass number these are incomplete element names, never ³He, n, p or α.
+        #expect(NuclideNotation.parse("H") == nil)
+        #expect(NuclideNotation.parse("N") == nil)
+        #expect(NuclideNotation.parse("P") == nil)
+        #expect(NuclideNotation.parse("A") == nil)
+        #expect(NuclideNotation.parse("1H")! == (1, 1))
+    }
+
+    @Test func superscriptsAndNames() throws {
+        #expect(NuclideNotation.parse("¹²C")! == (6, 12))
+        #expect(NuclideNotation.parse("⁴He")! == (2, 4))
+        #expect(NuclideNotation.parse("Alpha")! == (2, 4))
+        #expect(NuclideNotation.parse("proton")! == (1, 1))
+        #expect(try Reaction(notation: "¹²C(p,γ)¹³N").residual.a == 13)
+    }
+
     @Test func rejectsNonsense() {
         #expect(NuclideNotation.parse("12Xx") == nil)
         #expect(NuclideNotation.parse("") == nil)

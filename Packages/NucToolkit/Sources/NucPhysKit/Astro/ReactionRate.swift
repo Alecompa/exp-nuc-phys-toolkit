@@ -29,7 +29,7 @@ public struct SFactorModel: Hashable, Sendable, Codable {
     public var s0: Double
     /// S'(0), b
     public var s1: Double
-    /// S''(0)/2 is the quadratic coefficient: S = s0 + s1 E + s2 E²/2, s2 in b/keV
+    /// S''(0), b/keV; the quadratic term is s2 E²/2: S = s0 + s1 E + s2 E²/2
     public var s2: Double
     /// Sorted by energy.
     public var table: [Point]

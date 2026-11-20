@@ -28,7 +28,7 @@ struct GamowWindowView: View {
         List {
             Section {
                 VStack(alignment: .leading, spacing: 14) {
-                    ReactionHeader(reaction: r) { editingSetup = true }
+                    ReactionHeader(reaction: r, edit: { editingSetup = true }, showsBeam: false)
                     HeroNumber(value: Fmt.keV(w.peak, digits: 4), unit: "keV",
                                caption: "Gamow peak E₀ at T₉ = \(Fmt.significant(t9, digits: 3))")
                     HStack(spacing: 8) {

@@ -4,7 +4,7 @@ import SwiftUI
 enum Tool: String, CaseIterable, Identifiable, Hashable {
     case qValue, kinematics, rutherford, stopping, energyLoss, exfor
     case gamowWindow, penetrability, sFactor, resonanceStrength, reactionRate
-    case gammaDoppler, yieldEstimate, beamCurrent, detector, spectrum, sources, decay
+    case gammaDoppler, yieldEstimate, beamCurrent, detector, spectrum, spectrumAnalysis, sources, decay
     case constants, units, formulas
 
     var id: String { rawValue }
@@ -25,6 +25,7 @@ enum Tool: String, CaseIterable, Identifiable, Hashable {
         case .yieldEstimate: "Yield & Beam Time"
         case .beamCurrent: "Beam Current"
         case .spectrum: "Detector Spectrum"
+        case .spectrumAnalysis: "Spectrum Analysis"
         case .detector: "Detector Response"
         case .sources: "Calibration Sources"
         case .decay: "Decay Calculator"
@@ -51,6 +52,7 @@ enum Tool: String, CaseIterable, Identifiable, Hashable {
         case .yieldEstimate: "Count rate, statistics, beam time"
         case .beamCurrent: "µA ↔ pps, charge, power on target"
         case .spectrum: "γ or particle peaks behind foils"
+        case .spectrumAnalysis: "Import, find peaks, auto-calibrate"
         case .detector: "Resolution model, efficiency fit"
         case .sources: "Activity today, γ lines, dose rate"
         case .decay: "Activity, atoms, mass, time"
@@ -77,6 +79,7 @@ enum Tool: String, CaseIterable, Identifiable, Hashable {
         case .yieldEstimate: "clock.badge.checkmark.fill"
         case .beamCurrent: "bolt.horizontal.fill"
         case .spectrum: "waveform.path"
+        case .spectrumAnalysis: "waveform.badge.magnifyingglass"
         case .detector: "cylinder.split.1x2.fill"
         case .sources: "rays"
         case .decay: "hourglass"
@@ -103,6 +106,7 @@ enum Tool: String, CaseIterable, Identifiable, Hashable {
         case .yieldEstimate: .green
         case .beamCurrent: .blue
         case .spectrum: .purple
+        case .spectrumAnalysis: .indigo
         case .detector: .gray
         case .sources: .orange
         case .decay: .cyan
@@ -136,7 +140,7 @@ enum ToolCatalog {
         ToolSection(title: "Nuclear Astrophysics",
                     tools: [.gamowWindow, .sFactor, .resonanceStrength, .reactionRate, .penetrability], planned: []),
         ToolSection(title: "Run Planning", tools: [.yieldEstimate, .beamCurrent], planned: []),
-        ToolSection(title: "Detectors & Sources", tools: [.detector, .spectrum, .sources, .decay], planned: []),
+        ToolSection(title: "Detectors & Sources", tools: [.detector, .spectrum, .spectrumAnalysis, .sources, .decay], planned: []),
         ToolSection(title: "Reference", tools: [.constants, .units, .formulas], planned: []),
     ]
 }

@@ -26,6 +26,52 @@ struct ExperimentWorkflowTests {
         #expect(ExperimentSetup(workbench) == snapshot)
     }
 
+    @Test func everyPresetParses() {
+        for item in Presets.groups.flatMap(\.items) {
+            #expect((try? Reaction(notation: item)) != nil, "\(item)")
+        }
+    }
+
+    @Test func recentAndSavedReactions() throws {
+        let defaults = isolatedDefaults()
+        let workbench = Workbench(defaults: defaults)
+        workbench.reactionText = "14N(p,g)15O"
+        workbench.reactionText = "22Ne(p,g)23Na"
+        workbench.reactionText = "14N(p,g)15O"
+        #expect(workbench.recentReactions.prefix(2) == ["14N(p,g)15O", "22Ne(p,g)23Na"])
+        let r = try #require(workbench.reaction)
+        workbench.toggleSaved(r)
+        #expect(Workbench(defaults: defaults).savedReactions == ["14N(p,g)15O"])
+        workbench.toggleSaved(r)
+        #expect(workbench.savedReactions.isEmpty)
+    }
+
+    @Test func astrophysicsInputsStayWithTheirReaction() throws {
+        let defaults = isolatedDefaults()
+        let workbench = Workbench(defaults: defaults)
+        workbench.reactionText = "14N(p,g)15O"
+        #expect(workbench.sFactorIsPlaceholder)
+        #expect(abs(workbench.isotopicAbundance - 99.6205) < 1e-6)     // NUBASE2020 natural ¹⁴N (nubase2020.csv)
+        workbench.sFactorModel = SFactorModel(s0: 1.6)
+        workbench.screeningPotential = 600
+        #expect(!workbench.sFactorIsPlaceholder)
+
+        workbench.reactionText = "17O(p,a)14N"
+        #expect(workbench.sFactorModel.s0 == 1)                        // not ¹⁴N(p,γ)'s 1.6 keV b
+        #expect(workbench.screeningPotential == 0)
+        #expect(workbench.sFactorIsPlaceholder)
+
+        workbench.reactionText = "14N(p,g)15O"
+        #expect(workbench.sFactorModel.s0 == 1.6)
+        #expect(workbench.screeningPotential == 600)
+
+        // Survives a relaunch.
+        let reloaded = Workbench(defaults: defaults)
+        #expect(reloaded.sFactorModel.s0 == 1.6 && !reloaded.sFactorIsPlaceholder)
+        reloaded.reactionText = "17O(p,a)14N"
+        #expect(reloaded.sFactorModel.s0 == 1)
+    }
+
     @Test func savedZeroAndIsotopeFractions() throws {
         let defaults = isolatedDefaults()
         let workbench = Workbench(defaults: defaults)

@@ -35,6 +35,7 @@ extension Tool {
         case .gammaDoppler: "γ Doppler"
         case .yieldEstimate: "Yield & Time"
         case .spectrum: "Spectrum"
+        case .spectrumAnalysis: "Analysis"
         case .detector: "Detector"
         case .sources: "Sources"
         case .decay: "Decay"

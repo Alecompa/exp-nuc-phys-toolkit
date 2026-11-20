@@ -66,21 +66,77 @@ public final class Workbench {
     public var temperatureT9: Double {
         didSet { defaults.set(temperatureT9, forKey: Keys.t9) }
     }
+    // S(E), resonances, U_e and abundance belong to one reaction: they are kept per reaction
+    // (`AstroProfile`) and swapped in when the reaction changes, so ¹²C(p,γ)'s S factor never
+    // silently feeds the rate or yield of the next reaction.
+
     /// Non-resonant S factor of the entrance channel.
     public var sFactorModel: SFactorModel {
-        didSet { save(sFactorModel, Keys.sModel) }
+        didSet { save(sFactorModel, Keys.sModel); profileEdited(sFactor: true) }
     }
     /// Narrow resonances (centre-of-mass energy, ωγ) added to the rate.
     public var resonances: [NarrowResonance] {
-        didSet { save(resonances, Keys.resonances) }
+        didSet { save(resonances, Keys.resonances); profileEdited() }
     }
     /// Electron-screening potential U_e, eV.
     public var screeningPotential: Double {
-        didSet { defaults.set(screeningPotential, forKey: Keys.screening) }
+        didSet { defaults.set(screeningPotential, forKey: Keys.screening); profileEdited() }
     }
     /// Abundance of the reaction's target isotope in the target element, %.
     public var isotopicAbundance: Double {
-        didSet { defaults.set(isotopicAbundance, forKey: Keys.abundance) }
+        didSet { defaults.set(isotopicAbundance, forKey: Keys.abundance); profileEdited() }
+    }
+    /// True while the S factor is the placeholder of a reaction nobody has set an S(E) for.
+    public private(set) var sFactorIsPlaceholder = false
+
+    /// Per-reaction astrophysics inputs, keyed by `Reaction.plainLabel`.
+    public struct AstroProfile: Codable, Hashable, Sendable {
+        public var sFactorModel: SFactorModel
+        public var resonances: [NarrowResonance]
+        public var screeningPotential: Double
+        public var isotopicAbundance: Double
+        /// The S factor was never set by the user (or taken from EXFOR) for this reaction.
+        public var placeholder: Bool
+    }
+    @ObservationIgnored private var profiles: [String: AstroProfile] = [:]
+    @ObservationIgnored private var profileKey: String?
+    @ObservationIgnored private var applyingProfile = false
+
+    /// The stored inputs of a reaction, or defaults: S = 1 keV b (placeholder), no resonances, U_e = 0,
+    /// natural abundance of the target isotope (100 % for a radioactive or unlisted one).
+    public func astroProfile(for reaction: Reaction) -> AstroProfile {
+        if let p = profiles[reaction.plainLabel] { return p }
+        let natural = Nubase.nubase2020.groundState(z: reaction.target.z, a: reaction.target.a)?.abundance
+        return AstroProfile(sFactorModel: SFactorModel(s0: 1), resonances: [], screeningPotential: 0,
+                            isotopicAbundance: natural.map { $0 > 0 ? $0 : 100 } ?? 100, placeholder: true)
+    }
+
+    private var currentProfile: AstroProfile {
+        AstroProfile(sFactorModel: sFactorModel, resonances: resonances, screeningPotential: screeningPotential,
+                     isotopicAbundance: isotopicAbundance, placeholder: sFactorIsPlaceholder)
+    }
+
+    private func profileEdited(sFactor: Bool = false) {
+        guard !applyingProfile, let key = profileKey else { return }
+        if sFactor { sFactorIsPlaceholder = false }
+        profiles[key] = currentProfile
+        save(profiles, Keys.profiles)
+    }
+
+    /// Swaps in the inputs of the newly parsed reaction.
+    private func switchProfile() {
+        guard let r = reaction, r.plainLabel != profileKey else { return }
+        let p = astroProfile(for: r)
+        applyingProfile = true
+        sFactorModel = p.sFactorModel
+        resonances = p.resonances
+        screeningPotential = p.screeningPotential
+        isotopicAbundance = p.isotopicAbundance
+        sFactorIsPlaceholder = p.placeholder
+        applyingProfile = false
+        profileKey = r.plainLabel
+        profiles[r.plainLabel] = p
+        save(profiles, Keys.profiles)
     }
     /// Channel radius parameter r₀ in R = r₀(A₁^⅓ + A₂^⅓), fm.
     public var channelRadiusR0: Double {
@@ -116,6 +172,39 @@ public final class Workbench {
 
     public private(set) var reaction: Reaction?
     public private(set) var reactionError: ReactionError?
+
+    /// Reactions used recently, newest first (plain notation, at most 10).
+    public private(set) var recentReactions: [String] = []
+    /// Reactions the user keeps at hand ("My reactions"), in the order they were added.
+    public private(set) var savedReactions: [String] = []
+
+    /// Switches to another reaction from a shortcut: the residual level and a target material that lacks the
+    /// new target element belong to the old reaction and are reset.
+    public func switchReaction(to notation: String) {
+        guard let r = try? Reaction(notation: notation) else { return }
+        reactionText = r.plainLabel
+        residualExcitation = 0
+        if let t = customTarget, !t.components.contains(where: { $0.z == r.target.z }) { customTarget = nil }
+    }
+
+    public func isSaved(_ r: Reaction) -> Bool { savedReactions.contains(r.plainLabel) }
+
+    public func toggleSaved(_ r: Reaction) {
+        if let i = savedReactions.firstIndex(of: r.plainLabel) { savedReactions.remove(at: i) }
+        else { savedReactions.append(r.plainLabel) }
+        defaults.set(savedReactions, forKey: Keys.saved)
+    }
+
+    public func removeSaved(_ notation: String) {
+        savedReactions.removeAll { $0 == notation }
+        defaults.set(savedReactions, forKey: Keys.saved)
+    }
+
+    private func noteRecent(_ r: Reaction) {
+        guard recentReactions.first != r.plainLabel else { return }
+        recentReactions = Array(([r.plainLabel] + recentReactions.filter { $0 != r.plainLabel }).prefix(10))
+        defaults.set(recentReactions, forKey: Keys.recent)
+    }
 
     @ObservationIgnored private let defaults: UserDefaults
 
@@ -155,6 +244,15 @@ public final class Workbench {
         resolutionModel = Self.load(defaults, Keys.resolution) ?? ResolutionModel.presets[0].model
         efficiencyCurve = Self.load(defaults, Keys.efficiency) ?? .example
         sources = Self.load(defaults, Keys.sources) ?? []
+        profiles = Self.load(defaults, Keys.profiles) ?? [:]
+        recentReactions = defaults.stringArray(forKey: Keys.recent) ?? []
+        savedReactions = defaults.stringArray(forKey: Keys.saved) ?? []
+        // The values loaded above belong to the stored reaction (also for data saved before profiles existed).
+        if let r = try? Reaction(notation: reactionText) {
+            profileKey = r.plainLabel
+            if let p = profiles[r.plainLabel] { sFactorIsPlaceholder = p.placeholder }
+            else { profiles[r.plainLabel] = currentProfile }
+        }
         reparse()
     }
 
@@ -167,7 +265,7 @@ public final class Workbench {
 
     private func reparse() {
         switch Self.parse(reactionText) {
-        case .success(let r): reaction = r; reactionError = nil
+        case .success(let r): reaction = r; reactionError = nil; switchProfile(); noteRecent(r)
         case .failure(let e): reaction = nil; reactionError = e
         }
     }
@@ -314,6 +412,9 @@ public final class Workbench {
         static let resonances = "astro.resonances"
         static let screening = "astro.screeningPotential"
         static let abundance = "astro.isotopicAbundance"
+        static let profiles = "astro.profiles"
+        static let recent = "workbench.recentReactions"
+        static let saved = "workbench.savedReactions"
         static let r0 = "astro.r0"
         static let layersBefore = "workbench.layersBefore"
         static let layersAfter = "workbench.layersAfter"

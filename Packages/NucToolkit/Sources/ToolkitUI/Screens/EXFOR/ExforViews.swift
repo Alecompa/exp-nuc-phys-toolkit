@@ -152,10 +152,13 @@ struct ExforChannelView<Header: View>: View {
     @State private var finalState: Int?
     /// Incremented by "Try Again" to rerun the downloads.
     @State private var attempt = 0
-    @State private var quantity = ExforTable.Quantity.crossSection
-    @State private var frame = ExforTable.Frame.lab
-    @State private var logX = true
-    @State private var logY = true
+    /// S factor at c.m. energies by default: σ of charged-particle reactions spans tens of decades.
+    @AppStorage("exfor.quantity") private var storedQuantity = ExforTable.Quantity.sFactor
+    @AppStorage("exfor.frame") private var storedFrame = ExforTable.Frame.cm
+    @AppStorage("exfor.logX") private var logX = true
+    @AppStorage("exfor.logY") private var logY = true
+    @AppStorage("exfor.gamowWindow") private var showGamow = true
+    @AppStorage("exfor.model") private var showModel = false
     @State private var tables: [String: TableState] = [:]
     @State private var hidden: Set<String> = []
 
@@ -179,19 +182,48 @@ struct ExforChannelView<Header: View>: View {
         return (levels.contains(nil) ? [nil] : []) + levels.compactMap { $0 }.sorted().map { Optional($0) }
     }
 
+    /// Without a charged entrance channel the tables are shown as tabulated (σ, their own frame).
+    private var quantity: ExforTable.Quantity { entrance == nil ? .crossSection : storedQuantity }
+    private var frame: ExforTable.Frame? { entrance == nil ? nil : storedFrame }
+
+    private var gamowBand: ExforChart.Band? {
+        guard showGamow, let c = entrance, c.isCharged, workbench.temperatureT9 > 0 else { return nil }
+        let w = c.gamowWindow(t9: workbench.temperatureT9)
+        guard w.upper > w.lower else { return nil }
+        let lo = frame == .lab ? c.labEnergy(cm: w.lower) : w.lower
+        let hi = frame == .lab ? c.labEnergy(cm: w.upper) : w.upper
+        return ExforChart.Band(range: lo...hi, label: "Gamow window, T₉ = \(Fmt.significant(workbench.temperatureT9, digits: 3))")
+    }
+
+    /// The S(E) model of the Reaction Rate tool, over the energies of the shown data.
+    private func modelCurve(_ series: [ExforChart.Series]) -> [(x: Double, y: Double)] {
+        guard isSetupReaction, showModel, let c = entrance, c.isCharged else { return [] }
+        let toCM: (Double) -> Double = { frame == .lab ? c.cmEnergy(lab: $0) : $0 }
+        let es = series.flatMap(\.points).map { toCM($0.energy) }.filter { $0 > 0 }
+        let lo = max(1e-3, (es.min() ?? 10) / 2), hi = max(lo * 10, (es.max() ?? 1000) * 1.2)
+        let model = workbench.sFactorModel
+        return (0...160).compactMap { i in
+            let ecm = lo * pow(hi / lo, Double(i) / 160)
+            let sValue = model.s(at: ecm)
+            let y = quantity == .sFactor ? sValue : sValue / (ecm * exp(2 * .pi * c.sommerfeld(ecm)))
+            guard y.isFinite else { return nil }
+            return (x: frame == .lab ? c.labEnergy(cm: ecm) : ecm, y: y)
+        }
+    }
+
     private var visible: [ExforDataset] {
         datasets.filter { $0.level == finalState }
     }
 
     var body: some View {
         let shown = visible
+        let plotted = series(shown)
         List {
             header()
 
             Section {
-                ExforChart(series: series(shown), quantity: quantity, frame: frame, unit: workbench.energyUnit,
-                           logX: logX, logY: logY)
-                    .frame(height: 280)
+                ExforChart(series: plotted, quantity: quantity, frame: frame, unit: workbench.energyUnit,
+                           logX: logX, logY: logY, band: gamowBand, curve: modelCurve(plotted), curveLabel: "S(E) model")
                     .padding(.vertical, 8)
                 if let note = loadingNote(shown) {
                     Text(note).font(.footnote).foregroundStyle(.secondary)
@@ -209,18 +241,24 @@ struct ExforChannelView<Header: View>: View {
                         }
                     }
                 }
-                Picker("Quantity", selection: $quantity.animation(.smooth)) {
+                Picker("Quantity", selection: $storedQuantity.animation(.smooth)) {
                     Text("Cross section σ").tag(ExforTable.Quantity.crossSection)
                     Text("S factor").tag(ExforTable.Quantity.sFactor)
                 }
                 .disabled(entrance == nil)
-                Picker("Energy", selection: $frame.animation(.smooth)) {
+                Picker("Energy", selection: $storedFrame.animation(.smooth)) {
                     Text("Laboratory").tag(ExforTable.Frame.lab)
                     Text("Centre of mass").tag(ExforTable.Frame.cm)
                 }
                 .disabled(entrance == nil)
                 Toggle("Logarithmic energy axis", isOn: $logX.animation(.smooth))
                 Toggle("Logarithmic \(quantity == .sFactor ? "S" : "σ") axis", isOn: $logY.animation(.smooth))
+                if entrance?.isCharged == true {
+                    Toggle("Gamow window at T₉ = \(Fmt.significant(workbench.temperatureT9, digits: 3))", isOn: $showGamow.animation(.smooth))
+                }
+                if isSetupReaction, entrance?.isCharged == true {
+                    Toggle("S(E) model of Reaction Rate", isOn: $showModel.animation(.smooth))
+                }
             } header: {
                 Text("Display")
             } footer: {
@@ -268,7 +306,6 @@ struct ExforChannelView<Header: View>: View {
                 }
             }
         }
-        .onChange(of: quantity) { _, q in frame = q == .sFactor ? .cm : .lab }
         .task(id: LoadKey(finalState: finalState, attempt: attempt)) { await load(visible) }
     }
 
@@ -307,7 +344,7 @@ struct ExforChannelView<Header: View>: View {
             for _ in 0..<6 { if !add() { break } }        // at most six downloads at a time
             for await (id, state) in group {
                 guard !Task.isCancelled, let state else { continue }
-                withAnimation(.smooth) { tables[id] = state }
+                tables[id] = state
                 _ = add()
             }
         }
@@ -332,8 +369,9 @@ struct ExforChannelView<Header: View>: View {
     private func series(_ ds: [ExforDataset]) -> [ExforChart.Series] {
         ds.enumerated().compactMap { i, d in
             guard !hidden.contains(d.id), case .loaded(let t) = tables[d.id] else { return nil }
-            let pts = entrance.map { t.points(as: quantity, frame: frame, channel: $0) } ?? t.points
-            return ExforChart.Series(id: d.id, color: ExforPalette.color(i), upperLimit: t.qualifier == .upperLimit, points: pts)
+            let pts = entrance.map { t.points(as: quantity, frame: storedFrame, channel: $0) } ?? t.points
+            return ExforChart.Series(id: d.id, label: "\(d.author) (\(String(d.year)))", color: ExforPalette.color(i),
+                                     upperLimit: t.qualifier == .upperLimit, points: pts)
         }
     }
 
@@ -342,12 +380,12 @@ struct ExforChannelView<Header: View>: View {
     }
 
     private func csv(_ ds: [ExforDataset]) -> String {
-        let eName = frame == .cm ? "E_cm_keV" : "E_lab_keV"
+        let eName = frame == .cm ? "E_cm_keV" : frame == .lab ? "E_lab_keV" : "E_keV"
         let yName = quantity == .sFactor ? "S_keVb" : "sigma_b"
         var out = "exfor,author,year,final_state,\(eName),d\(eName),\(yName),d\(yName)\n"
         for d in ds where !hidden.contains(d.id) {
             guard case .loaded(let t) = tables[d.id] else { continue }
-            let pts = entrance.map { t.points(as: quantity, frame: frame, channel: $0) } ?? t.points
+            let pts = entrance.map { t.points(as: quantity, frame: storedFrame, channel: $0) } ?? t.points
             for p in pts {
                 out += [d.exforID, d.author, String(d.year), d.finalStateLabel, Self.g(p.energy),
                         p.energyUncertainty.map(Self.g) ?? "", Self.g(p.value), p.uncertainty.map(Self.g) ?? ""]
@@ -368,7 +406,12 @@ extension ExforChannelView where Header == EmptyView {
 
 enum ExforPalette {
     private static let colors: [Color] = [.orange, .blue, .green, .purple, .red, .teal, .pink, .indigo, .brown, .mint, .cyan, .yellow]
-    static func color(_ i: Int) -> Color { colors[i % colors.count] }
+    /// The fixed colours first, then golden-angle hues so that large channels do not repeat colours.
+    static func color(_ i: Int) -> Color {
+        if i < colors.count { return colors[i] }
+        let h = (Double(i - colors.count) * 0.618_033_988_75).truncatingRemainder(dividingBy: 1)
+        return Color(hue: h, saturation: 0.75, brightness: 0.8)
+    }
 }
 
 private struct ExforDatasetRow<Destination: View>: View {
@@ -429,91 +472,278 @@ private struct ExforDatasetRow<Destination: View>: View {
 struct ExforChart: View {
     struct Series: Identifiable {
         let id: String
+        /// "Author (year)", shown in the tap readout.
+        var label: String = ""
         let color: Color
         let upperLimit: Bool
         let points: [ExforTable.Point]
     }
 
+    /// A shaded energy range (keV, same frame as the points), e.g. the Gamow window.
+    struct Band: Hashable {
+        let range: ClosedRange<Double>
+        let label: String
+    }
+
     let series: [Series]
     let quantity: ExforTable.Quantity
-    let frame: ExforTable.Frame
+    let frame: ExforTable.Frame?
     let unit: EnergyUnit
     let logX: Bool
     let logY: Bool
+    var band: Band? = nil
+    /// A model curve (keV, value) drawn over the data, e.g. the S(E) of the rate tool.
+    var curve: [(x: Double, y: Double)] = []
+    var curveLabel = "Model"
+    var height: CGFloat = 280
+    var expanded = false
+
+    @State private var zoom: ClosedRange<Double>?
+    @State private var gestureBase: ClosedRange<Double>?
+    @State private var picked: Picked?
+    @State private var fullScreen = false
 
     private struct Mark: Identifiable {
-        let id: Int
+        let id: String
+        let series: Int
         let x: Double, y: Double, lo: Double, hi: Double
         let color: Color
         let upper: Bool
+        let point: ExforTable.Point
     }
 
-    var body: some View {
-        let scale = unit == .MeV ? 1e-3 : 1
+    private struct Picked: Equatable {
+        let markID: String
+        let text: String
+    }
+
+    private var scale: Double { unit == .MeV ? 1e-3 : 1 }
+
+    private func makeMarks() -> [Mark] {
         var marks: [Mark] = []
-        for s in series {
-            for p in s.points where p.energy > 0 && (!logY || p.value > 0) {
+        for (si, s) in series.enumerated() {
+            for (k, p) in s.points.enumerated() where p.energy > 0 && (!logY || p.value > 0) {
                 let u = p.uncertainty ?? 0
-                marks.append(Mark(id: marks.count, x: p.energy * scale, y: p.value,
+                marks.append(Mark(id: "\(s.id)#\(k)", series: si, x: p.energy * scale, y: p.value,
                                   lo: logY ? max(p.value - u, p.value * 1e-3) : p.value - u, hi: p.value + u,
-                                  color: s.color, upper: s.upperLimit))
+                                  color: s.color, upper: s.upperLimit, point: p))
             }
         }
-        let xs = marks.map(\.x), ys = marks.flatMap { [$0.lo, $0.hi] }
+        return marks
+    }
+
+    // Axis coordinate: log10 on a log axis, so zoom and pan are uniform on screen.
+    private func ax(_ v: Double) -> Double { logX ? log10(v) : v }
+    private func unax(_ v: Double) -> Double { logX ? pow(10, v) : v }
+
+    var body: some View {
+        let marks = makeMarks()
+        let xs = marks.map(\.x) + curve.map { $0.x * scale }.filter { !logX || $0 > 0 }
         let xLo = xs.min() ?? 1, xHi = max(xs.max() ?? 10, xLo * 1.01)
-        let yLo = ys.min() ?? 1e-6, yHi = max(ys.max() ?? 1, yLo * 1.01)
-        let xDomain = logX ? (xLo / 1.15)...(xHi * 1.15) : max(0, xLo - 0.05 * (xHi - xLo))...(xHi + 0.05 * (xHi - xLo))
+        let full = logX ? (xLo / 1.15)...(xHi * 1.15) : max(0, xLo - 0.05 * (xHi - xLo))...(xHi + 0.05 * (xHi - xLo))
+        let xDomain = zoom ?? full
+        // The y range follows the visible energies, so zooming into a low-energy tail rescales it.
+        let inView = marks.filter { xDomain.contains($0.x) }
+        let curveIn = curve.filter { xDomain.contains($0.x * scale) && (!logY || $0.y > 0) }.map(\.y)
+        let ys = (inView.isEmpty ? marks : inView).flatMap { [$0.lo, $0.hi] } + curveIn
+        let yLo = ys.filter { !logY || $0 > 0 }.min() ?? 1e-6, yHi = max(ys.max() ?? 1, yLo * 1.01)
         let yDomain = logY ? (yLo / 1.5)...(yHi * 1.5) : min(0, yLo)...(yHi * 1.08)
 
-        return Group {
-            if marks.isEmpty {
+        return VStack(alignment: .leading, spacing: 8) {
+            if marks.isEmpty && curve.isEmpty {
                 ContentUnavailableView("No points to show", systemImage: "chart.dots.scatter",
                                        description: Text("Tables appear here as they download."))
+                    .frame(height: height)
             } else {
-                Chart(marks) { m in
-                    if m.hi > m.lo {
-                        RuleMark(x: .value("E", m.x), yStart: .value("lo", m.lo), yEnd: .value("hi", m.hi))
-                            .foregroundStyle(m.color.opacity(0.45))
-                            .lineStyle(StrokeStyle(lineWidth: 1))
-                    }
-                    PointMark(x: .value("E", m.x), y: .value(quantity == .sFactor ? "S" : "σ", m.y))
-                        .foregroundStyle(m.color)
-                        .symbol(m.upper ? AnyChartSymbolShape(BasicChartSymbolShape.triangle) : AnyChartSymbolShape(BasicChartSymbolShape.circle))
-                        .symbolSize(20)
-                }
-                .chartXScale(domain: xDomain, type: logX ? .log : .linear)
-                .chartYScale(domain: yDomain, type: logY ? .log : .linear)
-                .chartXAxis {
-                    if logX {
-                        AxisMarks(values: logAxisTicks(xDomain)) { v in
-                            AxisGridLine(); AxisTick()
-                            AxisValueLabel { if let x = v.as(Double.self) { Text(axisNumber(x)) } }
+                chart(marks: marks, xDomain: xDomain, yDomain: yDomain, full: full)
+                    .frame(height: height)
+                if band != nil || !curve.isEmpty {
+                    HStack(spacing: 14) {
+                        if let band {
+                            HStack(spacing: 5) {
+                                RoundedRectangle(cornerRadius: 2).fill(Color.accent.opacity(0.25)).frame(width: 14, height: 10)
+                                Text(band.label)
+                            }
                         }
-                    } else {
-                        AxisMarks(values: .automatic(desiredCount: 4)) { v in
-                            AxisGridLine(); AxisTick()
-                            AxisValueLabel { if let x = v.as(Double.self) { Text(axisNumber(x)) } }
+                        if !curve.isEmpty {
+                            HStack(spacing: 5) {
+                                Text("‒ ‒").fontWeight(.bold)
+                                Text(curveLabel)
+                            }
                         }
                     }
+                    .font(.caption2).foregroundStyle(.secondary)
                 }
-                .chartYAxis {
-                    if logY {
-                        AxisMarks(values: sparseDecades(yDomain)) { v in
-                            AxisGridLine()
-                            AxisValueLabel { if let y = v.as(Double.self) { Text(yLabel(y)) } }
-                        }
-                    } else {
-                        AxisMarks(values: .automatic(desiredCount: 5)) { v in
-                            AxisGridLine()
-                            AxisValueLabel { if let y = v.as(Double.self) { Text(yLabel(y)) } }
-                        }
+                HStack(spacing: 8) {
+                    Text(picked?.text ?? (zoom == nil ? "Tap a point to identify it · pinch to zoom" : "Pinch or drag to move · double-tap to reset"))
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(picked == nil ? .secondary : .primary)
+                        .lineLimit(2)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    if zoom != nil {
+                        Button { withAnimation(.smooth) { zoom = nil } } label: { Image(systemName: "arrow.uturn.backward") }
+                            .buttonStyle(.borderless)
+                            .accessibilityLabel("Reset zoom")
+                    }
+                    if !expanded {
+                        Button { fullScreen = true } label: { Image(systemName: "arrow.up.left.and.arrow.down.right") }
+                            .buttonStyle(.borderless)
+                            .accessibilityLabel("Expand plot")
                     }
                 }
-                .chartXAxisLabel("\(frame == .cm ? "E (c.m.)" : "E (lab)"), \(unit.label)", alignment: .leading)
-                .chartYAxisLabel(quantity == .sFactor ? "S, keV b" : "σ")
-                .accessibilityLabel(quantity == .sFactor ? "S factor versus energy" : "Cross section versus energy")
             }
         }
+        .onChange(of: series.map(\.id)) { _, _ in picked = nil }
+        .onChange(of: quantity) { _, _ in picked = nil; zoom = nil }
+        .onChange(of: frame) { _, _ in picked = nil; zoom = nil }
+        .onChange(of: logX) { _, _ in zoom = nil }
+        .sheet(isPresented: $fullScreen) {
+            NavigationStack {
+                VStack {
+                    ExforChart(series: series, quantity: quantity, frame: frame, unit: unit, logX: logX, logY: logY,
+                               band: band, curve: curve, curveLabel: curveLabel, height: 480, expanded: true)
+                    Spacer(minLength: 0)
+                }
+                .padding()
+                .navigationTitle(quantity == .sFactor ? "S factor" : "Cross section")
+                .inlineTitle()
+                .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { fullScreen = false } } }
+            }
+        }
+    }
+
+    @ChartContentBuilder
+    private func content(marks: [Mark], yDomain: ClosedRange<Double>) -> some ChartContent {
+        if let band {
+            RectangleMark(xStart: .value("from", band.range.lowerBound * scale), xEnd: .value("to", band.range.upperBound * scale))
+                .foregroundStyle(Color.accent.opacity(0.12))
+        }
+        ForEach(marks) { m in
+            if m.hi > m.lo {
+                RuleMark(x: .value("E", m.x), yStart: .value("lo", m.lo), yEnd: .value("hi", m.hi))
+                    .foregroundStyle(m.color.opacity(0.45))
+                    .lineStyle(StrokeStyle(lineWidth: 1))
+            }
+            PointMark(x: .value("E", m.x), y: .value(quantity == .sFactor ? "S" : "σ", m.y))
+                .foregroundStyle(m.color)
+                .symbol(m.upper ? AnyChartSymbolShape(BasicChartSymbolShape.triangle) : AnyChartSymbolShape(BasicChartSymbolShape.circle))
+                .symbolSize(picked?.markID == m.id ? 90 : 20)
+        }
+        ForEach(Array(curve.enumerated()), id: \.offset) { _, c in
+            if (!logY || c.y > 0) && (!logX || c.x > 0) {
+                LineMark(x: .value("E", c.x * scale), y: .value("model", c.y), series: .value("Curve", curveLabel))
+                    .foregroundStyle(Color.primary.opacity(0.8))
+                    .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [5, 3]))
+            }
+        }
+    }
+
+    private func chart(marks: [Mark], xDomain: ClosedRange<Double>, yDomain: ClosedRange<Double>, full: ClosedRange<Double>) -> some View {
+        Chart { content(marks: marks, yDomain: yDomain) }
+            .chartXScale(domain: xDomain, type: logX ? .log : .linear)
+            .chartYScale(domain: yDomain, type: logY ? .log : .linear)
+            .chartPlotStyle { $0.clipped() }
+            .chartXAxis {
+                if logX {
+                    AxisMarks(values: logAxisTicks(xDomain)) { v in
+                        AxisGridLine(); AxisTick()
+                        AxisValueLabel { if let x = v.as(Double.self) { Text(axisNumber(x)) } }
+                    }
+                } else {
+                    AxisMarks(values: .automatic(desiredCount: 4)) { v in
+                        AxisGridLine(); AxisTick()
+                        AxisValueLabel { if let x = v.as(Double.self) { Text(axisNumber(x)) } }
+                    }
+                }
+            }
+            .chartYAxis {
+                if logY {
+                    AxisMarks(values: logAxisTicks(yDomain)) { v in
+                        AxisGridLine()
+                        AxisValueLabel { if let y = v.as(Double.self) { Text(yLabel(y)) } }
+                    }
+                } else {
+                    AxisMarks(values: .automatic(desiredCount: 5)) { v in
+                        AxisGridLine()
+                        AxisValueLabel { if let y = v.as(Double.self) { Text(yLabel(y)) } }
+                    }
+                }
+            }
+            .chartXAxisLabel("\(frameLabel), \(unit.label)", alignment: .leading)
+            .chartYAxisLabel(quantity == .sFactor ? "S, keV b" : "σ")
+            .chartOverlay { proxy in
+                GeometryReader { geo in
+                    let plot = proxy.plotFrame.map { geo[$0] } ?? geo.frame(in: .local)
+                    Rectangle().fill(.clear).contentShape(Rectangle())
+                        .onTapGesture(count: 2) { withAnimation(.smooth) { zoom = nil } }
+                        .onTapGesture { location in pick(at: location, plot: plot, proxy: proxy, marks: marks) }
+                        .gesture(MagnifyGesture()
+                            .onChanged { v in
+                                let base = gestureBase ?? xDomain
+                                gestureBase = base
+                                let f = min(1, max(0, (v.startLocation.x - plot.minX) / max(1, plot.width)))
+                                zoom = rescaled(base, around: f, by: v.magnification, full: full)
+                            }
+                            .onEnded { _ in gestureBase = nil })
+                        .simultaneousGesture(expanded || zoom != nil ? DragGesture(minimumDistance: 12)
+                            .onChanged { v in
+                                guard abs(v.translation.width) > abs(v.translation.height) else { return }
+                                let base = gestureBase ?? xDomain
+                                gestureBase = base
+                                zoom = panned(base, by: -v.translation.width / max(1, plot.width), full: full)
+                            }
+                            .onEnded { _ in gestureBase = nil } : nil)
+                }
+            }
+            .accessibilityLabel(quantity == .sFactor ? "S factor versus energy" : "Cross section versus energy")
+    }
+
+    private var frameLabel: String {
+        switch frame {
+        case .cm?: "E (c.m.)"
+        case .lab?: "E (lab)"
+        case nil: "E"
+        }
+    }
+
+    private func rescaled(_ d: ClosedRange<Double>, around f: Double, by m: Double, full: ClosedRange<Double>) -> ClosedRange<Double>? {
+        guard m > 0, d.lowerBound > 0 || !logX else { return zoom }
+        let lo = ax(d.lowerBound), hi = ax(d.upperBound)
+        let anchor = lo + f * (hi - lo)
+        let span = (hi - lo) / m
+        let fullSpan = ax(full.upperBound) - ax(full.lowerBound)
+        if span >= fullSpan { return nil }
+        let minSpan = logX ? 0.02 : (full.upperBound - full.lowerBound) * 1e-3
+        let s = max(minSpan, span)
+        return unax(anchor - f * s)...unax(anchor + (1 - f) * s)
+    }
+
+    private func panned(_ d: ClosedRange<Double>, by fraction: Double, full: ClosedRange<Double>) -> ClosedRange<Double> {
+        let lo = ax(d.lowerBound), hi = ax(d.upperBound)
+        let shift = fraction * (hi - lo)
+        return unax(lo + shift)...unax(hi + shift)
+    }
+
+    /// Nearest point in screen distance, within 30 pt.
+    private func pick(at location: CGPoint, plot: CGRect, proxy: ChartProxy, marks: [Mark]) {
+        var best: (Mark, CGFloat)?
+        for m in marks {
+            guard let p = proxy.position(for: (x: m.x, y: m.y)) else { continue }
+            let d = hypot(p.x + plot.minX - location.x, p.y + plot.minY - location.y)
+            if d < (best?.1 ?? 30) { best = (m, d) }
+        }
+        guard let (m, _) = best else { picked = nil; return }
+        let s = series[m.series]
+        let e = Fmt.keV(m.point.energy, digits: 5) + (m.point.energyUncertainty.map { "±" + Fmt.keV($0, digits: 2) } ?? "")
+        let v: String
+        if quantity == .sFactor {
+            v = "S = " + Fmt.significant(m.y, digits: 4) + (m.point.uncertainty.map { " ± " + Fmt.significant($0, digits: 2) } ?? "") + " keV b"
+        } else {
+            let c = Fmt.crossSection(m.y, digits: 4)
+            let rel = m.point.uncertainty.map { " ± " + Fmt.significant(100 * $0 / max(m.y, 1e-300), digits: 2) + " %" } ?? ""
+            v = "σ = \(c.value) \(c.unit)\(rel)"
+        }
+        picked = Picked(markID: m.id, text: "\(s.label.isEmpty ? "" : s.label + " · ")\(frameLabel) \(e) keV · \(v)")
     }
 
     private func yLabel(_ y: Double) -> String {
@@ -650,6 +880,8 @@ struct ExforToolView: View {
     @Environment(Workbench.self) private var workbench
     @State private var editingSetup = false
     @State private var datasets: [ExforDataset]?
+    /// The reaction the tables are filed under: the setup, or its normal-kinematics form for an inverse-kinematics setup.
+    @State private var filed: Reaction?
     @State private var others: [ExforChannelGroup] = []
 
     var body: some View {
@@ -659,12 +891,17 @@ struct ExforToolView: View {
                     if datasets.isEmpty {
                         noData(r)
                     } else {
-                        ExforChannelView(title: r.label, target: r.target,
-                                         entrance: ChargedChannel.entrance(r).isCharged ? ChargedChannel.entrance(r) : nil,
+                        let f = filed ?? r
+                        ExforChannelView(title: f.label, target: f.target,
+                                         entrance: ChargedChannel.entrance(f).isCharged ? ChargedChannel.entrance(f) : nil,
                                          datasets: datasets, isSetupReaction: true) {
                             Section {
-                                ReactionHeader(reaction: r) { editingSetup = true }
+                                ReactionHeader(reaction: r, edit: { editingSetup = true }, showsBeam: false)
                                     .padding(.vertical, 6)
+                            } footer: {
+                                if f != r {
+                                    Text("EXFOR files these data as \(f.label): laboratory energies are \(f.projectile.reactionLabel) energies. Compare in the c.m. frame.")
+                                }
                             }
                         }
                         .id(r)
@@ -687,8 +924,20 @@ struct ExforToolView: View {
             guard let r = workbench.reaction else { return }
             datasets = nil
             let index = await exforIndex()
-            let found = await Task.detached(priority: .userInitiated) { index.datasets(for: r) }.value
+            let (found, under) = await Task.detached(priority: .userInitiated) { () -> ([ExforDataset], Reaction?) in
+                let direct = index.datasets(for: r)
+                if !direct.isEmpty { return (direct, r) }
+                // Inverse kinematics, e.g. p(⁷Be,γ)⁸B: EXFOR usually files the data as ⁷Be(p,γ)⁸B.
+                if let normal = r.swappedBeamAndTarget {
+                    let swapped = index.datasets(for: normal)
+                    if !swapped.isEmpty { return (swapped, normal) }
+                }
+                return ([], nil)
+            }.value
+            guard !Task.isCancelled else { return }
             others = found.isEmpty ? await channelGroups(target: r.target) : []
+            guard !Task.isCancelled else { return }
+            filed = under
             datasets = found
         }
     }
@@ -696,7 +945,7 @@ struct ExforToolView: View {
     private func noData(_ r: Reaction) -> some View {
         List {
             Section {
-                ReactionHeader(reaction: r) { editingSetup = true }.padding(.vertical, 6)
+                ReactionHeader(reaction: r, edit: { editingSetup = true }, showsBeam: false).padding(.vertical, 6)
             }
             Section {
                 ContentUnavailableView("No EXFOR tables for \(r.label)", systemImage: "chart.dots.scatter",
