@@ -250,8 +250,19 @@ public final class Workbench {
         // The values loaded above belong to the stored reaction (also for data saved before profiles existed).
         if let r = try? Reaction(notation: reactionText) {
             profileKey = r.plainLabel
-            if let p = profiles[r.plainLabel] { sFactorIsPlaceholder = p.placeholder }
-            else { profiles[r.plainLabel] = currentProfile }
+            if let p = profiles[r.plainLabel] {
+                sFactorIsPlaceholder = p.placeholder
+            } else if defaults.object(forKey: Keys.sModel) != nil || defaults.object(forKey: Keys.abundance) != nil {
+                // Data saved before profiles existed: those values were the user's, for this reaction.
+                profiles[r.plainLabel] = currentProfile
+            } else {
+                // Fresh install: the reaction's defaults (placeholder S(E), natural abundance), not 1.4 keV b / 100 %.
+                let p = astroProfile(for: r)
+                sFactorModel = p.sFactorModel; resonances = p.resonances
+                screeningPotential = p.screeningPotential; isotopicAbundance = p.isotopicAbundance
+                sFactorIsPlaceholder = true
+                profiles[r.plainLabel] = p
+            }
         }
         reparse()
     }

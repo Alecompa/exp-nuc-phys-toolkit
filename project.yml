@@ -4,6 +4,7 @@ options:
   bundleIdPrefix: com.acompagnucci
   deploymentTarget:
     iOS: "26.0"
+    macOS: "26.0"
   createIntermediateGroups: true
 packages:
   NucToolkit:
@@ -24,7 +25,7 @@ targets:
         # Signing: Xcode manages profiles. Put your Team ID here (Xcode ▸ Settings ▸ Accounts),
         # or pick the team once in Signing & Capabilities; a free Personal Team works for your own phone.
         CODE_SIGN_STYLE: Automatic
-        DEVELOPMENT_TEAM: ""
+        DEVELOPMENT_TEAM: U75629K2LH
         INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.education
         MARKETING_VERSION: "0.1.0"
@@ -57,6 +58,8 @@ targets:
       path: Widgets/Info.plist
       properties:
         CFBundleDisplayName: Gamow
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
     settings:
@@ -67,8 +70,43 @@ targets:
         SWIFT_VERSION: "6.0"
         TARGETED_DEVICE_FAMILY: "1,2"
         CODE_SIGN_STYLE: Automatic
-        DEVELOPMENT_TEAM: ""
+        DEVELOPMENT_TEAM: U75629K2LH
         SKIP_INSTALL: YES
+  GamowMac:
+    type: application
+    platform: macOS
+    sources:
+      - path: MacApp
+      - path: App/Intents.swift
+    dependencies:
+      - package: NucToolkit
+        product: ToolkitUI
+    entitlements:
+      path: MacApp/GamowMac.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.security.network.client: true
+        com.apple.security.files.user-selected.read-write: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.acompagnucci.gamow.mac
+        PRODUCT_NAME: Gamow
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: U75629K2LH
+        ENABLE_HARDENED_RUNTIME: YES
+        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.education
+        INFOPLIST_KEY_CFBundleDisplayName: Gamow
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        SWIFT_VERSION: "6.0"
+        GENERATE_INFOPLIST_FILE: YES
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+      configs:
+        Release:
+          SWIFT_COMPILATION_MODE: wholemodule
+          SWIFT_OPTIMIZATION_LEVEL: -O
+          DEBUG_INFORMATION_FORMAT: dwarf-with-dsym
 schemes:
   Gamow:
     build:
@@ -77,3 +115,7 @@ schemes:
     test:
       targets:
         - package: NucToolkit/NucPhysKitTests
+  GamowMac:
+    build:
+      targets:
+        GamowMac: all

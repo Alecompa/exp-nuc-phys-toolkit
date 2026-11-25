@@ -91,6 +91,23 @@ struct SpectrumAnalysisView: View {
                 }
             }
         }
+        #if DEBUG
+        // Screenshot automation: GAMOW_SPECTRUM_FILE=<path> loads a file; GAMOW_AUTOCAL=1 calibrates after the search.
+        .task {
+            let env = ProcessInfo.processInfo.environment
+            guard spectrum == nil, let path = env["GAMOW_SPECTRUM_FILE"] else { return }
+            load(.success(URL(fileURLWithPath: path)))
+            guard env["GAMOW_AUTOCAL"] == "1" else { return }
+            for _ in 0..<50 where peaks.isEmpty { try? await Task.sleep(for: .milliseconds(100)) }
+            autoCalibrate()
+        }
+        #endif
+        #if os(macOS)
+        .onReceive(NotificationCenter.default.publisher(for: MacCommand.presentImporter)) { _ in importing = true }
+        .onReceive(NotificationCenter.default.publisher(for: MacCommand.loadSpectrum)) { note in
+            if let url = note.object as? URL { load(.success(url)) }
+        }
+        #endif
         .fileImporter(isPresented: $importing, allowedContentTypes: [.data, .plainText, .commaSeparatedText, .text]) { r in
             load(r)
         }
@@ -296,6 +313,15 @@ struct SpectrumAnalysisView: View {
         .chartXScale(domain: domain)
         .chartYScale(type: logScale ? .log : .linear)
         .chartXSelection(value: $selection)
+        #if os(macOS)
+        .chartOverlay { proxy in
+            // Mouse hover reads the channel under the pointer.
+            Rectangle().fill(.clear).contentShape(Rectangle())
+                .onContinuousHover { phase in
+                    if case .active(let p) = phase, let v: Double = proxy.value(atX: p.x) { selection = v }
+                }
+        }
+        #endif
         .chartPlotStyle { $0.clipped() }
         .chartXAxisLabel(calibration == nil ? "Channel" : "Energy (keV)")
         .chartYAxisLabel("Counts")

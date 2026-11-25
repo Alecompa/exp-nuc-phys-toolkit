@@ -519,6 +519,12 @@ struct ExforChart: View {
 
     private var scale: Double { unit == .MeV ? 1e-3 : 1 }
 
+    #if os(macOS)
+    private static let hint = "Point at a data point to identify it · pinch the trackpad to zoom"
+    #else
+    private static let hint = "Tap a point to identify it · pinch to zoom"
+    #endif
+
     private func makeMarks() -> [Mark] {
         var marks: [Mark] = []
         for (si, s) in series.enumerated() {
@@ -575,7 +581,7 @@ struct ExforChart: View {
                     .font(.caption2).foregroundStyle(.secondary)
                 }
                 HStack(spacing: 8) {
-                    Text(picked?.text ?? (zoom == nil ? "Tap a point to identify it · pinch to zoom" : "Pinch or drag to move · double-tap to reset"))
+                    Text(picked?.text ?? (zoom == nil ? Self.hint : "Pinch or drag to move · double-tap to reset"))
                         .font(.caption.monospacedDigit())
                         .foregroundStyle(picked == nil ? .secondary : .primary)
                         .lineLimit(2)
@@ -677,6 +683,11 @@ struct ExforChart: View {
                     Rectangle().fill(.clear).contentShape(Rectangle())
                         .onTapGesture(count: 2) { withAnimation(.smooth) { zoom = nil } }
                         .onTapGesture { location in pick(at: location, plot: plot, proxy: proxy, marks: marks) }
+                        #if os(macOS)
+                        .onContinuousHover { phase in
+                            if case .active(let p) = phase { pick(at: p, plot: plot, proxy: proxy, marks: marks, clearIfNone: false) }
+                        }
+                        #endif
                         .gesture(MagnifyGesture()
                             .onChanged { v in
                                 let base = gestureBase ?? xDomain
@@ -725,14 +736,14 @@ struct ExforChart: View {
     }
 
     /// Nearest point in screen distance, within 30 pt.
-    private func pick(at location: CGPoint, plot: CGRect, proxy: ChartProxy, marks: [Mark]) {
+    private func pick(at location: CGPoint, plot: CGRect, proxy: ChartProxy, marks: [Mark], clearIfNone: Bool = true) {
         var best: (Mark, CGFloat)?
         for m in marks {
             guard let p = proxy.position(for: (x: m.x, y: m.y)) else { continue }
             let d = hypot(p.x + plot.minX - location.x, p.y + plot.minY - location.y)
             if d < (best?.1 ?? 30) { best = (m, d) }
         }
-        guard let (m, _) = best else { picked = nil; return }
+        guard let (m, _) = best else { if clearIfNone { picked = nil }; return }
         let s = series[m.series]
         let e = Fmt.keV(m.point.energy, digits: 5) + (m.point.energyUncertainty.map { "±" + Fmt.keV($0, digits: 2) } ?? "")
         let v: String

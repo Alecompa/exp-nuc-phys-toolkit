@@ -12,10 +12,15 @@
 		2A02E93F4800921EBE5581B0 /* GamowApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E209B52DB8420E7ECAD4983 /* GamowApp.swift */; };
 		3C8A96A03281407595FAEBB1 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F483EB5B143974EE3525C3DB /* SwiftUI.framework */; };
 		6209090DB73D4C66C869AD2C /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8B29FCF9AA9B68823C6F7B96 /* WidgetKit.framework */; };
+		770CE2192D17051CCBF6E6F0 /* DebugSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = C81BB6364BC17A522AC99655 /* DebugSnapshot.swift */; };
+		80A8EE2355DE8BA5351B16A7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BD14E184C52D9B37F8D47DC7 /* Assets.xcassets */; };
 		858B1DE5F9DEF04F05A7CF6C /* NucPhysKit in Frameworks */ = {isa = PBXBuildFile; productRef = 3D49879E7D89925D60AD5684 /* NucPhysKit */; };
 		936E0C9FD3F5C9BCFE739E78 /* ToolkitUI in Frameworks */ = {isa = PBXBuildFile; productRef = 85CAD62556084C46F8930870 /* ToolkitUI */; };
+		B6593A98FE5453393409C879 /* GamowMacApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85B092C3AAC5E98EA59768BD /* GamowMacApp.swift */; };
 		B90BD46B2BA04EB9F73FF1B0 /* GamowWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 06DFC1CCE6CA1AE6F80BA7F8 /* GamowWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		BC0006E9BE56BD4A33E951E5 /* SourceWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1748AFC581CA712817DC5F22 /* SourceWidget.swift */; };
+		C1CE3BB145B560B5730F1B67 /* ToolkitUI in Frameworks */ = {isa = PBXBuildFile; productRef = 398C0724D2E281D58F78E4AA /* ToolkitUI */; };
+		E2E5F625CE3CCAC9FCB67CCA /* Intents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01A6EA92B2F616D6E818B65C /* Intents.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -44,18 +49,31 @@
 
 /* Begin PBXFileReference section */
 		01A6EA92B2F616D6E818B65C /* Intents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Intents.swift; sourceTree = "<group>"; };
-		06DFC1CCE6CA1AE6F80BA7F8 /* GamowWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = GamowWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		06DFC1CCE6CA1AE6F80BA7F8 /* GamowWidgets.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = GamowWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		1748AFC581CA712817DC5F22 /* SourceWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SourceWidget.swift; sourceTree = "<group>"; };
-		34DAD500AF6F72D7A1E86A22 /* Gamow.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Gamow.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		34DAD500AF6F72D7A1E86A22 /* Gamow.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Gamow.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		48ED4FC69F1DDF3923D6B314 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		4E209B52DB8420E7ECAD4983 /* GamowApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GamowApp.swift; sourceTree = "<group>"; };
 		5E4E3E52C34B43B57794680E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		85B092C3AAC5E98EA59768BD /* GamowMacApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GamowMacApp.swift; sourceTree = "<group>"; };
 		8B29FCF9AA9B68823C6F7B96 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		929F30240184DE433CDA3CEA /* GamowMac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GamowMac.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B135915CAB026C8829B12888 /* GamowMac.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = GamowMac.entitlements; sourceTree = "<group>"; };
+		BD14E184C52D9B37F8D47DC7 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		C81BB6364BC17A522AC99655 /* DebugSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugSnapshot.swift; sourceTree = "<group>"; };
 		F483EB5B143974EE3525C3DB /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		F4D6A9A1870A8E9748D0B860 /* NucToolkit */ = {isa = PBXFileReference; lastKnownFileType = folder; name = NucToolkit; path = Packages/NucToolkit; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		0F6AA39CB029E651FEE59128 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C1CE3BB145B560B5730F1B67 /* ToolkitUI in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		1F3ECDDDFC28A8F190766567 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -90,6 +108,7 @@
 			isa = PBXGroup;
 			children = (
 				34DAD500AF6F72D7A1E86A22 /* Gamow.app */,
+				929F30240184DE433CDA3CEA /* GamowMac.app */,
 				06DFC1CCE6CA1AE6F80BA7F8 /* GamowWidgets.appex */,
 			);
 			name = Products;
@@ -99,6 +118,7 @@
 			isa = PBXGroup;
 			children = (
 				A9DD997A07E20043AB5D37FD /* App */,
+				97C6EE376DAE888160041157 /* MacApp */,
 				672AB352275B76792871914E /* Packages */,
 				0C5DA1C6249A0FFEF455E834 /* Widgets */,
 				F050A6B9AFE4D9610DDA4CE3 /* Frameworks */,
@@ -112,6 +132,17 @@
 				F4D6A9A1870A8E9748D0B860 /* NucToolkit */,
 			);
 			path = Packages;
+			sourceTree = "<group>";
+		};
+		97C6EE376DAE888160041157 /* MacApp */ = {
+			isa = PBXGroup;
+			children = (
+				BD14E184C52D9B37F8D47DC7 /* Assets.xcassets */,
+				C81BB6364BC17A522AC99655 /* DebugSnapshot.swift */,
+				B135915CAB026C8829B12888 /* GamowMac.entitlements */,
+				85B092C3AAC5E98EA59768BD /* GamowMacApp.swift */,
+			);
+			path = MacApp;
 			sourceTree = "<group>";
 		};
 		A9DD997A07E20043AB5D37FD /* App */ = {
@@ -158,6 +189,26 @@
 			productReference = 34DAD500AF6F72D7A1E86A22 /* Gamow.app */;
 			productType = "com.apple.product-type.application";
 		};
+		5FC88FEBD498B3EC31B2FA29 /* GamowMac */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 64C468551A1525E78748BB51 /* Build configuration list for PBXNativeTarget "GamowMac" */;
+			buildPhases = (
+				2A843AE9E3263AF684A6EEB3 /* Sources */,
+				0DC4A27BAD35ED3D88A21FF7 /* Resources */,
+				0F6AA39CB029E651FEE59128 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = GamowMac;
+			packageProductDependencies = (
+				398C0724D2E281D58F78E4AA /* ToolkitUI */,
+			);
+			productName = GamowMac;
+			productReference = 929F30240184DE433CDA3CEA /* GamowMac.app */;
+			productType = "com.apple.product-type.application";
+		};
 		E6BF27F1DBB46EA54136AC6B /* GamowWidgets */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = D6EDDF62074B5F87E367BF09 /* Build configuration list for PBXNativeTarget "GamowWidgets" */;
@@ -184,12 +235,18 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 2720;
+				LastUpgradeCheck = 1600;
 				TargetAttributes = {
 					14B809912246336A10F8D814 = {
+						DevelopmentTeam = U75629K2LH;
+						ProvisioningStyle = Automatic;
+					};
+					5FC88FEBD498B3EC31B2FA29 = {
+						DevelopmentTeam = U75629K2LH;
 						ProvisioningStyle = Automatic;
 					};
 					E6BF27F1DBB46EA54136AC6B = {
+						DevelopmentTeam = U75629K2LH;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -213,11 +270,20 @@
 			targets = (
 				14B809912246336A10F8D814 /* Gamow */,
 				E6BF27F1DBB46EA54136AC6B /* GamowWidgets */,
+				5FC88FEBD498B3EC31B2FA29 /* GamowMac */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		0DC4A27BAD35ED3D88A21FF7 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				80A8EE2355DE8BA5351B16A7 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		F2C72187BEA5B7FE520EBF1F /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -229,6 +295,16 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		2A843AE9E3263AF684A6EEB3 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				770CE2192D17051CCBF6E6F0 /* DebugSnapshot.swift in Sources */,
+				B6593A98FE5453393409C879 /* GamowMacApp.swift in Sources */,
+				E2E5F625CE3CCAC9FCB67CCA /* Intents.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		BA4A11A7637831A25B9A1E21 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -289,6 +365,33 @@
 			};
 			name = Release;
 		};
+		1F04AEC33FDB13503596B97D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = MacApp/GamowMac.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = U75629K2LH;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Gamow;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.acompagnucci.gamow.mac;
+				PRODUCT_NAME = Gamow;
+				SDKROOT = macosx;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
 		2C1931B162293E360020B90B /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -301,7 +404,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 0.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.acompagnucci.gamow.widgets;
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
@@ -309,6 +412,36 @@
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
+		};
+		650CEDFE221732A9B4DE5876 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = MacApp/GamowMac.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = U75629K2LH;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Gamow;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.acompagnucci.gamow.mac;
+				PRODUCT_NAME = Gamow;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
 		};
 		701EC817D2B2A61686211DE3 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -351,7 +484,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 0.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.acompagnucci.gamow.widgets;
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
@@ -397,7 +530,6 @@
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -413,12 +545,11 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -462,7 +593,6 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -472,11 +602,10 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.0;
@@ -486,6 +615,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		64C468551A1525E78748BB51 /* Build configuration list for PBXNativeTarget "GamowMac" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1F04AEC33FDB13503596B97D /* Debug */,
+				650CEDFE221732A9B4DE5876 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
 		A8403EB84B9CA5F12F89AA07 /* Build configuration list for PBXNativeTarget "Gamow" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -523,6 +661,10 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		398C0724D2E281D58F78E4AA /* ToolkitUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = ToolkitUI;
+		};
 		3D49879E7D89925D60AD5684 /* NucPhysKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = NucPhysKit;
