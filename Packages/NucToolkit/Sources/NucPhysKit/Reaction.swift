@@ -57,7 +57,7 @@ public struct Reaction: Hashable, Sendable {
         try self.init(target: target, projectile: projectile, ejectile: ejectile, residual: residual)
     }
 
-    /// Parses "12C(p,g)13N", "12C(p,γ)", "3He(a,g)7Be", "d(p,g)", "7Li(p,n)7Be".
+    /// Parses "12C(p,g)13N", "12C(p,γ)", "3He(a,g)7Be", "d(p,g)", "7Li(p,n)7Be", "27Al(p,p')".
     public init(notation: String, table: MassTable = .ame2020) throws {
         let s = notation.replacingOccurrences(of: " ", with: "")
         guard let open = s.firstIndex(of: "("), let close = s.firstIndex(of: ")"), open < close else {
@@ -74,7 +74,8 @@ public struct Reaction: Hashable, Sendable {
         }
         let target = try nuclide(targetText)
         let projectile = try nuclide(String(inner[0]))
-        let ejText = String(inner[1])
+        // (p,p') and (a,a′) are inelastic scattering: the prime only says the residual is excited.
+        let ejText = String(inner[1]).trimmingCharacters(in: CharacterSet(charactersIn: "'’′"))
         let ejectile: ReactionParticle = ["g", "γ", "gamma"].contains(ejText.lowercased())
             ? .photon : .nuclide(try nuclide(ejText))
         if residualText.isEmpty {
@@ -143,6 +144,12 @@ public struct Reaction: Hashable, Sendable {
         case (2, 4): "a"
         default: n.plainLabel
         }
+    }
+
+    /// The same channel with beam and target exchanged (p(⁷Be,γ)⁸B ↔ ⁷Be(p,γ)⁸B); nil for identical particles.
+    public var swappedBeamAndTarget: Reaction? {
+        guard target != projectile else { return nil }
+        return try? Reaction(target: projectile, projectile: target, ejectile: ejectile, residual: residual)
     }
 
     /// The compound system target+projectile (exists for radiative capture).

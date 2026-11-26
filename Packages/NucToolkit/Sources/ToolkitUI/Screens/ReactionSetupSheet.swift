@@ -24,6 +24,8 @@ struct ReactionSetupSheet: View {
     @State private var abundance: Double = 100
     @State private var editingMaterial = false
     @State private var pickedPreset = 0
+    /// The last reaction that parsed: typing passes through unparseable text, which must not hide a change.
+    @State private var lastReaction: Reaction?
     @FocusState private var notationFocused: Bool
 
     private var parsed: Result<Reaction, ReactionError> { Workbench.parse(notation) }
@@ -70,6 +72,25 @@ struct ReactionSetupSheet: View {
 
                 targetSection
 
+                if let r = reaction {
+                    Section {
+                        Button {
+                            withAnimation(.smooth) { workbench.toggleSaved(r) }
+                        } label: {
+                            Label(workbench.isSaved(r) ? "Remove \(r.label) from My Reactions" : "Add \(r.label) to My Reactions",
+                                  systemImage: workbench.isSaved(r) ? "star.slash" : "star")
+                        }
+                    }
+                }
+
+                if !workbench.savedReactions.isEmpty {
+                    chipSection("My reactions", workbench.savedReactions, removable: true)
+                }
+                let recent = workbench.recentReactions.filter { !workbench.savedReactions.contains($0) }
+                if !recent.isEmpty {
+                    chipSection("Recent", Array(recent.prefix(8)), removable: false)
+                }
+
                 Section("Examples") {
                     ForEach(Presets.groups, id: \.title) { group in
                         VStack(alignment: .leading, spacing: 8) {
@@ -101,9 +122,16 @@ struct ReactionSetupSheet: View {
                 }
             }
             .sensoryFeedback(.selection, trigger: pickedPreset)
+            .onChange(of: reaction) { _, new in
+                // Abundance follows the reaction: its stored value, or the natural abundance.
+                guard let new, new != lastReaction else { return }
+                if lastReaction != nil { abundance = workbench.astroProfile(for: new).isotopicAbundance }
+                lastReaction = new
+            }
         }
         .presentationDetents([.large])
         .onAppear {
+            lastReaction = workbench.reaction
             text = workbench.reactionText
             loadFields(text)
             beam = workbench.beamEnergy
@@ -187,6 +215,28 @@ struct ReactionSetupSheet: View {
         }
     }
 
+    private func chipSection(_ title: String, _ items: [String], removable: Bool) -> some View {
+        Section {
+            FlowLayout(spacing: 8) {
+                ForEach(items, id: \.self) { item in
+                    presetChip(item)
+                        .contextMenu {
+                            if removable {
+                                Button("Remove from My Reactions", systemImage: "star.slash", role: .destructive) {
+                                    withAnimation(.smooth) { workbench.removeSaved(item) }
+                                }
+                            }
+                        }
+                }
+            }
+            .padding(.vertical, 4)
+        } header: {
+            Text(title)
+        } footer: {
+            if removable { Text("Touch and hold a reaction to remove it.") }
+        }
+    }
+
     private func presetChip(_ notation: String) -> some View {
         let r = try? Reaction(notation: notation)
         let selected = r != nil && r == reaction
@@ -235,14 +285,17 @@ enum Presets {
 
     static let groups: [Group] = [
         Group(title: "Hydrogen burning", items: [
-            "d(p,g)", "3He(a,g)", "7Be(p,g)", "12C(p,g)", "14N(p,g)", "15N(p,a)",
-            "17O(p,g)", "22Ne(p,g)", "25Mg(p,g)",
+            "d(p,g)", "3He(a,g)", "7Be(p,g)", "12C(p,g)", "13C(p,g)", "14N(p,g)", "15N(p,g)", "15N(p,a)",
+            "17O(p,g)", "17O(p,a)", "18O(p,g)", "19F(p,a)", "22Ne(p,g)", "23Na(p,g)", "25Mg(p,g)",
         ]),
-        Group(title: "Helium burning & s-process", items: [
-            "12C(a,g)", "14N(a,g)", "13C(a,n)", "22Ne(a,n)",
+        Group(title: "Helium & carbon burning, s-process", items: [
+            "12C(a,g)", "14N(a,g)", "13C(a,n)", "22Ne(a,n)", "22Ne(a,g)", "12C(12C,a)", "12C(12C,p)",
+        ]),
+        Group(title: "BBN & light elements", items: [
+            "d(a,g)", "d(d,n)", "d(d,p)", "7Li(p,a)", "6Li(p,g)", "10B(p,a)", "11B(p,a)",
         ]),
         Group(title: "Calibration & neutrons", items: [
-            "27Al(p,g)", "7Li(p,n)", "d(d,n)", "t(d,n)",
+            "27Al(p,g)", "7Li(p,n)", "t(d,n)", "197Au(p,p)", "197Au(a,a)",
         ]),
     ]
 }

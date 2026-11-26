@@ -86,6 +86,8 @@ extension View {
                 BeamCurrentView().zoomTransition(id: Tool.beamCurrent, in: namespace)
             case .tool(.spectrum):
                 DetectorSpectrumView().zoomTransition(id: Tool.spectrum, in: namespace)
+            case .tool(.spectrumAnalysis):
+                SpectrumAnalysisView().zoomTransition(id: Tool.spectrumAnalysis, in: namespace)
             case .tool(.detector):
                 DetectorView().zoomTransition(id: Tool.detector, in: namespace)
             case .tool(.sources):

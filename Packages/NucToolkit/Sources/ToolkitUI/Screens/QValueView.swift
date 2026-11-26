@@ -132,21 +132,67 @@ struct QValueView: View {
 struct ReactionHeader: View {
     let reaction: Reaction
     let edit: () -> Void
+    /// Show the beam-energy stepper (off where the tool has its own energy field).
+    var showsBeam = true
 
     var body: some View {
-        Button(action: edit) {
-            HStack(spacing: 10) {
-                ReactionTitle(reaction: reaction)
-                    .foregroundStyle(.primary)
-                Image(systemName: "chevron.down.circle.fill")
-                    .font(.title3)
-                    .symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(.secondary)
-                Spacer(minLength: 0)
+        HStack(spacing: 10) {
+            Button(action: edit) {
+                HStack(spacing: 10) {
+                    ReactionTitle(reaction: reaction)
+                        .foregroundStyle(.primary)
+                    Image(systemName: "chevron.down.circle.fill")
+                        .font(.title3)
+                        .symbolRenderingMode(.hierarchical)
+                        .foregroundStyle(.secondary)
+                }
+                .contentShape(Rectangle())
             }
-            .contentShape(Rectangle())
+            .buttonStyle(.plain)
+            .accessibilityHint("Edit the reaction")
+            Spacer(minLength: 0)
+            if showsBeam { BeamEnergyStepper() }
         }
-        .buttonStyle(.plain)
-        .accessibilityHint("Edit the reaction")
+    }
+}
+
+/// Beam energy of the shared setup with − / + buttons, for quick scans during a shift.
+/// The step is chosen from the menu on the value.
+struct BeamEnergyStepper: View {
+    @Environment(Workbench.self) private var workbench
+    @AppStorage("beam.step") private var step = 10.0     // keV
+
+    var body: some View {
+        HStack(spacing: 2) {
+            Button { change(-step) } label: { Image(systemName: "minus") }
+                .accessibilityLabel("Lower beam energy by \(Fmt.keV(step)) keV")
+                .disabled(workbench.beamEnergy - step < 0)
+            Menu {
+                Section("Step") {
+                    ForEach([1.0, 5, 10, 25, 50, 100, 500], id: \.self) { s in
+                        Button { step = s } label: {
+                            if s == step { Label("\(Fmt.keV(s)) keV", systemImage: "checkmark") } else { Text("\(Fmt.keV(s)) keV") }
+                        }
+                    }
+                }
+            } label: {
+                VStack(spacing: 0) {
+                    Text(Fmt.energy(workbench.beamEnergy, unit: workbench.energyUnit, decimals: workbench.energyUnit == .keV ? 1 : 4))
+                        .font(.system(.subheadline, design: .rounded, weight: .semibold)).monospacedDigit()
+                        .contentTransition(.numericText())
+                    Text("\(workbench.energyUnit.label) beam").font(.caption2).foregroundStyle(.secondary)
+                }
+                .frame(minWidth: 64)
+            }
+            Button { change(step) } label: { Image(systemName: "plus") }
+                .accessibilityLabel("Raise beam energy by \(Fmt.keV(step)) keV")
+        }
+        .buttonStyle(.bordered)
+        .controlSize(.small)
+        .sensoryFeedback(.selection, trigger: workbench.beamEnergy)
+    }
+
+    private func change(_ d: Double) {
+        withAnimation(.smooth) { workbench.beamEnergy = max(0, (workbench.beamEnergy + d) / step).rounded() * step }
     }
 }

@@ -33,6 +33,7 @@ struct SFactorView: View {
     @State private var sigmaValue = 1.0            // in sigmaUnit
     @State private var sigmaUnit = CrossSectionUnit.nb
     @State private var screened = false            // σ input is the measured (screened) value
+    @State private var initialized = false
 
     var body: some View {
         Group {
@@ -46,8 +47,11 @@ struct SFactorView: View {
         .inlineTitle()
         .sheet(isPresented: $editingSetup) { ReactionSetupSheet() }
         .onAppear {
-            if energy == 0 { energy = (workbench.reactionEnergyCM ?? 100).rounded(toPlaces: 3) }
-            if sValue == 1 { sValue = workbench.sFactorModel.s(at: energy) }
+            // Defaults once per visit; values the user typed (including S = 1 keV b) are never overwritten.
+            guard !initialized else { return }
+            initialized = true
+            energy = (workbench.reactionEnergyCM ?? 100).rounded(toPlaces: 3)
+            sValue = workbench.sFactorModel.s(at: energy)
         }
     }
 
@@ -66,7 +70,7 @@ struct SFactorView: View {
         List {
             Section {
                 VStack(alignment: .leading, spacing: 14) {
-                    ReactionHeader(reaction: r) { editingSetup = true }
+                    ReactionHeader(reaction: r, edit: { editingSetup = true }, showsBeam: false)
                     HeroNumber(value: hero.0, unit: hero.1,
                                caption: direction == .toSigma ? "Bare cross section" : "Bare S factor")
                     HStack(spacing: 8) {
@@ -125,7 +129,7 @@ struct SFactorView: View {
             } header: {
                 Text("Electron screening")
             } footer: {
-                Text("A laboratory cross section is the bare one × f (Assenbaum, Langanke & Rolfs 1987). U_e is typically 0.1–1 keV for light targets; the adiabatic limit is the difference in electron binding energies of the atoms.")
+                Text("A laboratory cross section is the bare one × f (Assenbaum, Langanke & Rolfs 1987). U_e is typically 0.1–1 keV for light targets; the adiabatic limit is the difference in electron binding energies of the atoms. U_e is stored per reaction and also used by the yield estimate: set it to 0 when S(E) is a measured (already screened) table.")
             }
 
             Section {

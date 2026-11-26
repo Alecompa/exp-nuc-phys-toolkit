@@ -349,6 +349,45 @@ private struct SetupCard: View {
                 }
             }
 
+            if let ecm = workbench.reactionEnergyCM, let r = workbench.reaction {
+                HStack(spacing: 18) {
+                    fact("E c.m.", Fmt.energy(ecm, unit: workbench.energyUnit, decimals: workbench.energyUnit == .keV ? 1 : 4))
+                    if r.ejectile.isPhoton,
+                       let p = InBeamGamma.primary(r, beamEnergy: workbench.reactionEnergy, finalLevel: workbench.residualExcitation) {
+                        fact("E_γ (c.m.)", Fmt.energy(p.restEnergy, unit: workbench.energyUnit, decimals: workbench.energyUnit == .keV ? 1 : 4))
+                    } else {
+                        fact("Eₓ compound", Fmt.energy(ecm + (r.compoundNucleus().map { r.target.massExcess + r.projectile.massExcess - $0.massExcess } ?? 0),
+                                                       unit: workbench.energyUnit, decimals: workbench.energyUnit == .keV ? 1 : 4))
+                    }
+                }
+            }
+
+            let others = (workbench.savedReactions + workbench.recentReactions)
+                .reduce(into: [String]()) { if !$0.contains($1) && $1 != workbench.reaction?.plainLabel { $0.append($1) } }
+            if !others.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 6) {
+                        ForEach(others.prefix(10), id: \.self) { n in
+                            Button {
+                                workbench.switchReaction(to: n)
+                            } label: {
+                                HStack(spacing: 3) {
+                                    if workbench.savedReactions.contains(n) { Image(systemName: "star.fill").font(.caption2) }
+                                    Text((try? Reaction(notation: n))?.label ?? n)
+                                }
+                                .font(.system(.footnote, design: .rounded, weight: .semibold))
+                                .padding(.horizontal, 10).padding(.vertical, 5)
+                                .foregroundStyle(.white)
+                                .background(.white.opacity(0.16), in: Capsule())
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel("Switch to \(n)")
+                        }
+                    }
+                }
+                .sensoryFeedback(.selection, trigger: workbench.reactionText)
+            }
+
             if let t = workbench.stoppingTarget {
                 HStack(spacing: 6) {
                     Image(systemName: "square.stack.3d.up.fill")

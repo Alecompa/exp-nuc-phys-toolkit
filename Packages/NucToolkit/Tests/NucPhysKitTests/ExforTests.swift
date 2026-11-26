@@ -49,6 +49,14 @@ struct ExforIndexTests {
         #expect(ds.first?.channel.label == "(¹²C,α)")
     }
 
+    @Test func inverseKinematicsFindsNormalKinematicsTables() throws {
+        let inverse = try Reaction(notation: "p(7Be,g)8B")
+        let normal = try #require(inverse.swappedBeamAndTarget)
+        #expect(normal == (try Reaction(notation: "7Be(p,g)8B")))
+        #expect(!index.datasets(for: normal).isEmpty)
+        #expect(try Reaction(notation: "12C(12C,a)20Ne").swappedBeamAndTarget == nil)
+    }
+
     @Test func elasticMapsToElAndInl() throws {
         #expect(ExforChannel.outgoingCodes(try Reaction(notation: "12C(p,p)12C")) == ["el", "inl"])
         #expect(ExforChannel.outgoingCodes(try Reaction(notation: "6Li(p,3He)4He")) == ["he3", "h"])

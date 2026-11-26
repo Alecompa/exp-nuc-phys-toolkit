@@ -3,7 +3,7 @@
 ![Platform](https://img.shields.io/badge/platform-iOS%20%7C%20iPadOS%2026-blue)
 ![Swift](https://img.shields.io/badge/Swift-6-orange)
 ![SwiftUI](https://img.shields.io/badge/UI-SwiftUI%20%2B%20Liquid%20Glass-purple)
-![Tests](https://img.shields.io/badge/tests-96%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-124%20passing-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
 Gamow is a native iPhone and iPad app for the numbers an experimental nuclear physicist needs at the
@@ -22,7 +22,10 @@ calculations, and has no account, tracking or ads.
 ## Features
 
 One reaction setup (for example `27Al(p,g)28Si` at 1400 keV) is shared by all tools, so changing the beam energy,
-the residual level or the target updates every screen.
+the residual level or the target updates every screen. Any two-body reaction can be typed (`12C(12C,a)20Ne`,
+`p(7Be,g)8B`, `27Al(p,p')`, `¹⁴N(p,γ)`); star it to keep it under **My reactions**, and the last reactions stay one tap
+away on the setup card. The S factor, resonances, screening potential and isotopic abundance are stored per
+reaction, so switching reactions never carries one reaction's S(E) into another's rate or yield.
 
 The **Tools** home shows the current setup, a **Pinned** row of favourite tools and the rest grouped in collapsible
 categories (Reactions, Stopping & targets, Nuclear astrophysics, Run planning, Detectors & sources, Reference).
@@ -36,11 +39,12 @@ is left in its ground state) but stay reachable through search.
 | **Stopping & targets** | SRIM-2013 stopping powers (Swift port of LunaSRIM), ranges and straggling · any composition from a formula (`Ta2N5`, `Ca(OH)2`, `TiD2`, `Ta2[17O]5`) or the SRIM compound library, gases from pressure and temperature · layer stacks with energy loss, straggling and mean energy in the target |
 | **Nuclear astrophysics** | Gamow peak and window vs T₉ · S factor ↔ σ with electron screening · resonance strength ↔ thick-target yield · Nₐ⟨σv⟩ from a polynomial or tabulated S(E) plus narrow resonances (CSV import/export) · Coulomb penetrability, shift factor, Wigner limit, θ² |
 | **Run planning** | Yield, count rate and beam time for a target statistical uncertainty, with background and the Currie detection limit · beam current ↔ particles/s, charge state, power on target, integrated charge |
-| **Detector spectrum** | Expected spectrum for the current setup · charged-particle mode: ejectile groups and beam elastically scattered on the target elements at the detector angle, through absorber foils (SRIM stopping, straggling, kinematic spread) · γ mode: primary capture γ and the residual-level cascade from ENSDF branching, custom and source lines, Gaussian photopeaks, Compton continuum, single/double escape peaks scaled with the NIST XCOM pair-production fraction, NIST foil attenuation · zoom, cursors, ROI sums, CSV export |
+| **Detector spectrum** | Expected spectrum for the current setup · charged-particle mode: ejectile groups and beam elastically scattered on the natural isotopes of each target element (both kinematic branches, Rutherford weights) at the detector angle, through absorber foils (SRIM stopping, straggling, kinematic spread) · γ mode: primary capture γ (exact two-body energy, recoil included) and the residual-level cascade from ENSDF branching, Doppler shifted at the γ-detector angle, emitted in flight or at rest according to the ENSDF lifetime and the recoil stopping time · beam-induced contaminants (¹⁹F(p,αγ), ¹⁵N(p,αγ), ¹¹B, ¹³C, ¹²C, ²H, ¹⁴N, ²³Na, ²⁷Al(p,γ), inelastic lines, (α,nγ)) and room background (⁴⁰K, ²⁰⁸Tl, ²¹⁴Bi), recomputed for the beam energy · custom and source lines, Gaussian photopeaks, Compton continuum, single/double escape peaks scaled with the NIST XCOM pair-production fraction, NIST foil attenuation · zoom, cursors, ROI sums, CSV export |
+| **Spectrum analysis** | Import a measured spectrum (ORTEC .Spe/.Chn, text or CSV) · peak search (second-derivative filter, SNIP background) · automatic energy calibration against calibration sources, room background and the setup's in-beam lines, with residuals · peak identification including escape peaks · peak list CSV |
 | **Detectors & sources** | HPGe/scintillator resolution model · weighted efficiency-curve fit to your calibration points · calibration sources: activity today with uncertainty, γ lines with expected counts, air-kerma rate · decay calculator (activity, atoms, mass, time to a fraction) |
 | **Reference** | CODATA 2018 constants · unit converter (energy, T₉ ↔ kT, barns, lengths, areal density, activity, time, charge) · formula sheet |
 | **Nuclides** | AME2020 masses and separation energies · NUBASE2020 half-lives, Jπ, decay modes, abundances, isomers · ENSDF levels and γ rays from the IAEA LiveChart, cached for offline use |
-| **Cross sections (EXFOR)** | Measured σ and S factors for p, d, t, ³He, α and heavy-ion reactions (51 871 tables) · every reaction on a nuclide, or the data for the current setup · overlay of all measurements with error bars, σ ↔ S and lab ↔ c.m. conversion, final-state selection · reference, facility and link to the EXFOR entry · CSV export · a measured S(E) can feed the rate tool |
+| **Cross sections (EXFOR)** | Measured σ and S factors for p, d, t, ³He, α and heavy-ion reactions (51 871 tables) · every reaction on a nuclide, or the data for the current setup · overlay of all measurements with error bars, S factor at c.m. energies by default (σ and lab on request), tap a point to see author, energy and value, pinch to zoom with the y axis following, Gamow window band and the rate tool's S(E) model overlaid, final-state selection, inverse-kinematics setups find the normal-kinematics data · reference, facility and link to the EXFOR entry · CSV export · a measured S(E) can feed the rate tool |
 | **Notebook** | Save any tool's inputs and results with a note; search; export as CSV, PDF or text |
 | **System** | Shortcuts / Siri actions (Q value, Gamow peak, source activity, half-life) · Home and Lock Screen widget for a source's activity today |
 

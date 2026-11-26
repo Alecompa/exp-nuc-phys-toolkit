@@ -48,9 +48,10 @@ struct GammaDopplerView: View {
                         .font(.footnote).foregroundStyle(.secondary)
                 }
                 NumberField(title: "γ energy at rest", value: $e0, unit: "keV", range: 0...1e5)
-                if let r = reaction, let ecm = workbench.reactionEnergyCM, r.ejectile.isPhoton {
-                    let primary = ecm + r.qValue(residualExcitation: workbench.residualExcitation)
-                    Button("Primary capture γ, \(Fmt.keV(primary, digits: 5)) keV") { e0 = primary.rounded(toPlaces: 2) }
+                if let r = reaction, r.ejectile.isPhoton,
+                   let primary = InBeamGamma.primary(r, beamEnergy: workbench.reactionEnergy, finalLevel: workbench.residualExcitation)?.restEnergy {
+                    // Energy in the c.m. frame, recoil included (exact two-body value).
+                    Button("Primary capture γ (c.m.), \(Fmt.keV(primary, digits: 5)) keV") { e0 = primary.rounded(toPlaces: 2) }
                         .font(.callout)
                 }
                 if workbench.residualExcitation > 0, let r = reaction {
@@ -108,8 +109,9 @@ struct GammaDopplerView: View {
         .sheet(isPresented: $editingSetup) { ReactionSetupSheet() }
         .onAppear {
             guard e0 == 0, let r = reaction else { return }
-            if r.ejectile.isPhoton, let ecm = workbench.reactionEnergyCM {
-                e0 = max(1, ecm + r.qValue(residualExcitation: workbench.residualExcitation)).rounded(toPlaces: 2)
+            if r.ejectile.isPhoton,
+               let p = InBeamGamma.primary(r, beamEnergy: workbench.reactionEnergy, finalLevel: workbench.residualExcitation) {
+                e0 = max(1, p.restEnergy).rounded(toPlaces: 2)
             } else if workbench.residualExcitation > 0 {
                 e0 = GammaDoppler.recoilCorrected(transition: workbench.residualExcitation, mass: r.residual.kinematicMass).rounded(toPlaces: 2)
             }
