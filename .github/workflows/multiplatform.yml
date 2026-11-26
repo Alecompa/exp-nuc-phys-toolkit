@@ -26,7 +26,9 @@ jobs:
       - name: Debug APK
         run: ./gradlew :composeApp:assembleDebug --console=plain
       - uses: actions/upload-artifact@v4
-        with: { name: gamow-android-debug-apk, path: multiplatform/composeApp/build/outputs/apk/debug/*.apk }
+        with:
+          name: gamow-android-debug-apk
+          path: multiplatform/composeApp/build/outputs/apk/debug/*.apk
 
   desktop:
     strategy:
@@ -44,4 +46,6 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       - run: ./gradlew :composeApp:desktopTest :composeApp:${{ matrix.task }} --console=plain
       - uses: actions/upload-artifact@v4
-        with: { name: gamow-desktop-${{ matrix.out }}, path: multiplatform/composeApp/build/compose/binaries/main/${{ matrix.out }}/* }
+        with:
+          name: gamow-desktop-${{ matrix.out }}
+          path: multiplatform/composeApp/build/compose/binaries/main/${{ matrix.out }}/*
