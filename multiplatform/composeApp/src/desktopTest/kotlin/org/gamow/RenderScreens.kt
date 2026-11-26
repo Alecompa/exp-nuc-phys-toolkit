@@ -15,9 +15,9 @@ import kotlin.test.Test
 class RenderScreens {
     private val dir = System.getenv("GAMOW_RENDER_DIR")?.let(::File)
 
-    private fun render(name: String, w: Int, h: Int, tool: Tool?, waitMs: Long = 0) {
+    private fun render(name: String, w: Int, h: Int, tool: Tool?, waitMs: Long = 0, fontScale: Float = 1f) {
         val out = dir ?: return
-        ImageComposeScene(w * 2, h * 2, density = Density(2f)) { App(tool) }.use { scene ->
+        ImageComposeScene(w * 2, h * 2, density = Density(2f, fontScale)) { App(tool) }.use { scene ->
             scene.render()                       // first frame: layout, starts downloads
             var t = 1_000_000_000L
             val until = System.currentTimeMillis() + waitMs
@@ -58,6 +58,27 @@ class RenderScreens {
             org.gamow.core.spectra.AutoCalibration.calibrate(peaks, lines)?.let { org.gamow.ui.AnalysisState.result = it; org.gamow.ui.AnalysisState.calibration = it.calibration }
             render("linux_analysis", 1200, 1300, Tool.Analysis, waitMs = 1500)
         }
+    }
+
+    @Test fun phaseOneTools() {
+        render("android_rutherford", 412, 1500, Tool.Rutherford)
+        render("android_doppler", 412, 1400, Tool.Doppler)
+        render("android_detector", 412, 1500, Tool.Detector)
+        render("android_units", 412, 1200, Tool.Units)
+        render("linux_constants", 1200, 900, Tool.Constants)
+    }
+
+    @Test fun phaseThree() {
+        render("android_home_pinned", 412, 1500, null)
+        render("android_experiments", 412, 1000, Tool.Experiments)
+        render("android_settings", 412, 1500, Tool.Settings)
+    }
+
+    /** Android's largest font setting (200 %): check that nothing overflows or overlaps. */
+    @Test fun largeFonts() {
+        render("a11y_kinematics_font200", 412, 2600, Tool.Kinematics, fontScale = 2f)
+        render("a11y_yield_font200", 412, 3600, Tool.Yield, fontScale = 2f)
+        render("a11y_home_font200", 412, 2000, null, fontScale = 2f)
     }
 
     @Test fun desktopScreens() {

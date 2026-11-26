@@ -33,6 +33,23 @@ struct ExperimentWorkflowTests {
         #expect(abs(workbench.isotopicAbundance - 98.94) < 1e-9)         // natural ¹²C (nubase2020.csv)
     }
 
+    /// Writes `Shared/sample_ios_experiment.json`, an iOS ExperimentSetup export the Kotlin app must import.
+    @Test func sharedIOSExperimentSample() throws {
+        let url = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("Shared/sample_ios_experiment.json")
+        let workbench = Workbench(defaults: isolatedDefaults())
+        workbench.reactionText = "14N(p,g)15O"
+        workbench.beamEnergy = 380; workbench.residualExcitation = 6176.3; workbench.temperatureT9 = 0.06
+        workbench.layerThickness = 1500; workbench.layerAngle = 55; workbench.beamCurrent = 250; workbench.chargeState = 1
+        workbench.sFactorModel = SFactorModel(kind: .table, table: [.init(energy: 100, s: 1.7), .init(energy: 300, s: 1.9)])
+        workbench.resonances = [NarrowResonance(energy: 259.0, strength: 0.0127)]
+        workbench.screeningPotential = 600; workbench.isotopicAbundance = 99.6
+        let data = try JSONEncoder().encode(ExperimentSetup(workbench))
+        if ProcessInfo.processInfo.environment["GAMOW_WRITE_REFERENCE"] == "1" { try data.write(to: url) }
+        let stored = try JSONDecoder().decode(ExperimentSetup.self, from: Data(contentsOf: url))
+        #expect(stored.reactionText == "14N(p,g)15O" && stored.beamEnergy == 380 && stored.resonances.count == 1)
+    }
+
     @Test func everyPresetParses() {
         for item in Presets.groups.flatMap(\.items) {
             #expect((try? Reaction(notation: item)) != nil, "\(item)")

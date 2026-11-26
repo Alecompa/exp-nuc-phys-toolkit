@@ -34,6 +34,14 @@ struct ReferenceDecayTests {
             for (i, l) in src.prominentLines(minIntensity: 5).prefix(4).enumerated() { v["e\(i)"] = l.energy; v["i\(i)"] = l.intensity }
             out.append(.init(name: "source", inputs: ["nuclide": src.id], values: v))
         }
+        for e in [5.0, 10, 25, 59.5, 122, 661.7, 1332.5, 6129, 20000] {
+            out.append(.init(name: "muen", inputs: ["energy": "\(e)"], values: ["muen": AirKerma.massEnergyAbsorption(energy: e)]))
+        }
+        for src in CalibrationSources.all {
+            out.append(.init(name: "kerma", inputs: ["nuclide": src.id], values: [
+                "constant": AirKerma.rateConstant(lines: src.lines),
+                "rate": AirKerma.rate(lines: src.lines, activity: 3.7e5, distance: 0.3)]))
+        }
         return out
     }
 

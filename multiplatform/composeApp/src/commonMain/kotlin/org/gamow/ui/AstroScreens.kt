@@ -5,6 +5,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
@@ -59,6 +61,11 @@ fun RateScreen(wb: Workbench, onEdit: () -> Unit) {
         } else {
             var text by remember(r) { mutableStateOf(model.tableText) }
             val parsed = runCatching { SFactorModel.parseTable(text) }
+            val importTable = rememberFilePicker { _, bytes ->
+                val t = bytes.decodeToString(); text = t
+                SFactorModel.parseTableOrNull(t)?.let { pts -> wb.run.update(p.copy(model = model.copy(table = pts), placeholder = false)) }
+            }
+            TextButton(onClick = importTable) { Text("Import table from a file (CSV or text)") }
             OutlinedTextField(text, { text = it; SFactorModel.parseTableOrNull(it)?.let { pts -> wb.run.update(p.copy(model = model.copy(table = pts), placeholder = false)) } },
                 label = { Text("E (keV, c.m.), S (keV b) per line") }, minLines = 4, modifier = Modifier.fillMaxWidth())
             parsed.exceptionOrNull()?.let { Text(it.message ?: "", color = MaterialTheme.colorScheme.error) }
@@ -77,7 +84,7 @@ fun RateScreen(wb: Workbench, onEdit: () -> Unit) {
                 NumberField("ωγ", res.strength, "eV", Modifier.weight(1f), range = 0.0..1e9) { v ->
                     wb.run.update(p.copy(resonances = p.resonances.mapIndexed { j, x -> if (j == i) x.copy(strength = v) else x }))
                 }
-                TextButton(onClick = { wb.run.update(p.copy(resonances = p.resonances.filterIndexed { j, _ -> j != i })) }) { Text("✕") }
+                TextButton(onClick = { wb.run.update(p.copy(resonances = p.resonances.filterIndexed { j, _ -> j != i })) }) { Text("✕", Modifier.semantics { contentDescription = "Remove" }) }
             }
         }
         OutlinedButton(onClick = { wb.run.update(p.copy(resonances = p.resonances + NarrowResonance(100.0, 1e-6))) }) { Text("Add resonance") }
@@ -92,7 +99,7 @@ private enum class YieldSource { S_FACTOR, SIGMA, RESONANCE }
 fun YieldScreen(wb: Workbench, onEdit: () -> Unit) {
     val r = wb.reaction ?: return NoReaction(onEdit)
     val c = wb.entrance ?: return Message("The entrance channel ${r.label} has no Coulomb barrier.")
-    val target = wb.run.material() ?: return Message("Choose a target material in Stopping & Energy Loss.")
+    val target = wb.run.target() ?: return Message("Choose a target material in Stopping & Energy Loss.")
     val p = wb.run.profile()
     var source by remember { mutableStateOf(YieldSource.S_FACTOR) }
     var sigmaNb by remember { mutableStateOf(1.0) }
@@ -110,11 +117,13 @@ fun YieldScreen(wb: Workbench, onEdit: () -> Unit) {
     val calc = remember(ion, target) { StoppingCalculator(ion, target) }
     val frac = target.activeFraction(r.target.z, r.target.a, p.abundance / 100)
     val eps: (Double) -> Double = { e -> runCatching { calc.stopping(e).total * 1e-15 / frac }.getOrDefault(0.0) }
-    val layer = runCatching { calc.energyLoss(wb.beamEnergy, wb.run.thickness, wb.run.tilt) }.getOrNull()
+    // The target layer after any entrance windows (Stopping & Energy Loss stack); null when the beam stops before it.
+    val tr = wb.run.transport(ion, wb.beamEnergy)
+    val layer = tr?.target
     var note: String? = null
     val yieldPerIon: Double? = when {
         frac <= 0 -> { note = "${target.name} contains no ${r.target.label}."; null }
-        layer == null -> null
+        layer == null -> { note = if (wb.run.thickness <= 0) "The target thickness is zero." else "The beam stops before the target, in the entrance windows."; null }
         source == YieldSource.S_FACTOR -> c.targetYield(p.model, layer.energyIn, layer.energyOut, p.screening, stopping = eps)
         source == YieldSource.SIGMA -> if (layer.stopped) { note = "The beam stops in the target: use S factor."; null } else
             target.activeArealDensity(r.target.z, r.target.a, p.abundance / 100, wb.run.thickness, wb.run.tilt)?.let { ChargedChannel.thinTargetYield(sigmaNb * 1e-9, it) }
@@ -163,9 +172,9 @@ fun YieldScreen(wb: Workbench, onEdit: () -> Unit) {
         NumberField("Efficiency", eff, "%", range = 0.0..100.0) { eff = it; Prefs.put("yield.eff", "$it") }
         // Capture γ energy (c.m. frame, recoil included) for the efficiency of the example HPGe curve.
         org.gamow.core.spectra.InBeamGamma.primary(r, wb.beamEnergy, wb.residualExcitation)?.let { g ->
-            org.gamow.core.spectra.EfficiencyCurve.example.fit()?.efficiency(g.restEnergy)?.let { e ->
+            DetectorSettings.curve.fit()?.efficiency(g.restEnergy)?.let { e ->
                 TextButton(onClick = { eff = 100 * e; Prefs.put("yield.eff", "${100 * e}") }) {
-                    Text("Use the example HPGe curve at E_γ = ${Fmt.keV(g.restEnergy)} keV: ${Fmt.sig(100 * e, 3)} %")
+                    Text("Use ${if (DetectorSettings.isExample) "the example HPGe curve" else "your efficiency curve"} at E_γ = ${Fmt.keV(g.restEnergy)} keV: ${Fmt.sig(100 * e, 3)} %")
                 }
             }
         }
@@ -198,7 +207,7 @@ fun durationText(s: Double): Pair<String, String> {
 fun ResonanceScreen(wb: Workbench, onEdit: () -> Unit) {
     val r = wb.reaction ?: return NoReaction(onEdit)
     val c = wb.entrance ?: return Message("The entrance channel ${r.label} has no Coulomb barrier.")
-    val target = wb.run.material() ?: return Message("Choose a target material in Stopping & Energy Loss.")
+    val target = wb.run.target() ?: return Message("Choose a target material in Stopping & Energy Loss.")
     val p = wb.run.profile()
     var toStrength by remember { mutableStateOf(true) }
     var eR by remember(r) { mutableStateOf(wb.beamEnergy) }
@@ -219,6 +228,23 @@ fun ResonanceScreen(wb: Workbench, onEdit: () -> Unit) {
         NumberField("E_R (lab)", eR, "keV", range = 1e-3..1e7) { eR = it }
         if (toStrength) NumberField("Plateau yield", yieldValue, "per ion", range = 0.0..1.0) { yieldValue = it }
         else NumberField("ωγ", wg, "eV", range = 0.0..1e9) { wg = it }
+        if (!toStrength) MoreOptions("ωγ from spins and widths", summary = "ω = (2J+1)/((2j₁+1)(2j₂+1)), ωγ = ω Γₐ Γ_b / Γ") {
+            var j by remember { mutableStateOf(1.0) }
+            var j1 by remember(r) { mutableStateOf(spinOf(r.projectile)) }
+            var j2 by remember(r) { mutableStateOf(spinOf(r.target)) }
+            var ga by remember { mutableStateOf(1e-3) }
+            var gb by remember { mutableStateOf(1.0) }
+            var gt by remember { mutableStateOf(1.001) }
+            NumberField("J of the resonance", j, "", range = 0.0..20.0) { j = it }
+            Row { NumberField("j₁ (${r.projectile.reactionLabel})", j1, "", Modifier.weight(1f), range = 0.0..20.0) { j1 = it }
+                Spacer(Modifier.width(6.dp)); NumberField("j₂ (${r.target.label})", j2, "", Modifier.weight(1f), range = 0.0..20.0) { j2 = it } }
+            NumberField("Γₐ (entrance)", ga, "eV", range = 0.0..1e9) { ga = it }
+            NumberField("Γ_b (exit)", gb, "eV", range = 0.0..1e9) { gb = it }
+            NumberField("Γ (total)", gt, "eV", range = 0.0..1e9) { gt = it }
+            val w = NarrowResonance.strength(NarrowResonance.spinFactor(j, j1, j2), ga, gb, gt)
+            ValueRow("ωγ", Fmt.sig(w, 4), "eV")
+            TextButton(onClick = { wg = w }) { Text("Use this ωγ") }
+        }
         PickerField("Target", target.name) {}
         eps?.let { ValueRow("ε_eff at E_R", Fmt.sig(it, 4), "eV cm²") }
         ValueRow("E_R (c.m.)", Fmt.keV(ecm), "keV")
@@ -261,4 +287,12 @@ fun PenetrabilityScreen(wb: Workbench, onEdit: () -> Unit) {
         Plot(listOf(PlotSeries(pts, MaterialTheme.colorScheme.primary)), xLog = true, yLog = true, cursor = e, xLabel = "E c.m. (keV)", yLabel = "P$l",
             onPointer = { e = it })
     }
+}
+
+/** Ground-state spin from NUBASE2020 Jπ ("3/2-" → 1.5), 0 when unknown. */
+fun spinOf(n: Nuclide): Double {
+    val jp = Nubase.nubase2020.groundState(n.z, n.a)?.spinParity ?: return 0.0
+    // First alternative of multi-valued assignments such as "(1-,2-)" or "(3/2-,5/2-)", then strip parity and brackets.
+    val t = jp.substringBefore(',').trim('+', '-', '(', ')', ' ')
+    return if ('/' in t) t.substringBefore('/').toDoubleOrNull()?.div(2) ?: 0.0 else t.toDoubleOrNull() ?: 0.0
 }

@@ -32,14 +32,19 @@ fun SectionCard(title: String? = null, footer: String? = null, content: @Composa
 
 /** label ………… value unit */
 @Composable
+@OptIn(ExperimentalLayoutApi::class)
 fun ValueRow(label: String, value: String, unit: String = "", note: String? = null) {
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Column(Modifier.weight(1f)) {
+    // Label left, value right; when both do not fit (large fonts, narrow phones) the value wraps under the label
+    // instead of squeezing the label into a column of single letters.
+    FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalArrangement = Arrangement.Center) {
+        Column(Modifier.padding(end = 8.dp).align(Alignment.CenterVertically)) {
             Text(label, style = MaterialTheme.typography.bodyLarge)
             if (note != null) Text(note, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        Text(value, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
-        if (unit.isNotEmpty()) Text(" $unit", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Row(Modifier.align(Alignment.CenterVertically), verticalAlignment = Alignment.Bottom) {
+            Text(value, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+            if (unit.isNotEmpty()) Text(" $unit", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
     }
 }
 
@@ -81,15 +86,16 @@ fun NumberField(label: String, value: Double, unit: String, modifier: Modifier =
 
 /** Reaction title with an Edit action and the beam-energy stepper. */
 @Composable
+@OptIn(ExperimentalLayoutApi::class)
 fun ReactionHeader(wb: Workbench, onEdit: () -> Unit, showBeam: Boolean = true) {
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+    // The beam stepper moves to its own line when the reaction name leaves no room for it.
+    FlowRow(horizontalArrangement = Arrangement.SpaceBetween, verticalArrangement = Arrangement.Center, modifier = Modifier.fillMaxWidth()) {
         TextButton(onClick = onEdit, contentPadding = PaddingValues(0.dp)) {
             Text(wb.reaction?.label ?: wb.reactionText, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface)
             Text("  ▾", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        Spacer(Modifier.weight(1f))
-        if (showBeam) BeamStepper(wb)
+        if (showBeam) Box(Modifier.align(Alignment.CenterVertically)) { BeamStepper(wb) }
     }
 }
 

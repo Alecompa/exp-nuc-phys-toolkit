@@ -144,6 +144,13 @@ fun SourcesScreen() {
 @Composable
 private fun SourceLines(s: CalibrationSource, activity: Double?) {
     Column(Modifier.padding(start = 8.dp, bottom = 6.dp)) {
+        var distance by remember { mutableStateOf(1.0) }
+        val k = AirKerma.rateConstant(s.lines)
+        if (activity != null) {
+            NumberField("Distance", distance, "m", range = 0.01..1e3) { distance = it }
+            ValueRow("Dose rate (air kerma)", Fmt.sig(AirKerma.rate(s.lines, activity, distance), 3), "µGy/h",
+                note = "Unshielded point source, photons above 20 keV")
+        } else ValueRow("Air-kerma rate constant", Fmt.sig(k, 3), "µGy m² MBq⁻¹ h⁻¹")
         for (l in s.prominentLines(1.0)) {
             Row {
                 Text("${Fmt.keV(l.energy)} keV" + if (l.kind == "xray") " (X)" else if (l.kind == "annihilation") " (β⁺)" else "",

@@ -64,7 +64,14 @@ fun NotebookScreen() {
     val entries = NotebookStore.entries
     SectionCard(footer = "Results saved from the tools, newest first. Copy one entry or all of them as text, e.g. into the logbook.") {
         if (entries.isEmpty()) Text("Nothing saved yet. Use “Save to notebook” in a tool.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-        else OutlinedButton(onClick = { clipboard.setText(AnnotatedString(entries.joinToString("\n") { it.text })) }) { Text("Copy all as text") }
+        else {
+            val export = rememberTextExporter()
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(onClick = { clipboard.setText(AnnotatedString(entries.joinToString("\n") { it.text })) }) { Text("Copy all") }
+                OutlinedButton(onClick = { export("gamow_notebook.csv", notebookCsv(entries)) }) { Text("Export CSV") }
+                OutlinedButton(onClick = { export("gamow_notebook.txt", entries.joinToString("\n") { it.text }) }) { Text("Export text") }
+            }
+        }
     }
     for (e in entries) {
         SectionCard {
@@ -79,4 +86,12 @@ fun NotebookScreen() {
             }
         }
     }
+}
+
+/** One row per value: date, tool, title, quantity, value, note (RFC 4180 quoting). */
+fun notebookCsv(entries: List<NotebookEntry>): String {
+    fun q(x: String) = if (x.any { it == ',' || it == '"' || it == '\n' }) "\"" + x.replace("\"", "\"\"") + "\"" else x
+    return "date,tool,title,quantity,value,note\n" + entries.flatMap { e ->
+        (e.lines.ifEmpty { listOf("" to "") }).map { (k, v) -> listOf(formatDate(e.date), e.tool, e.title, k, v, e.note).joinToString(",") { q(it) } }
+    }.joinToString("\n")
 }

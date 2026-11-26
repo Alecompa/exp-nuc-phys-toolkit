@@ -44,6 +44,11 @@ class ReferenceDecayTest {
                         src.prominentLines(5.0).take(4).forEachIndexed { i, l -> put("e$i", l.energy); put("i$i", l.intensity) }
                     }
                 }
+                "muen" -> mapOf("muen" to AirKerma.massEnergyAbsorption(inp("energy").toDouble()))
+                "kerma" -> {
+                    val src = CalibrationSources.source(inp("nuclide"))!!
+                    mapOf("constant" to AirKerma.rateConstant(src.lines), "rate" to AirKerma.rate(src.lines, 3.7e5, 0.3))
+                }
                 else -> fail("unknown case $name")
             }
             assertEquals(expected.keys, actual.keys, "$inputs")

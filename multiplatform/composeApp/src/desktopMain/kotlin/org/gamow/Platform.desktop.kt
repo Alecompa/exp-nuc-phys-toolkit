@@ -13,8 +13,33 @@ private object ResourceAnchor
 
 actual object Prefs {
     private val node = java.util.prefs.Preferences.userRoot().node("org/gamow")
-    actual fun get(key: String): String? = node.get(key, null)
-    actual fun put(key: String, value: String) { node.put(key, value); node.flush() }
+    /** java.util.prefs rejects values over 8192 characters: long values are split into numbered chunk keys. */
+    private const val CHUNK = 7000
+    private const val MARK = "@@gamow-chunks:"   // java.util.prefs also rejects the NUL character
+
+    actual fun get(key: String): String? {
+        val v = node.get(key, null) ?: return null
+        if (!v.startsWith(MARK)) return v
+        val n = v.removePrefix(MARK).toIntOrNull() ?: return null
+        return (0 until n).joinToString("") { node.get("$key#$it", "") }
+    }
+
+    actual fun put(key: String, value: String) {
+        try {
+            val old = node.get(key, null)?.takeIf { it.startsWith(MARK) }?.removePrefix(MARK)?.toIntOrNull() ?: 0
+            if (value.length <= CHUNK) node.put(key, value)
+            else {
+                val parts = value.chunked(CHUNK)
+                parts.forEachIndexed { i, p -> node.put("$key#$i", p) }
+                node.put(key, MARK + parts.size)
+            }
+            val now = if (value.length <= CHUNK) 0 else (value.length + CHUNK - 1) / CHUNK
+            for (i in now until old) node.remove("$key#$i")
+            node.flush()
+        } catch (e: Exception) {
+            System.err.println("Gamow: could not save setting $key: ${e.message}")
+        }
+    }
 }
 
 actual fun nowEpochSeconds(): Double = System.currentTimeMillis() / 1000.0
