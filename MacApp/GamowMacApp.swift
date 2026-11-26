@@ -3,10 +3,13 @@ import ToolkitUI
 
 @main
 struct GamowMacApp: App {
+    /// One shared setup for the window and the Settings scene.
+    @State private var workbench = Workbench()
+
     var body: some Scene {
         WindowGroup {
-            MacRootView()
-                .frame(minWidth: 900, minHeight: 600)
+            MacRootView(workbench: workbench)
+                .frame(minWidth: 1080, minHeight: 640)
                 #if DEBUG
                 .onAppear { DebugSnapshot.scheduleIfRequested() }
                 #endif
@@ -15,7 +18,7 @@ struct GamowMacApp: App {
         .commands { GamowMacCommands() }
 
         Settings {
-            MacSettingsView()
+            MacSettingsView(workbench: workbench)
         }
     }
 }

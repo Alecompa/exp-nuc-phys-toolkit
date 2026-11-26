@@ -92,9 +92,9 @@ private struct NewExperimentSheet: View {
                 Section {
                     NumberField(title: "Integrated charge", value: $charge, unit: "µC", range: 0...1e15)
                     NumberField(title: "Elapsed time", value: $seconds, unit: "s", range: 0...1e12)
-                } header: { Text("Measured run totals (optional)") } footer: {
+                } header: { Text("Measured run totals (optional)") } footer: { Group {
                     Text("Measured totals; leave zero if not measured.")
-                }
+                }.wrappingFooter() }
                 if let error { Text(error).foregroundStyle(.red) }
             }
             .navigationTitle(record == nil ? "Save experiment" : "Edit run notes")

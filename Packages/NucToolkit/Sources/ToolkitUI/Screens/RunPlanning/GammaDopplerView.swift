@@ -26,7 +26,7 @@ struct GammaDopplerView: View {
         let det = workbench.resolutionModel.fwhm(at: e)
         let total = (det * det + pow(0.68 * spread, 2)).squareRoot()
 
-        List {
+        ToolList {
             Section {
                 VStack(alignment: .leading, spacing: 14) {
                     if let reaction { ReactionHeader(reaction: reaction) { editingSetup = true } }
@@ -69,9 +69,9 @@ struct GammaDopplerView: View {
                 }
             } header: {
                 Text("Emitter")
-            } footer: {
+            } footer: { Group {
                 Text(reaction?.ejectile.isPhoton == false ? "The recoil velocity depends on the ejectile angle; β is its average." : "The compound nucleus moves with the centre of mass.")
-            }
+            }.wrappingFooter() }
 
             Section {
                 LabeledContent("Detector angle") { Text("\(Fmt.number(angle, decimals: 1))°").monospacedDigit() }
@@ -97,9 +97,9 @@ struct GammaDopplerView: View {
                          note: "Spread as a box, added in quadrature")
             } header: {
                 Text("Line shape")
-            } footer: {
+            } footer: { Group {
                 Text("E = E₀ √(1−β²)/(1 − β cos θ). Assumes the emitter does not slow down before decaying (lifetime ≪ stopping time); otherwise the line is partly attenuated (DSAM).")
-            }
+            }.wrappingFooter() }
         }
         .groupedList()
         .scrollDismissesKeyboard(.interactively)

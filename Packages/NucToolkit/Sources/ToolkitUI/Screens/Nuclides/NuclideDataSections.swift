@@ -109,13 +109,13 @@ struct LevelSchemeSection: View {
                         .disabled(loading)
                 }
             }
-        } footer: {
+        } footer: { Group {
             if let scheme {
-                Text("\(scheme.reference.isEmpty ? "ENSDF" : "ENSDF: " + scheme.reference). From the IAEA LiveChart of Nuclides, retrieved \(scheme.retrieved.formatted(date: .abbreviated, time: .omitted)); cached for offline use. \(workbench.reaction?.residual == nuclide ? "Touch and hold a level to use it as the final state." : "")")
+                Text("\(scheme.reference.isEmpty ? "ENSDF" : "ENSDF: " + scheme.reference). From the IAEA LiveChart of Nuclides, retrieved \(scheme.retrieved.formatted(date: .abbreviated, time: .omitted)); cached for offline use. \(workbench.reaction?.residual == nuclide ? "\(GestureWords.hold) a level to use it as the final state." : "")")
             } else {
                 Text("Needs an internet connection the first time; afterwards the data stay available offline.")
             }
-        }
+        }.wrappingFooter() }
         .sensoryFeedback(.success, trigger: confirmation)
         .task(id: nuclide.id) {
             // Show cached data instantly; otherwise fetch unless automatic loading is off in Settings.
@@ -171,7 +171,7 @@ struct LevelSchemeDetailView: View {
     }
 
     var body: some View {
-        List {
+        ToolList {
             Section {
                 Picker("Show", selection: $mode) {
                     ForEach(Mode.allCases) { Text($0.rawValue).tag($0) }

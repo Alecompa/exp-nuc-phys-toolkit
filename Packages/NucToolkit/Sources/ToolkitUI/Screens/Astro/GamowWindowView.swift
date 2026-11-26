@@ -25,7 +25,7 @@ struct GamowWindowView: View {
         let w = c.gamowWindow(t9: t9)
         let rc = c.radius(r0: workbench.channelRadiusR0)
 
-        List {
+        ToolList {
             Section {
                 VStack(alignment: .leading, spacing: 14) {
                     ReactionHeader(reaction: r, edit: { editingSetup = true }, showsBeam: false)
@@ -53,9 +53,9 @@ struct GamowWindowView: View {
                     .padding(.vertical, 8)
             } header: {
                 Text("Integrand at this temperature")
-            } footer: {
+            } footer: { Group {
                 Text("Maxwell–Boltzmann factor × tunnelling probability, exp(−E/kT − √(E_G/E)), normalised to its maximum. Dashed: the Gaussian approximation; band: E₀ ± Δ/2.")
-            }
+            }.wrappingFooter() }
 
             Section {
                 ValueRow(label: "Peak E₀", value: Fmt.keV(w.peak), unit: "keV", note: "Centre of mass")
@@ -76,9 +76,9 @@ struct GamowWindowView: View {
                     .padding(.vertical, 8)
             } header: {
                 Text("Window vs temperature")
-            } footer: {
+            } footer: { Group {
                 Text("E₀ = (√E_G · kT/2)^⅔ and Δ = 4√(E₀kT/3) assume a constant S factor; resonances and a steep S(E) move the effective window (see Reaction Rate).")
-            }
+            }.wrappingFooter() }
 
             Section {
                 ValueRow(label: "Reduced mass μ", value: Fmt.significant(c.reducedMass, digits: 6), unit: "u")

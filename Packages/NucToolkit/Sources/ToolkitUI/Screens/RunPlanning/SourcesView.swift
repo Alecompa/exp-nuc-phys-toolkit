@@ -53,9 +53,9 @@ struct SourcesView: View {
                 }
             } header: {
                 Text("Catalog")
-            } footer: {
+            } footer: { Group {
                 Text("Half-lives from NUBASE2020; γ- and X-ray intensities from ENSDF via the IAEA LiveChart of Nuclides (snapshot bundled with the app).")
-            }
+            }.wrappingFooter() }
         }
         .groupedList()
         .navigationTitle("Calibration Sources")
@@ -129,7 +129,7 @@ struct SourceDetailView: View {
         let activity = now?.activity ?? freeActivity
         let fit = workbench.efficiencyCurve.fit()
 
-        List {
+        ToolList {
             Section {
                 VStack(alignment: .leading, spacing: 14) {
                     let a = Fmt.activity(activity)
@@ -160,9 +160,9 @@ struct SourceDetailView: View {
                     Button("Edit Certificate") { editing = cert }
                 } header: {
                     Text(cert.name.isEmpty ? "Certificate" : cert.name)
-                } footer: {
+                } footer: { Group {
                     Text("The uncertainty combines the certificate and the half-life (λt · σ_T/T) in quadrature.")
-                }
+                }.wrappingFooter() }
             }
 
             if let s = state {
@@ -199,9 +199,9 @@ struct SourceDetailView: View {
                 .textSelection(.enabled)
             } header: {
                 Text("Photon emissions")
-            } footer: {
+            } footer: { Group {
                 Text("Counts in the full-energy peak with the Detector Response efficiency curve, during the live time; decay during the measurement and coincidence summing are neglected.")
-            }
+            }.wrappingFooter() }
 
             Section {
                 NumberField(title: "Distance", value: $distance, unit: "m", range: 0.01...1000)
@@ -211,9 +211,9 @@ struct SourceDetailView: View {
                 ValueRow(label: "Rate constant", value: Fmt.significant(k, digits: 3), unit: "µGy m²/(MBq h)")
             } header: {
                 Text("Dose rate")
-            } footer: {
+            } footer: { Group {
                 Text("Unshielded point source in air, photons above 20 keV, NIST μ_en/ρ of air. The ambient dose equivalent H*(10) is about 1.1–1.2 × the air kerma for these energies. Not a substitute for a survey meter.")
-            }
+            }.wrappingFooter() }
         }
         .groupedList()
         .scrollDismissesKeyboard(.interactively)
@@ -259,9 +259,9 @@ struct CertificateSheet: View {
                 Section {
                     NuclidePickerRow(title: "Nuclide", nuclide: $draft.nuclide)
                     TextField("Name (e.g. certificate number)", text: $draft.name)
-                } footer: {
+                } footer: { Group {
                     if let s = draft.state { Text("T½ = \(s.halfLifeText.isEmpty ? Fmt.halfLife(s.halfLife) : s.halfLifeText)") }
-                }
+                }.wrappingFooter() }
                 Section("Certificate") {
                     LabeledContent("Activity") {
                         HStack(spacing: 6) {

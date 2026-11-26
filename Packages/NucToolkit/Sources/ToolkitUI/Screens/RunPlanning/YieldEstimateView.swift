@@ -148,7 +148,7 @@ struct YieldEstimateView: View {
         let after = CountingStatistics.relativeUncertainty(signal: signal, background: background, time: plannedHours * 3600,
                                                            backgroundFromEqualTime: equalBackground)
 
-        List {
+        ToolList {
             Section {
                 VStack(alignment: .leading, spacing: 14) {
                     ReactionHeader(reaction: r) { editingSetup = true }
@@ -199,9 +199,17 @@ struct YieldEstimateView: View {
                     Button {
                         editingTarget = true
                     } label: {
-                        LabeledContent("Material", value: workbench.stoppingTarget?.name ?? "None")
+                        LabeledContent {
+                            HStack(spacing: 6) {
+                                Text(workbench.stoppingTarget?.name ?? "None").foregroundStyle(.secondary)
+                                Image(systemName: "chevron.right").font(.caption).foregroundStyle(.tertiary)
+                            }
+                        } label: {
+                            Text("Material")
+                        }
                     }
                     .foregroundStyle(.primary)
+                    .rowButton()
                     NumberField(title: "\(r.target.label) abundance", value: $workbench.isotopicAbundance, unit: "%", range: 0...100)
                     Text("Natural abundance by default (NUBASE2020); set your enrichment. Isotopes written explicitly in a formula, such as [17O], ignore this factor.")
                         .font(.caption).foregroundStyle(.secondary)
@@ -227,9 +235,9 @@ struct YieldEstimateView: View {
                 }
             } header: {
                 Text("Reaction yield")
-            } footer: {
+            } footer: { Group {
                 Text(footer)
-            }
+            }.wrappingFooter() }
 
             Section {
                 NumberField(title: "Current", value: $workbench.beamCurrent, unit: "µA", range: 1e-9...1e6)
@@ -294,9 +302,9 @@ struct YieldEstimateView: View {
                 }
             } header: {
                 Text("Statistics")
-            } footer: {
+            } footer: { Group {
                 Text("σ_net/N = √(S + kB)/S, k = 2 when the background comes from a run of equal length, 1 when it is known exactly. Excludes dead time and systematic uncertainties.")
-            }
+            }.wrappingFooter() }
         }
         .groupedList()
         .scrollDismissesKeyboard(.interactively)

@@ -59,7 +59,7 @@ struct PenetrabilityView: View {
         let theta2 = reduced / (wigner * 1000)
         let exitAvailable = ChargedChannel.exit(r)?.isCharged == true
 
-        List {
+        ToolList {
             Section {
                 VStack(alignment: .leading, spacing: 14) {
                     ReactionHeader(reaction: r, edit: { editingSetup = true }, showsBeam: false)
@@ -105,9 +105,9 @@ struct PenetrabilityView: View {
                 ValueRow(label: "Γ_W = 2Pγ²_W", value: Fmt.significant(sp * 1000), unit: "eV", note: "Single-particle limit")
             } header: {
                 Text("Coulomb functions at a")
-            } footer: {
+            } footer: { Group {
                 Text("P = ρ/(F² + G²) and S = ρ(FF′ + GG′)/(F² + G²) at ρ = ka, from F and G integrated numerically (accurate deep under the barrier).")
-            }
+            }.wrappingFooter() }
 
             Section {
                 ScientificField(title: "Partial width Γ", value: $width, unit: "eV")
@@ -116,9 +116,9 @@ struct PenetrabilityView: View {
                          note: theta2 > 1 ? "Above the Wigner limit" : nil)
             } header: {
                 Text("Width ↔ reduced width")
-            } footer: {
+            } footer: { Group {
                 Text("Observed (formal) widths; the R-matrix boundary-condition correction 1 + γ²dS/dE is not applied.")
-            }
+            }.wrappingFooter() }
 
             Section {
                 PenetrabilityCurve(points: curves, energy: e, l: l)

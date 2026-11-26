@@ -39,7 +39,7 @@ struct RutherfordView: View {
             workbench.activeAtomFraction.map { workbench.layerThickness * 1e-8 * t.atomDensity * $0 }
         }
 
-        List {
+        ToolList {
             Section {
                 VStack(alignment: .leading, spacing: 14) {
                     ReactionHeader(reaction: r) { editingSetup = true }
@@ -110,9 +110,9 @@ struct RutherfordView: View {
                     }
                 } header: {
                     Text("Monitor rate")
-                } footer: {
+                } footer: { Group {
                     Text("N = dσ/dΩ · ΔΩ · N_t · Q/(qe), for a thin target. Pure point-charge scattering: valid well below the Coulomb barrier; electron screening lowers it slightly at low energy (≈ 1% for light ions at a few hundred keV on heavy targets).")
-                }
+                }.wrappingFooter() }
             }
         }
         .groupedList()

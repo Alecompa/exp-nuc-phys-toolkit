@@ -150,13 +150,15 @@ struct EnergyField: View {
                 TextField(title, value: Binding(
                     get: { keV / unit.scale },
                     set: { keV = max(0, $0) * unit.scale }
-                ), format: .number.precision(.fractionLength(0...4)).grouping(.never))
+                ), format: .number.precision(.fractionLength(0...4)).grouping(.never), prompt: Text(""))
                 .multilineTextAlignment(.trailing)
                 .monospacedDigit()
                 .decimalKeyboard()
+                .rowField()
                 Text(unit.label).foregroundStyle(.secondary)
             }
         }
+        .fieldRow()
     }
 }
 

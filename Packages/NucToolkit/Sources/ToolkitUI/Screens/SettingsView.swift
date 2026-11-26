@@ -18,9 +18,9 @@ struct SettingsView: View {
                     .pickerStyle(.segmented)
                 } header: {
                     Text("Units")
-                } footer: {
+                } footer: { Group {
                     Text("Inputs and results across all tools use this unit.")
-                }
+                }.wrappingFooter() }
 
                 Section("Data") {
                     LabeledContent("Atomic masses", value: "AME2020")
@@ -38,18 +38,18 @@ struct SettingsView: View {
                     LabeledContent("Q uncertainties", value: "Quadrature")
                 } header: {
                     Text("Conventions")
-                } footer: {
+                } footer: { Group {
                     Text("Kinematic masses are atomic masses minus Z electron masses, so kinematic and tabulated Q values agree exactly. Mass correlations in AME are neglected.")
-                }
+                }.wrappingFooter() }
 
                 Section {
                     Toggle("Load ENSDF levels automatically", isOn: $autoloadLevels)
                     Button("Clear Level Cache", role: .destructive) { LiveChartCache.clear(); cacheCleared += 1 }
                 } header: {
                     Text("Online data")
-                } footer: {
+                } footer: { Group {
                     Text("Level schemes come from the IAEA LiveChart of Nuclides the first time a nuclide is opened, and are cached for offline use for 30 days.")
-                }
+                }.wrappingFooter() }
 
                 Section {
                     LabeledContent("Downloaded tables", value: exforCache.map {
@@ -64,17 +64,17 @@ struct SettingsView: View {
                     }
                 } header: {
                     Text("EXFOR")
-                } footer: {
+                } footer: { Group {
                     Text("Cross-section tables come from the IAEA's EXFOR tables on GitHub (IAEA-NDS/exfortables_py, snapshot \(ExforIndex.bundled.date)). Only the index is in the app; a table downloads when you open its reaction and is kept for offline use.")
-                }
+                }.wrappingFooter() }
 
                 Section {
                     NavigationLink { AboutView() } label: { Label("About Gamow", systemImage: "info.circle") }
                     NavigationLink { LicencesView() } label: { Label("Data Sources & Licences", systemImage: "books.vertical") }
                     NavigationLink { PrivacyView() } label: { Label("Privacy", systemImage: "hand.raised") }
-                } footer: {
+                } footer: { Group {
                     Text("Version \(AboutView.version)")
-                }
+                }.wrappingFooter() }
             }
             .navigationTitle("Settings")
             .largeTitle()

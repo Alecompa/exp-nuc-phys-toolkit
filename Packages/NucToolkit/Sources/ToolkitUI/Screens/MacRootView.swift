@@ -6,13 +6,14 @@ import SwiftUI
 /// Mac window: a sidebar with the current setup, every tool by category and the data views; the selected
 /// tool on the right. Spectrum files dropped on the window open in Spectrum Analysis.
 public struct MacRootView: View {
-    @State private var workbench = Workbench()
+    /// Shared with the Settings window, so a unit or setting changed there applies to the open window at once.
+    @Bindable private var workbench: Workbench
     @SceneStorage("mac.selection") private var stored = "tool:kinematics"
     @State private var editingSetup = false
     @State private var path: [Route] = []
     @Namespace private var zoom
 
-    public init() {}
+    public init(workbench: Workbench) { self.workbench = workbench }
 
     enum Item: Hashable {
         case tool(Tool), nuclides, experiments, notebook
@@ -66,7 +67,7 @@ public struct MacRootView: View {
             detail
         }
         .sheet(isPresented: $editingSetup) {
-            ReactionSetupSheet().frame(minWidth: 520, idealWidth: 560, minHeight: 640, idealHeight: 760)
+            ReactionSetupSheet().frame(minWidth: 560, idealWidth: 620, minHeight: 600, idealHeight: 720)
         }
         .onReceive(NotificationCenter.default.publisher(for: MacCommand.editSetup)) { _ in editingSetup = true }
         .onReceive(NotificationCenter.default.publisher(for: MacCommand.openSpectrum)) { _ in
@@ -91,13 +92,16 @@ public struct MacRootView: View {
         }
         #if DEBUG
         // Screenshot automation: GAMOW_MAC_SELECT=<sidebar key>, GAMOW_OPEN_SETUP=1, GAMOW_SPECTRUM_FILE=<path>.
-        .onAppear {
+        .task {
+            // After window-state restoration, which would otherwise put back the last selection.
+            try? await Task.sleep(for: .milliseconds(300))
             let env = ProcessInfo.processInfo.environment
             if let key = env["GAMOW_MAC_SELECT"], Item(key: key) != nil { stored = key }
             if env["GAMOW_OPEN_SETUP"] == "1" { editingSetup = true }
         }
         #endif
         .environment(workbench)
+        .groupedForm()
         .tint(.accent)
         .modelContainer(for: [NotebookEntry.self, ExperimentRecord.self])
     }
@@ -175,11 +179,15 @@ public struct GamowMacCommands: Commands {
 
 /// The Settings window (⌘,).
 public struct MacSettingsView: View {
-    public init() {}
+    private let workbench: Workbench
+    /// `workbench` is the one the main window uses.
+    public init(workbench: Workbench) { self.workbench = workbench }
     public var body: some View {
         SettingsView()
-            .environment(Workbench())
-            .frame(width: 520, height: 560)
+            .environment(workbench)
+            .groupedForm()
+            .tint(.accent)
+            .frame(width: 540, height: 600)
     }
 }
 #endif

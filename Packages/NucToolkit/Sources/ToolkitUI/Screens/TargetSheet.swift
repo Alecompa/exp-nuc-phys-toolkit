@@ -63,13 +63,15 @@ struct NumberField: View {
         LabeledContent(title) {
             HStack(spacing: 6) {
                 TextField(title, value: Binding(get: { value }, set: { value = min(max($0, range.lowerBound), range.upperBound) }),
-                          format: .number.precision(.significantDigits(1...7)).grouping(.never))
+                          format: .number.precision(.significantDigits(1...7)).grouping(.never), prompt: Text(""))
                     .multilineTextAlignment(.trailing)
                     .monospacedDigit()
                     .decimalKeyboard()
+                    .rowField()
                 if let unit { Text(unit).foregroundStyle(.secondary) }
             }
         }
+        .fieldRow()
     }
 }
 
@@ -86,10 +88,11 @@ struct ThicknessField: View {
                 TextField(title, value: Binding(
                     get: { unit.fromAngstrom(angstrom, target: target) },
                     set: { angstrom = max(1e-3, unit.toAngstrom($0, target: target)) }
-                ), format: .number.precision(.significantDigits(1...6)).grouping(.never))
+                ), format: .number.precision(.significantDigits(1...6)).grouping(.never), prompt: Text(""))
                 .multilineTextAlignment(.trailing)
                 .monospacedDigit()
                 .decimalKeyboard()
+                .rowField()
                 Menu {
                     Picker("Unit", selection: $unit) {
                         ForEach(ThicknessUnit.allCases) { Text($0.rawValue).tag($0) }
@@ -100,9 +103,11 @@ struct ThicknessField: View {
                         Image(systemName: "chevron.up.chevron.down").font(.caption2)
                     }
                 }
+                .menuIndicator(.hidden)   // the label draws its own ⌃⌄; the Mac would add a second arrow
                 .accessibilityLabel("Thickness unit, \(unit.rawValue)")
             }
         }
+        .fieldRow()
     }
 }
 
@@ -168,9 +173,9 @@ struct TargetEditor: View {
                         ThicknessField(angstrom: $thickness, target: draft, unit: $workbench.thicknessUnit)
                     } header: {
                         Text("Layer")
-                    } footer: {
+                    } footer: { Group {
                         Text(Self.equivalents(draft, thickness, current: workbench.thicknessUnit)).monospacedDigit()
-                    }
+                    }.wrappingFooter() }
                 }
                 Section {
                     LabeledContent("Atomic density") {
@@ -244,9 +249,9 @@ struct TargetEditor: View {
             }
         } header: {
             Text("Material")
-        } footer: {
+        } footer: { Group {
             Text("Elements Z = 1–92 and the 356 materials of SRIM's compound dictionary, or any composition below.")
-        }
+        }.wrappingFooter() }
     }
 
     private var compositionSection: some View {
@@ -290,7 +295,7 @@ struct TargetEditor: View {
             }
         } header: {
             Text("Composition")
-        } footer: {
+        } footer: { Group {
             if let formulaError {
                 Text(formulaError).foregroundStyle(.red)
             } else if let match = dictionaryMatch, abs(match.density - draft.density) > 1e-6 {
@@ -303,7 +308,7 @@ struct TargetEditor: View {
             } else {
                 Text("Any stoichiometry, also fractional (Ti0.5Al0.5N). D and T for deuterium and tritium, [17O] for an isotope. Stopping follows Bragg's rule; set the density below.")
             }
-        }
+        }.wrappingFooter() }
     }
 
     private var propertiesSection: some View {
@@ -319,9 +324,9 @@ struct TargetEditor: View {
             NumberField(title: "Bragg correction", value: $draft.compoundCorrection, unit: "×", range: 0.5...1.5)
         } header: {
             Text("Properties")
-        } footer: {
+        } footer: { Group {
             Text("The gas phase changes SRIM's phase correction and the mean ionisation potential. The Bragg correction multiplies the compound stopping at low velocity and fades out at high velocity; 1 means none.")
-        }
+        }.wrappingFooter() }
     }
 
     private var gasSection: some View {
@@ -340,9 +345,9 @@ struct TargetEditor: View {
             }
         } header: {
             Text("Gas")
-        } footer: {
+        } footer: { Group {
             Text("Ideal gas: n = p/(kT) molecules per cm³. Editing the pressure, temperature or molecule size sets the density; a gas cell's length is the layer thickness.")
-        }
+        }.wrappingFooter() }
     }
 
     /// Pressure (mbar) equivalent to the draft density at `temperature`; setting it sets the density.
@@ -517,6 +522,7 @@ struct MaterialLibrary: View {
                             }
                         }
                         .tint(.primary)
+                        .rowButton()
                     }
                 }
             } else {
@@ -536,6 +542,7 @@ struct MaterialLibrary: View {
                                 }
                             }
                             .tint(.primary)
+                            .rowButton()
                         }
                     }
                 }

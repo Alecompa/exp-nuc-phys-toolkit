@@ -53,7 +53,7 @@ struct StoppingPowerView: View {
         let s = try? calc.stopping(at: energy)
         let range = try? calc.range(at: energy)
 
-        List {
+        ToolList {
             Section {
                 VStack(alignment: .leading, spacing: 14) {
                     StoppingHeader(ion: calc.ion, ionLabel: ionLabel, target: calc.target,
@@ -80,9 +80,9 @@ struct StoppingPowerView: View {
                 }.padding(.vertical, 8)
             } header: {
                 Text("vs ion energy")
-            } footer: {
+            } footer: { Group {
                 Text("Drag across the chart to read values. Log–log axes; nuclear stopping from SRIM's pair coefficients.")
-            }
+            }.wrappingFooter() }
 
             Section {
                 EnergyField(title: "Beam energy", keV: $workbench.beamEnergy, unit: workbench.energyUnit)
@@ -107,9 +107,9 @@ struct StoppingPowerView: View {
                 }
             } header: {
                 Text("Range")
-            } footer: {
+            } footer: { Group {
                 Text("Projected range and stragglings from the SR module's moment integration (Biersack), as SRIM tables them. Use TRIM for the shape of the range distribution.")
-            }
+            }.wrappingFooter() }
 
             Section {
                 Text("SRIM-2013 stopping (J. F. Ziegler, M. D. Ziegler, J. P. Biersack, NIM B 268, 1818 (2010)), ported from LunaSRIM by J. Skowronski. SRIM data are free for non-commercial use.")

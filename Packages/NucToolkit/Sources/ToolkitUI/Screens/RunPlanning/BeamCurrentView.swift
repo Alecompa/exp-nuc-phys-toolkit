@@ -25,7 +25,7 @@ struct BeamCurrentView: View {
         let particles = Beam.particles(charge: q, chargeState: workbench.chargeState)
         let time = q / max(workbench.beamCurrent * 1e-6, 1e-30)
 
-        List {
+        ToolList {
             Section {
                 VStack(alignment: .leading, spacing: 14) {
                     if let r = workbench.reaction { ReactionHeader(reaction: r) { editingSetup = true } }
@@ -46,18 +46,21 @@ struct BeamCurrentView: View {
                     LabeledContent("Charge state") { Text("\(workbench.chargeState)+").monospacedDigit() }
                 }
                 LabeledContent("Particle current") {
-                    ScientificTextField(title: "pps", value: Binding(
-                        get: { pps },
-                        set: { workbench.beamCurrent = Beam.current(particlesPerSecond: $0, chargeState: workbench.chargeState) * 1e6 }))
-                    Text("pps").foregroundStyle(.secondary)
+                    HStack(spacing: 6) {
+                        ScientificTextField(title: "pps", value: Binding(
+                            get: { pps },
+                            set: { workbench.beamCurrent = Beam.current(particlesPerSecond: $0, chargeState: workbench.chargeState) * 1e6 }))
+                        Text("pps").foregroundStyle(.secondary)
+                    }
                 }
+                .fieldRow()
                 ValueRow(label: "Particle current (pµA)", value: Fmt.significant(workbench.beamCurrent / Double(workbench.chargeState)),
                          unit: "pµA", note: "Electrical current / charge state")
             } header: {
                 Text("Beam")
-            } footer: {
+            } footer: { Group {
                 Text("Shared with Yield & Beam Time. 1 pµA = 6.2415 × 10¹² particles/s.")
-            }
+            }.wrappingFooter() }
 
             Section {
                 EnergyField(title: "Beam energy", keV: $workbench.beamEnergy, unit: unit)

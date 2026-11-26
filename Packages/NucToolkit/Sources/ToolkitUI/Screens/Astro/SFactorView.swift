@@ -67,7 +67,7 @@ struct SFactorView: View {
         let sigmaBare = c.crossSection(sFactor: sBare, energy: e)
         let hero = direction == .toSigma ? Fmt.crossSection(sigmaBare) : (Fmt.significant(sBare), "keV b")
 
-        List {
+        ToolList {
             Section {
                 VStack(alignment: .leading, spacing: 14) {
                     ReactionHeader(reaction: r, edit: { editingSetup = true }, showsBeam: false)
@@ -128,9 +128,9 @@ struct SFactorView: View {
                 ValueRow(label: "Enhancement f", value: Fmt.significant(f, digits: 5), note: "exp(πη U_e/E)")
             } header: {
                 Text("Electron screening")
-            } footer: {
+            } footer: { Group {
                 Text("A laboratory cross section is the bare one × f (Assenbaum, Langanke & Rolfs 1987). U_e is typically 0.1–1 keV for light targets; the adiabatic limit is the difference in electron binding energies of the atoms. U_e is stored per reaction and also used by the yield estimate: set it to 0 when S(E) is a measured (already screened) table.")
-            }
+            }.wrappingFooter() }
 
             Section {
                 ValueRow(label: "S factor (bare)", value: Fmt.significant(sBare), unit: "keV b")
@@ -143,9 +143,9 @@ struct SFactorView: View {
                 ValueRow(label: "Lab energy", value: Fmt.keV(c.labEnergy(cm: e), digits: 6), unit: "keV")
             } header: {
                 Text("At \(Fmt.keV(e, digits: 5)) keV (c.m.)")
-            } footer: {
+            } footer: { Group {
                 Text("σ(E) = S(E)/E · exp(−2πη), with 2πη = √(E_G/E) and E_G = \(Fmt.significant(c.gamowEnergy / 1000, digits: 5)) MeV.")
-            }
+            }.wrappingFooter() }
 
             Section {
                 SigmaChart(channel: c, model: workbench.sFactorModel, energy: e, screening: ue)
@@ -153,9 +153,9 @@ struct SFactorView: View {
                     .padding(.vertical, 8)
             } header: {
                 Text("σ(E) from the rate model")
-            } footer: {
+            } footer: { Group {
                 Text("Bare (solid) and screened (dashed) cross sections from the S factor set in Reaction Rate.")
-            }
+            }.wrappingFooter() }
         }
         .groupedList()
         .notebookSnapshot {

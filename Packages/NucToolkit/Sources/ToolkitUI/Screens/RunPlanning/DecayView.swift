@@ -22,7 +22,7 @@ struct DecayView: View {
             MassTable.ame2020.nuclide(z: s.z, a: s.a).map { $0.atomicMass / PhysicalConstants.atomicMassUnit }
         } ?? state.map { Double($0.a) }
 
-        List {
+        ToolList {
             Section {
                 VStack(alignment: .leading, spacing: 14) {
                     if let h = halfLife, h.isFinite, h > 0 {
@@ -66,9 +66,9 @@ struct DecayView: View {
                 }
             } header: {
                 Text("Nuclide")
-            } footer: {
+            } footer: { Group {
                 if !useCustom { Text("Half-lives from NUBASE2020, isomers included (²⁶ᵐAl, ¹⁷⁸ᵐ²Hf).") }
-            }
+            }.wrappingFooter() }
 
             if let h = halfLife, h.isFinite, h > 0 {
                 let lambda = RadioactiveDecay.decayConstant(halfLife: h)

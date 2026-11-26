@@ -101,6 +101,7 @@ struct NuclidePickerRow: View {
             }
         }
         .tint(.primary)
+        .rowButton()
         .disabled(disabled)
         .sheet(isPresented: $picking) {
             NuclidePickerSheet(title: title, selected: nuclide) { nuclide = $0.plainLabel }

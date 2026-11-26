@@ -116,14 +116,19 @@ struct ScientificTextField: View {
     @FocusState private var focused: Bool
 
     var body: some View {
-        TextField(title, text: $text)
+        TextField(title, text: $text, prompt: Text(""))
             .multilineTextAlignment(.trailing)
             .monospacedDigit()
             .scientificKeyboard()
+            .rowField()
             .focused($focused)
             .onAppear { text = Self.format(value) }
             .onChange(of: value) { if !focused { text = Self.format(value) } }
             .onChange(of: text) {
+                // Only what the user types updates the value. The displayed text is rounded to 4 significant
+                // digits outside 10⁻³…10⁶, and parsing it back on appear would overwrite the exact value
+                // (e.g. 6.242e14 pps turned 100 µA into 100.0079 µA).
+                guard focused else { return }
                 if let v = Self.parse(text), allowsNegative || v >= 0 { value = v }
             }
             .onChange(of: focused) { if !focused { text = Self.format(value) } }
@@ -167,6 +172,7 @@ struct ScientificField: View {
                 if let note { Text(note).font(.caption).foregroundStyle(.secondary) }
             }
         }
+        .fieldRow()
     }
 }
 

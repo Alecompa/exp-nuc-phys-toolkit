@@ -64,9 +64,9 @@ struct ExforTargetSection: View {
             }
         } header: {
             Text("Cross sections · EXFOR")
-        } footer: {
+        } footer: { Group {
             Text("Measured data with \(nuclide.label) as the target, from the IAEA EXFOR library. A reaction's tables download when you open it and stay available offline.")
-        }
+        }.wrappingFooter() }
         .task(id: nuclide.id) { groups = await channelGroups(target: nuclide) }
     }
 }
@@ -218,7 +218,7 @@ struct ExforChannelView<Header: View>: View {
     var body: some View {
         let shown = visible
         let plotted = series(shown)
-        List {
+        ToolList {
             header()
 
             Section {
@@ -263,9 +263,9 @@ struct ExforChannelView<Header: View>: View {
                 }
             } header: {
                 Text("Display")
-            } footer: {
+            } footer: { Group {
                 Text("Tables in EXFOR come as σ or S, at laboratory or c.m. energies; they are converted with the entrance channel (S = σ E exp(2πη), non-relativistic). Measured data include electron screening.")
-            }
+            }.wrappingFooter() }
 
             Section {
                 ForEach(shown) { d in
@@ -293,9 +293,9 @@ struct ExforChannelView<Header: View>: View {
                     }
                     .font(.caption.weight(.semibold))
                 }
-            } footer: {
-                Text("Tap a colour dot to hide or show a table. EXFOR via IAEA-NDS/exfortables_py, snapshot \(ExforIndex.bundled.date).")
-            }
+            } footer: { Group {
+                Text("\(GestureWords.tap) a colour dot to hide or show a table. EXFOR via IAEA-NDS/exfortables_py, snapshot \(ExforIndex.bundled.date).")
+            }.wrappingFooter() }
         }
         .groupedList()
         .navigationTitle(title)
@@ -583,7 +583,7 @@ struct ExforChart: View {
                     .font(.caption2).foregroundStyle(.secondary)
                 }
                 HStack(spacing: 8) {
-                    Text(picked?.text ?? (zoom == nil ? Self.hint : "Pinch or drag to move · double-tap to reset"))
+                    Text(picked?.text ?? (zoom == nil ? Self.hint : "Pinch or drag to move · double-\(GestureWords.tap.lowercased()) to reset"))
                         .font(.caption.monospacedDigit())
                         .foregroundStyle(picked == nil ? .secondary : .primary)
                         .lineLimit(2)
@@ -779,7 +779,7 @@ struct ExforDatasetView: View {
     @State private var confirmation = 0
 
     var body: some View {
-        List {
+        ToolList {
             Section {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("\(dataset.author) (\(String(dataset.year)))").font(.title3.weight(.semibold))
@@ -818,9 +818,9 @@ struct ExforDatasetView: View {
                     } label: {
                         Label("Use as S(E) in Reaction Rate", systemImage: "flame")
                     }
-                } footer: {
+                } footer: { Group {
                     Text("Replaces the S-factor model with these points as a table (S at c.m. energies, interpolated in ln S, constant beyond the ends). The data are used as measured: no fit and no correction for electron screening.")
-                }
+                }.wrappingFooter() }
             }
 
             Section {
@@ -835,9 +835,9 @@ struct ExforDatasetView: View {
                 }
             } header: {
                 Text("E \(table.frame == .cm ? "(c.m.)" : "(lab)"), keV · \(table.quantity == .sFactor ? "S, keV b" : "σ")")
-            } footer: {
+            } footer: { Group {
                 Text("As tabulated in exfortables_py, converted to keV and barn. Uncertainties are those given in EXFOR (often statistical only).")
-            }
+            }.wrappingFooter() }
         }
         .groupedList()
         .navigationTitle("EXFOR \(dataset.exforID)")
@@ -911,11 +911,11 @@ struct ExforToolView: View {
                             Section {
                                 ReactionHeader(reaction: r, edit: { editingSetup = true }, showsBeam: false)
                                     .padding(.vertical, 6)
-                            } footer: {
+                            } footer: { Group {
                                 if f != r {
                                     Text("EXFOR files these data as \(f.label): laboratory energies are \(f.projectile.reactionLabel) energies. Compare in the c.m. frame.")
                                 }
-                            }
+                            }.wrappingFooter() }
                         }
                         .id(r)
                     }
@@ -956,7 +956,7 @@ struct ExforToolView: View {
     }
 
     private func noData(_ r: Reaction) -> some View {
-        List {
+        ToolList {
             Section {
                 ReactionHeader(reaction: r, edit: { editingSetup = true }, showsBeam: false).padding(.vertical, 6)
             }

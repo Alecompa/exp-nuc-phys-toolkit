@@ -9,7 +9,7 @@ struct AboutView: View {
     }
 
     var body: some View {
-        List {
+        ToolList {
             Section {
                 VStack(spacing: 12) {
                     Image(systemName: "sun.max.fill")
@@ -92,7 +92,7 @@ struct LicencesView: View {
     ]
 
     var body: some View {
-        List {
+        ToolList {
             ForEach(sources) { s in
                 Section {
                     VStack(alignment: .leading, spacing: 6) {
@@ -120,7 +120,7 @@ struct LicencesView: View {
 
 struct PrivacyView: View {
     var body: some View {
-        List {
+        ToolList {
             Section {
                 Label("No account, no tracking, no analytics, no ads.", systemImage: "hand.raised.fill")
                 Label("Your inputs, sources and notebook stay on this device.", systemImage: "iphone")

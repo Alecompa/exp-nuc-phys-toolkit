@@ -24,7 +24,7 @@ struct NotebookView: View {
                     ContentUnavailableView {
                         Label("No saved calculations", systemImage: "book.pages")
                     } description: {
-                        Text("Tap \(Image(systemName: "book.pages")) in any tool to save its inputs and results here, with a note.")
+                        Text("\(GestureWords.tap) \(Image(systemName: "book.pages")) in any tool to save its inputs and results here, with a note.")
                     }
                 } else {
                     List {

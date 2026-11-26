@@ -60,7 +60,7 @@ struct KinematicsView: View {
         let solutions = k.solutions(labAngle: angle.radians)
         let ejectileName = r.ejectile.isPhoton ? "γ" : r.ejectile.label
 
-        List {
+        ToolList {
             Section {
                 VStack(alignment: .leading, spacing: 14) {
                     ReactionHeader(reaction: r, edit: { editingSetup = true }, showsBeam: false)
@@ -93,9 +93,9 @@ struct KinematicsView: View {
                     }.padding(.vertical, 6)
                 } header: {
                     Text("vs \(ejectileName) lab angle")
-                } footer: {
+                } footer: { Group {
                     Text("Drag across the chart or use the angle control to move the cursor.")
-                }
+                }.wrappingFooter() }
 
                 ForEach(Array(solutions.enumerated()), id: \.offset) { index, s in
                     Section {
@@ -158,7 +158,7 @@ struct KinematicsView: View {
             }
             return s
         }
-        .safeAreaInset(edge: .bottom) {
+        .bottomControlBar {
             if k.isOpen {
                 AngleControl(angle: $angle, limit: k.maxEjectileAngle.map { $0.degrees })
                     .onAppear { angle = AngleControl.clamp(angle, limit: k.maxEjectileAngle?.degrees) }

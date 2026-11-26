@@ -16,7 +16,7 @@ struct DetectorSpectrumView: View {
 
     var body: some View {
         let mode = mode ?? defaultMode
-        List {
+        ToolList {
             Section {
                 VStack(alignment: .leading, spacing: 12) {
                     if let r = workbench.reaction { ReactionHeader(reaction: r) { editingSetup = true } }
@@ -152,6 +152,7 @@ private struct GammaSpectrumSections: View {
                             }
                         }
                         .padding(.vertical, 2)
+                        .macDeleteMenu { workbench.spectrumSetup.lines.removeAll { $0.id == line.id } }
                     }
                     .onDelete { workbench.spectrumSetup.lines.remove(atOffsets: $0) }
                     Menu {
@@ -199,9 +200,9 @@ private struct GammaSpectrumSections: View {
                     EscapeRows(escape: $workbench.spectrumSetup.escape)
                     FoilRows(foils: $workbench.spectrumSetup.foils)
                 }
-            } header: { Text("Detector") } footer: {
+            } header: { Text("Detector") } footer: { Group {
                 Text("In-beam γ rays are Doppler shifted by the c.m. velocity at this angle.")
-            }
+            }.wrappingFooter() }
 
             Section {
                 DisclosureGroup("Energy window and continuum", isExpanded: $showWindow) {
@@ -216,9 +217,9 @@ private struct GammaSpectrumSections: View {
 
             Section {
                 Link("NIST attenuation tables", destination: URL(string: "https://physics.nist.gov/PhysRefData/XrayMassCoef/chap2.html")!)
-            } footer: {
+            } footer: { Group {
                 Text("One Compton/peak ratio for all lines (in reality it rises with energy); emission in flight is a flat Doppler box at full recoil velocity (no slowing-down shape). No summing, pile-up or multiple scattering.")
-            }
+            }.wrappingFooter() }
         }
         .task(id: workbench.reaction?.residual) {
             scheme = nil
@@ -351,9 +352,9 @@ private struct ParticleSpectrumSections: View {
                     ContentUnavailableView("No particles at this angle", systemImage: "scope")
                 }
                 ForEach(groups) { g in ParticleGroupRow(group: g) }
-            } header: { Text("At the detector") } footer: {
+            } header: { Text("At the detector") } footer: { Group {
                 if !groups.isEmpty { Text("Reaction peaks have unit area (no cross section); elastic peaks are scaled among themselves by the Rutherford cross section per target atom. Energy loss in the target is not included.") }
-            }
+            }.wrappingFooter() }
 
             Section {
                 LabeledContent("Angle") { Text("\(Fmt.number(workbench.particleDetector.angle, decimals: 1))°").monospacedDigit() }
@@ -362,9 +363,9 @@ private struct ParticleSpectrumSections: View {
                 NumberField(title: "Resolution", value: $workbench.particleDetector.resolution, unit: "keV FWHM", range: 0.1...1000)
                 NumberField(title: "Half-opening", value: $workbench.particleDetector.halfOpening, unit: "°", range: 0...45)
                 Toggle("Elastic scattering", isOn: $workbench.particleDetector.showElastic)
-            } header: { Text("Detector") } footer: {
+            } header: { Text("Detector") } footer: { Group {
                 Text("Elastic peaks are the beam scattered by each element of the target material.")
-            }
+            }.wrappingFooter() }
 
             FoilsSection(foils: $workbench.particleDetector.foils,
                          footer: "Energy loss and straggling from SRIM. Add foils to stop elastic scattering before the detector.")
@@ -438,7 +439,7 @@ private struct FoilsSection: View {
     var footer = "Swipe to remove."
 
     var body: some View {
-        Section { FoilRows(foils: $foils) } header: { Text("Foils") } footer: { Text(footer) }
+        Section { FoilRows(foils: $foils) } header: { Text("Foils") } footer: { Group { Text(footer) }.wrappingFooter() }
     }
 }
 
@@ -462,9 +463,11 @@ private struct FoilRows: View {
                         }
                     }
                     .tint(.primary)
+                    .rowButton()
                     ThicknessField(angstrom: $foil.thickness, target: foil.material, unit: $workbench.thicknessUnit)
                     NumberField(title: "Tilt", value: $foil.angle, unit: "°", range: 0...89)
                 }
+                .macDeleteMenu { foils.removeAll { $0.id == foil.id } }
             }
             .onDelete { foils.remove(atOffsets: $0) }
             Button("Add foil", systemImage: "plus") { editing = DetectorFoil() }
@@ -530,6 +533,7 @@ private struct BackgroundRows: View {
                         Text(source.note).font(.caption2).foregroundStyle(.secondary)
                     }
                     .padding(.vertical, 2)
+                    .macDeleteMenu { setup.backgrounds.removeAll { $0.id == entry.id } }
                 }
             }
             .onDelete { setup.backgrounds.remove(atOffsets: $0) }

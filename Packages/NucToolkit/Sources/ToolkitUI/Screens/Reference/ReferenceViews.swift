@@ -54,7 +54,7 @@ struct ConstantsView: View {
     ]
 
     var body: some View {
-        List {
+        ToolList {
             ForEach(Self.groups, id: \.0) { title, items in
                 let shown = items.filter { search.isEmpty || $0.name.localizedCaseInsensitiveContains(search) || $0.symbol.localizedCaseInsensitiveContains(search) }
                 if !shown.isEmpty {
@@ -67,7 +67,7 @@ struct ConstantsView: View {
                 }
             }
             Section {
-                Text("CODATA 2018 recommended values (physics.nist.gov/constants). Touch and hold a value to copy it.")
+                Text("CODATA 2018 recommended values (physics.nist.gov/constants). \(GestureWords.hold) a value to copy it.")
                     .font(.footnote).foregroundStyle(.secondary)
             }
         }
@@ -111,7 +111,7 @@ struct UnitConverterView: View {
         let fromIndex = min(from, units.count - 1)
         let base = value * units[fromIndex].1
 
-        List {
+        ToolList {
             Section {
                 Picker("Quantity", selection: Binding(get: { quantity }, set: { quantity = $0; from = 0 })) {
                     ForEach(Quantity.allCases) { Text($0.rawValue).tag($0) }
@@ -137,9 +137,9 @@ struct UnitConverterView: View {
                 Section {
                     NumberField(title: "Molar mass", value: $molarMass, unit: "g/mol", range: 1e-3...1e4)
                     ValueRow(label: "Mass thickness", value: Fmt.significant(base * molarMass / RadioactiveDecay.avogadro * 1e6, digits: 6), unit: "µg/cm²")
-                } footer: {
+                } footer: { Group {
                     Text("For a compound, use the molar mass per formula unit and count formula units, not atoms.")
-                }
+                }.wrappingFooter() }
             }
             if quantity == .temperature {
                 Section {
@@ -160,6 +160,16 @@ struct UnitConverterView: View {
 // MARK: - Formula sheet
 
 struct FormulaSheetView: View {
+    /// Serif on iOS. The Mac's serif face (New York) has no matching subscript digits, which leaves gaps in
+    /// "m₁ + m₂", so the Mac uses the system face.
+    private static var formulaFont: Font {
+        #if os(macOS)
+        .system(.body)
+        #else
+        .system(.body, design: .serif)
+        #endif
+    }
+
     struct Formula: Identifiable {
         let title: String
         let formula: String
@@ -210,13 +220,13 @@ struct FormulaSheetView: View {
     ]
 
     var body: some View {
-        List {
+        ToolList {
             ForEach(Self.groups, id: \.0) { title, items in
                 Section(title) {
                     ForEach(items) { f in
                         VStack(alignment: .leading, spacing: 4) {
                             Text(f.title).font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
-                            Text(f.formula).font(.system(.body, design: .serif)).textSelection(.enabled)
+                            Text(f.formula).font(Self.formulaFont).textSelection(.enabled)
                             if let note = f.note {
                                 Text(note).font(.caption).foregroundStyle(.secondary)
                             }

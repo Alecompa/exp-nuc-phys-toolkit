@@ -58,7 +58,7 @@ struct EnergyLossView: View {
         let result = outcome?.target
         let hasStack = !workbench.layersBefore.isEmpty || !workbench.layersAfter.isEmpty
 
-        List {
+        ToolList {
             Section {
                 VStack(alignment: .leading, spacing: 14) {
                     StoppingHeader(ion: ion, ionLabel: r.projectile.label, target: target,
@@ -92,9 +92,9 @@ struct EnergyLossView: View {
                 NumberField(title: "Tilt", value: $workbench.layerAngle, unit: "°", range: 0...89)
             } header: {
                 Text("Beam")
-            } footer: {
+            } footer: { Group {
                 Text("Tilt: angle between the beam and the layer normal, for every layer.")
-            }
+            }.wrappingFooter() }
 
             Section {
                 ForEach(workbench.layersBefore) { layer in
@@ -123,9 +123,9 @@ struct EnergyLossView: View {
                 }
             } header: {
                 Text("Layers · beam direction ↓")
-            } footer: {
-                Text("Tap a layer to edit its material and thickness. Mean energy and energy spread leaving one layer enter the next.")
-            }
+            } footer: { Group {
+                Text("\(GestureWords.tap) a layer to edit its material and thickness. Mean energy and energy spread leaving one layer enter the next.")
+            }.wrappingFooter() }
 
             if let outcome, outcome.all.contains(where: { $0.profile.count > 2 }) {
                 Section {
@@ -134,9 +134,9 @@ struct EnergyLossView: View {
                         .padding(.vertical, 8)
                 } header: {
                     Text("Energy along the path")
-                } footer: {
+                } footer: { Group {
                     Text("Band: ±1σ energy straggling. Shaded: the target layer.")
-                }
+                }.wrappingFooter() }
             }
 
             if let result {
@@ -156,9 +156,9 @@ struct EnergyLossView: View {
                     }
                 } header: {
                     Text("Through the target layer")
-                } footer: {
+                } footer: { Group {
                     Text("Mean energy from dE/dx = −S(E); variance from Bohr straggling stretched by the slope of S (LunaSRIM). Path-length and nuclear straggling are neglected.")
-                }
+                }.wrappingFooter() }
 
                 if !result.stopped {
                     Section {
@@ -174,9 +174,9 @@ struct EnergyLossView: View {
                         }
                     } header: {
                         Text("Effective energy · \(r.label)")
-                    } footer: {
+                    } footer: { Group {
                         Text("For a thin target with a slowly varying cross section, the reaction effectively happens at the mean energy. With the switch on, the other tools use it in place of the beam energy.")
-                    }
+                    }.wrappingFooter() }
                 }
             }
         }
@@ -248,6 +248,7 @@ struct EnergyLossView: View {
             .contentShape(Rectangle())
         }
         .tint(.primary)
+        .rowButton()
         .accessibilityHint("Edit layer")
     }
 

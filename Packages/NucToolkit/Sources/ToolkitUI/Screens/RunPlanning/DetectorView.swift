@@ -14,7 +14,7 @@ struct DetectorView: View {
         let res = workbench.resolutionModel
         let fit = workbench.efficiencyCurve.fit()
 
-        List {
+        ToolList {
             Section {
                 VStack(alignment: .leading, spacing: 14) {
                     HeroNumber(value: Fmt.significant(res.fwhm(at: energy), digits: 3), unit: "keV FWHM",
@@ -60,11 +60,11 @@ struct DetectorView: View {
                     .padding(.vertical, 6)
             } header: {
                 Text("Energy resolution")
-            } footer: {
+            } footer: { Group {
                 Text(res.kind == .semiconductor
                      ? "FWHM² = a² + 2.355² F w E + (cE)², with w = 2.96 eV per pair in germanium: electronic noise, Fano statistics and incomplete charge collection."
                      : "FWHM ∝ √E (photo-electron statistics), scaled to the resolution at 662 keV.")
-            }
+            }.wrappingFooter() }
 
             Section {
                 if let fit {
@@ -83,13 +83,14 @@ struct DetectorView: View {
                 }
             } header: {
                 Text("Full-energy-peak efficiency")
-            } footer: {
+            } footer: { Group {
                 Text("ln ε = Σ aᵢ ln(E/1 MeV)ⁱ, weighted by the point uncertainties. The default points are an illustrative coaxial HPGe at 10 cm: replace them with your calibration.")
-            }
+            }.wrappingFooter() }
 
             Section {
                 ForEach($workbench.efficiencyCurve.points) { $p in
                     EfficiencyPointRow(point: $p)
+                        .macDeleteMenu { workbench.efficiencyCurve.points.removeAll { $0.id == p.id } }
                 }
                 .onDelete { workbench.efficiencyCurve.points.remove(atOffsets: $0) }
                 Button {
@@ -114,9 +115,9 @@ struct DetectorView: View {
                 ValueRow(label: "Geometric efficiency", value: Fmt.significant(100 * omega / (4 * .pi), digits: 4), unit: "% of 4π")
             } header: {
                 Text("Geometry")
-            } footer: {
+            } footer: { Group {
                 Text("Point source on the detector axis. The full-energy efficiency is this fraction times the intrinsic photopeak efficiency.")
-            }
+            }.wrappingFooter() }
         }
         .groupedList()
         .scrollDismissesKeyboard(.interactively)

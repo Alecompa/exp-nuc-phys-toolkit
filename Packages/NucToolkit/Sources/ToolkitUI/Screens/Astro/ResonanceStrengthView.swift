@@ -54,7 +54,7 @@ struct ResonanceStrengthView: View {
         let wg = mode == .toYield ? strength : eps.map { c.resonanceStrength(resonanceEnergy: eCM, yield: yield, effectiveStopping: $0) }
         let y = mode == .toYield ? eps.map { c.thickTargetYield(resonanceEnergy: eCM, strength: strength, effectiveStopping: $0) } : yield
 
-        List {
+        ToolList {
             Section {
                 VStack(alignment: .leading, spacing: 14) {
                     ReactionHeader(reaction: r) { editingSetup = true }
@@ -101,9 +101,17 @@ struct ResonanceStrengthView: View {
                 Button {
                     editingTarget = true
                 } label: {
-                    LabeledContent("Target material", value: workbench.stoppingTarget?.name ?? "None")
+                    LabeledContent {
+                        HStack(spacing: 6) {
+                            Text(workbench.stoppingTarget?.name ?? "None").foregroundStyle(.secondary)
+                            Image(systemName: "chevron.right").font(.caption).foregroundStyle(.tertiary)
+                        }
+                    } label: {
+                        Text("Target material")
+                    }
                 }
                 .foregroundStyle(.primary)
+                .rowButton()
                 NumberField(title: "\(r.target.label) abundance in untagged material", value: $workbench.isotopicAbundance, unit: "%", range: 1e-6...100)
                 if let stopping {
                     ValueRow(label: "Stopping per atom", value: Fmt.significant(stopping),
@@ -121,9 +129,9 @@ struct ResonanceStrengthView: View {
                 ValueRow(label: "(m₁ + m₂)/m₂", value: Fmt.significant((c.m1 + c.m2) / c.m2, digits: 6))
             } header: {
                 Text("Target")
-            } footer: {
+            } footer: { Group {
                 Text("Y_max = (λ²/2) · (m₁+m₂)/m₂ · ωγ/ε_eff, for an infinitely thick target. ε_eff is the laboratory stopping per active nucleus: the compound's mean stopping divided by the active atom fraction (explicit isotope fractions plus untagged element fraction × abundance). SRIM-2013 stopping, from the Energy Loss target.")
-            }
+            }.wrappingFooter() }
 
             Section {
                 StepperRow(title: "J (resonance)", value: $spinJ)
@@ -145,9 +153,9 @@ struct ResonanceStrengthView: View {
                 }
             } header: {
                 Text("Strength from widths")
-            } footer: {
+            } footer: { Group {
                 Text("ωγ = (2J+1)/((2j₁+1)(2j₂+1)) · Γ_aΓ_b/Γ. Multiply by 2 for identical particles in the entrance channel.")
-            }
+            }.wrappingFooter() }
 
             if let wg {
                 let res = NarrowResonance(energy: eCM, strength: wg)
@@ -165,9 +173,9 @@ struct ResonanceStrengthView: View {
                     .sensoryFeedback(.success, trigger: added)
                 } header: {
                     Text("Rate contribution")
-                } footer: {
+                } footer: { Group {
                     Text("Narrow-resonance rate Nₐ(2π/μkT)^3/2 ħ² ωγ exp(−E_R/kT), E_R in the centre of mass. \(workbench.resonances.count) resonance\(workbench.resonances.count == 1 ? "" : "s") in the rate model.")
-                }
+                }.wrappingFooter() }
             }
         }
         .groupedList()

@@ -25,6 +25,29 @@ struct NuclidesView: View {
     @State private var selected: Nuclide?
 
     var body: some View {
+        #if os(macOS)
+        // The Mac window already has a sidebar: a resizable list | detail split inside its detail area, rather
+        // than a second NavigationSplitView, which would add a third column and squeeze the window sidebar.
+        HSplitView {
+            nuclideList(split: true)
+                .frame(minWidth: 240, idealWidth: 300, maxWidth: 420)
+            NavigationStack {
+                if let n = selected {
+                    NuclideDetailView(nuclide: n).id(n).readableContentWidth()
+                } else {
+                    ContentUnavailableView("Choose a Nuclide", systemImage: "atom",
+                                           description: Text("Search by name, symbol or mass number."))
+                }
+            }
+            .frame(minWidth: 340, maxWidth: .infinity)
+        }
+        .onAppear { if selected == nil { selected = workbench.reaction?.target } }
+        #else
+        touchBody
+        #endif
+    }
+
+    @ViewBuilder private var touchBody: some View {
         if sizeClass == .regular {
             NavigationSplitView {
                 nuclideList(split: true)
@@ -153,7 +176,7 @@ struct NuclideDetailView: View {
 
     var body: some View {
         let unit = workbench.energyUnit
-        List {
+        ToolList {
             Section {
                 HStack(spacing: 18) {
                     NuclideTile(nuclide: nuclide, size: 84)
@@ -195,9 +218,9 @@ struct NuclideDetailView: View {
                 }
             } header: {
                 Text("Separation energies")
-            } footer: {
+            } footer: { Group {
                 Text("Equal to the Q value of capture on the daughter, e.g. Sₚ(¹³N) = Q of ¹²C(p,γ)¹³N.")
-            }
+            }.wrappingFooter() }
 
             if nuclide.a > 1 {
                 LevelSchemeSection(nuclide: nuclide)
@@ -221,12 +244,12 @@ struct NuclideDetailView: View {
                     } label: {
                         Label("Use as target in (α,γ)", systemImage: "scope")
                     }
-                } footer: {
+                } footer: { Group {
                     if let r = workbench.reaction, r.target == nuclide {
                         Label("Setup is now \(r.label)", systemImage: "checkmark.circle.fill")
                             .foregroundStyle(.green)
                     }
-                }
+                }.wrappingFooter() }
             }
         }
         .groupedList()

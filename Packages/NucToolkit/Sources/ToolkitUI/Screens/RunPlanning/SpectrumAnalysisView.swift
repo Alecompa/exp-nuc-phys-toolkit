@@ -28,7 +28,7 @@ struct SpectrumAnalysisView: View {
     @State private var selection: Double?
 
     var body: some View {
-        List {
+        ToolList {
             if let spectrum {
                 Section {
                     chart(spectrum)
@@ -44,17 +44,17 @@ struct SpectrumAnalysisView: View {
                     Toggle("Logarithmic counts", isOn: $logScale)
                 } header: {
                     Text(spectrum.name)
-                } footer: {
+                } footer: { Group {
                     Text(summary(spectrum))
-                }
+                }.wrappingFooter() }
 
                 Section {
                     NumberField(title: "Peak FWHM (guess)", value: $fwhmChannels, unit: "channels", range: 1...500)
                     NumberField(title: "Threshold", value: $threshold, unit: "σ", range: 2...50)
                     ValueRow(label: "Peaks found", value: "\(peaks.count)")
-                } header: { Text("Peak search") } footer: {
+                } header: { Text("Peak search") } footer: { Group {
                     Text("Second-derivative filter matched to the FWHM (Mariscotti) on the raw counts; areas above a SNIP background. Set the FWHM to the width of a clean peak.")
-                }
+                }.wrappingFooter() }
 
                 calibrationSection(spectrum)
                 peakList
@@ -221,9 +221,9 @@ struct SpectrumAnalysisView: View {
                     }
                 }
             }
-        } header: { Text("Energy calibration") } footer: {
+        } header: { Text("Energy calibration") } footer: { Group {
             Text("Every pair of strong peaks is tried against every pair of reference lines; the gain and offset that place the most (intensity-weighted) lines on peaks win, then a weighted least-squares fit refines them. Check the residuals: a wrong source selection gives a confident wrong answer.")
-        }
+        }.wrappingFooter() }
     }
 
     private func autoCalibrate() {
@@ -262,9 +262,9 @@ struct SpectrumAnalysisView: View {
                 .contentShape(Rectangle())
                 .onTapGesture { zoomTo(p) }
             }
-        } header: { Text("Peaks") } footer: {
-            Text("Tap a peak to zoom to it. Areas are net counts within ±1.5 FWHM above the SNIP background (no fit); use them for orientation, not for a final yield.")
-        }
+        } header: { Text("Peaks") } footer: { Group {
+            Text("\(GestureWords.tap) a peak to zoom to it. Areas are net counts within ±1.5 FWHM above the SNIP background (no fit); use them for orientation, not for a final yield.")
+        }.wrappingFooter() }
     }
 
     private func fwhmText(_ p: FoundPeak) -> Double { calibration.map { p.fwhm * $0.gain } ?? p.fwhm }

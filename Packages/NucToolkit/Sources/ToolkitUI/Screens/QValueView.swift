@@ -9,7 +9,7 @@ struct QValueView: View {
         @Bindable var workbench = workbench
         let unit = workbench.energyUnit
 
-        List {
+        ToolList {
             if let r = workbench.reaction {
                 Section {
                     VStack(alignment: .leading, spacing: 14) {
@@ -75,9 +75,9 @@ struct QValueView: View {
                     massRow(r.residual, role: "Residual")
                 } header: {
                     Text("Mass excesses · AME2020")
-                } footer: {
+                } footer: { Group {
                     Text("Q = Δ(target) + Δ(projectile) − Δ(ejectile) − Δ(residual). Uncertainties add in quadrature; AME correlations are neglected. # marks values from systematics.")
-                }
+                }.wrappingFooter() }
             } else {
                 ContentUnavailableView {
                     Label("No valid reaction", systemImage: "atom")
@@ -161,15 +161,52 @@ struct ReactionHeader: View {
 struct BeamEnergyStepper: View {
     @Environment(Workbench.self) private var workbench
     @AppStorage("beam.step") private var step = 10.0     // keV
+    private static let steps: [Double] = [1, 5, 10, 25, 50, 100, 500]
 
     var body: some View {
+        #if os(macOS)
+        macControl
+        #else
+        touchControl
+        #endif
+    }
+
+    #if os(macOS)
+    /// Mac: an editable field, a stepper and the step size, like a native inspector control.
+    private var macControl: some View {
+        HStack(spacing: 6) {
+            Text("Beam").foregroundStyle(.secondary)
+            TextField("Beam energy", value: Binding(
+                get: { workbench.beamEnergy / workbench.energyUnit.scale },
+                set: { workbench.beamEnergy = max(0, $0) * workbench.energyUnit.scale }
+            ), format: .number.precision(.fractionLength(0...4)).grouping(.never))
+            .multilineTextAlignment(.trailing)
+            .monospacedDigit()
+            .rowField(width: 84)
+            Text(workbench.energyUnit.label).foregroundStyle(.secondary)
+            Stepper("Beam energy", onIncrement: { change(step) }, onDecrement: { change(-step) })
+                .labelsHidden()
+                .help("Change the beam energy by \(Fmt.keV(step)) keV (⌘⌥↑ / ⌘⌥↓)")
+            Picker("Step", selection: $step) {
+                ForEach(Self.steps, id: \.self) { Text("± \(Int($0)) keV").tag($0) }
+            }
+            .labelsHidden()
+            .pickerStyle(.menu)
+            .fixedSize()
+            .help("Step of the stepper and of ⌘⌥↑ / ⌘⌥↓")
+        }
+        .controlSize(.small)
+    }
+    #endif
+
+    private var touchControl: some View {
         HStack(spacing: 2) {
             Button { change(-step) } label: { Image(systemName: "minus") }
                 .accessibilityLabel("Lower beam energy by \(Fmt.keV(step)) keV")
                 .disabled(workbench.beamEnergy - step < 0)
             Menu {
                 Section("Step") {
-                    ForEach([1.0, 5, 10, 25, 50, 100, 500], id: \.self) { s in
+                    ForEach(Self.steps, id: \.self) { s in
                         Button { step = s } label: {
                             if s == step { Label("\(Fmt.keV(s)) keV", systemImage: "checkmark") } else { Text("\(Fmt.keV(s)) keV") }
                         }

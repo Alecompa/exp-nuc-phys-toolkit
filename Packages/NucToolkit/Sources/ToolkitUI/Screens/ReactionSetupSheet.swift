@@ -39,15 +39,16 @@ struct ReactionSetupSheet: View {
                         Text("Builder").tag(true)
                         Text("Notation").tag(false)
                     }.pickerStyle(.segmented)
+                    .labelsHidden()
                     .onChange(of: guided) { old, _ in
                         if old { text = "\(targetText)(\(projectileText),\(ejectileText))\(residualText)" }
                         else { loadFields(text) }
                     }
                     if guided {
-                        LabeledContent("Target isotope") { TextField("14N", text: $targetText).notationInput().multilineTextAlignment(.trailing) }
-                        LabeledContent("Projectile") { TextField("p or 12C", text: $projectileText).notationInput().multilineTextAlignment(.trailing) }
-                        LabeledContent("Ejectile") { TextField("g, n or a", text: $ejectileText).notationInput().multilineTextAlignment(.trailing) }
-                        LabeledContent("Residual") { TextField("Automatic", text: $residualText).notationInput().multilineTextAlignment(.trailing) }
+                        LabeledContent("Target isotope") { TextField("14N", text: $targetText).notationInput().multilineTextAlignment(.trailing).rowField(width: 140) }
+                        LabeledContent("Projectile") { TextField("p or 12C", text: $projectileText).notationInput().multilineTextAlignment(.trailing).rowField(width: 140) }
+                        LabeledContent("Ejectile") { TextField("g, n or a", text: $ejectileText).notationInput().multilineTextAlignment(.trailing).rowField(width: 140) }
+                        LabeledContent("Residual") { TextField("Automatic", text: $residualText).notationInput().multilineTextAlignment(.trailing).rowField(width: 140) }
                     }
                     VStack(alignment: .leading, spacing: 10) {
                         if !guided { TextField("12C(p,g)13N", text: $text)
@@ -60,9 +61,9 @@ struct ReactionSetupSheet: View {
                     .padding(.vertical, 4)
                 } header: {
                     Text("Reaction")
-                } footer: {
+                } footer: { Group {
                     Text("Light ions p d t h a n, photon g. Leave the residual empty to infer it.")
-                }
+                }.wrappingFooter() }
 
                 Section("Energies") {
                     EnergyField(title: "Beam energy (lab)", keV: $beam, unit: workbench.energyUnit)
@@ -108,6 +109,7 @@ struct ReactionSetupSheet: View {
                 }
 
             }
+            .groupedForm()
             .scrollDismissesKeyboard(.interactively)
             .keyboardDoneButton()
             .navigationTitle("Setup")
@@ -170,7 +172,9 @@ struct ReactionSetupSheet: View {
                         Text(t.name).foregroundStyle(.primary)
                         Text(TargetSummary.line(t, reaction: material == nil))
                     }
+                    .contentShape(Rectangle())
                 }
+                .buttonStyle(.plain)
                 .tint(.primary)
                 if let r = reaction, !t.components.contains(where: { $0.z == r.target.z }) {
                     HStack {
@@ -186,9 +190,9 @@ struct ReactionSetupSheet: View {
                 NumberField(title: "\(reaction?.target.label ?? "Isotope") abundance", value: $abundance, unit: "%", range: 0...100)
             } header: {
                 Text("Target")
-            } footer: {
+            } footer: { Group {
                 Text("Backings and covers: Energy Loss tool.")
-            }
+            }.wrappingFooter() }
         }
     }
 
@@ -232,9 +236,9 @@ struct ReactionSetupSheet: View {
             .padding(.vertical, 4)
         } header: {
             Text(title)
-        } footer: {
-            if removable { Text("Touch and hold a reaction to remove it.") }
-        }
+        } footer: { Group {
+            if removable { Text("\(GestureWords.hold) a reaction to remove it.") }
+        }.wrappingFooter() }
     }
 
     private func presetChip(_ notation: String) -> some View {

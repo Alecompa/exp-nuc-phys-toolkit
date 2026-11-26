@@ -80,7 +80,7 @@ struct ReactionRateView: View {
         let w = c.gamowWindow(t9: t9)
         let extrapolated = model.tableRange.map { w.lower < $0.lowerBound || w.upper > $0.upperBound } ?? false
 
-        List {
+        ToolList {
             Section {
                 VStack(alignment: .leading, spacing: 14) {
                     ReactionHeader(reaction: r, edit: { editingSetup = true }, showsBeam: false)
@@ -106,9 +106,9 @@ struct ReactionRateView: View {
                 ValueRow(label: "Narrow resonances", value: Fmt.significant(res))
             } header: {
                 Text("Temperature")
-            } footer: {
+            } footer: { Group {
                 Text("Rates in cm³ mol⁻¹ s⁻¹.")
-            }
+            }.wrappingFooter() }
 
             Section {
                 if let table {
@@ -141,9 +141,9 @@ struct ReactionRateView: View {
                 }
             } header: {
                 Text("vs temperature")
-            } footer: {
+            } footer: { Group {
                 Text("Nₐ⟨σv⟩ = Nₐ √(8/πμ) (kT)^−3/2 ∫ S(E) exp(−2πη − E/kT) dE, integrated numerically, plus the narrow resonances. Bare rate: no stellar or laboratory screening, no thermal excitation of the target.")
-            }
+            }.wrappingFooter() }
 
             Section {
                 if workbench.sFactorIsPlaceholder {
@@ -183,15 +183,16 @@ struct ReactionRateView: View {
                 ValueRow(label: "S at E₀", value: Fmt.significant(model.s(at: w.peak)), unit: "keV b")
             } header: {
                 Text("Non-resonant S factor")
-            } footer: {
+            } footer: { Group {
                 Text(model.kind == .polynomial
                      ? "S(E) = S(0) + S′(0)E + ½S″(0)E², E in keV (c.m.); negative values are cut at zero."
                      : "Interpolated linearly in ln S, held constant beyond the table ends. Energies in keV (c.m.), S in keV b.")
-            }
+            }.wrappingFooter() }
 
             Section {
                 ForEach($workbench.resonances) { $res in
                     ResonanceRow(resonance: $res, channel: c, t9: t9)
+                        .macDeleteMenu { workbench.resonances.removeAll { $0.id == res.id } }
                 }
                 .onDelete { workbench.resonances.remove(atOffsets: $0) }
                 Button {
@@ -202,9 +203,9 @@ struct ReactionRateView: View {
                 }
             } header: {
                 Text("Narrow resonances")
-            } footer: {
+            } footer: { Group {
                 Text("E_R in the centre of mass. Measure ωγ in Resonance Strength and add it from there.")
-            }
+            }.wrappingFooter() }
         }
         .groupedList()
         .notebookSnapshot {
@@ -356,9 +357,9 @@ private struct SFactorTableSheet: View {
                         .notationInput()
                 } header: {
                     Text("E (keV, c.m.), S (keV b)")
-                } footer: {
+                } footer: { Group {
                     Text("One point per line; commas, semicolons, tabs or spaces between columns; # starts a comment; a header line is skipped.")
-                }
+                }.wrappingFooter() }
                 Section {
                     switch parsed {
                     case .success(let pts):
