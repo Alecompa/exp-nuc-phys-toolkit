@@ -5,6 +5,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
@@ -82,7 +84,7 @@ fun RateScreen(wb: Workbench, onEdit: () -> Unit) {
                 NumberField("ωγ", res.strength, "eV", Modifier.weight(1f), range = 0.0..1e9) { v ->
                     wb.run.update(p.copy(resonances = p.resonances.mapIndexed { j, x -> if (j == i) x.copy(strength = v) else x }))
                 }
-                TextButton(onClick = { wb.run.update(p.copy(resonances = p.resonances.filterIndexed { j, _ -> j != i })) }) { Text("✕") }
+                TextButton(onClick = { wb.run.update(p.copy(resonances = p.resonances.filterIndexed { j, _ -> j != i })) }) { Text("✕", Modifier.semantics { contentDescription = "Remove" }) }
             }
         }
         OutlinedButton(onClick = { wb.run.update(p.copy(resonances = p.resonances + NarrowResonance(100.0, 1e-6))) }) { Text("Add resonance") }

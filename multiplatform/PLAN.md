@@ -1,6 +1,6 @@
 # Android / Linux / Windows: plan to feature parity with the iOS app
 
-Status on 2026-11-26 (updated): phases 1–3 are done (✅ below); phase 4 (release and device tests) is open. All physics is ported to Kotlin and checked against the Swift code through six shared
+Status on 2026-11-26 (updated): phases 1–3 are done (✅ below); phase 4 is mostly done; tests on real Linux, Windows and Android devices are still open. All physics is ported to Kotlin and checked against the Swift code through six shared
 reference files (`Shared/reference_*.json`, about 1 600 cases and 26 000 values, 10⁻⁹ relative). The remaining work is
 interface work on top of tested physics. This file tracks it; tick items as they land.
 
@@ -57,10 +57,10 @@ kept for the session only.
 
 | # | Item | Effort |
 |---|---|---|
-| 4.1 | Run the GitHub workflow; fix Linux/Windows packaging issues it reveals; test the `.deb` on a Linux machine and the `.msi` on Windows | S–M |
-| 4.2 | Install the APK on two Android phones (small and large screen); check Back gesture, keyboard, file picker, dark/light theme | S |
-| 4.3 | Release APK signing (keystore outside the repository) and versioning shared with iOS (`MARKETING_VERSION`) | S |
-| 4.4 | Accessibility: font scaling to 200 %, TalkBack labels on plots and pickers | M |
+| ✅ 4.1 | GitHub workflow green on Linux (`.deb`), Windows (`.msi`), macOS (`.dmg`) and the APK job (commit 400e3bc). Still open: install the `.deb` on a Linux machine and the `.msi` on Windows | S–M |
+| ◐ 4.2 | Android emulator (API 35, 1080×2400): APK installs and launches; Kinematics, Stopping, Detector spectrum and EXFOR (online download) open without crashes; Back works. Still open: a real phone, a small screen, the file picker, dark theme | S |
+| ✅ 4.3 | Release signing from `keystore.properties` or `GAMOW_KEYSTORE*` environment variables, both gitignored (tested with a throwaway key). Versions: Android `versionName` 0.1.0 / `versionCode` 1, the same as iOS `MARKETING_VERSION` / `CURRENT_PROJECT_VERSION`; for now they are kept in step by hand | S |
+| ✅ 4.4 | Accessibility: rows, the reaction header and plot margins reflow at 200 % font (desktop render test `largeFonts` and the emulator); screen-reader descriptions on plots, the pin and remove buttons, and the expand/collapse state of `MoreOptions` | M |
 
 S ≈ under an hour, M ≈ a few hours. Phases 1 and 2 are one working session; 3 and 4 a second.
 

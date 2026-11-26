@@ -6,6 +6,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
@@ -80,7 +82,7 @@ object ReferenceConstants {
 @Composable
 private fun SearchField(query: String, placeholder: String, onChange: (String) -> Unit) {
     OutlinedTextField(query, onChange, placeholder = { Text(placeholder) }, singleLine = true,
-        trailingIcon = { if (query.isNotEmpty()) TextButton(onClick = { onChange("") }) { Text("✕") } },
+        trailingIcon = { if (query.isNotEmpty()) TextButton(onClick = { onChange("") }) { Text("✕", Modifier.semantics { contentDescription = "Remove" }) } },
         modifier = Modifier.fillMaxWidth())
 }
 

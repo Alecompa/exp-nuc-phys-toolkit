@@ -5,6 +5,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -179,7 +181,7 @@ private fun GammaSection(wb: Workbench, r: Reaction) {
                         Text(if (lines.isEmpty()) "Closed at this beam energy" else lines.joinToString(", ") { Fmt.keV(it.meanEnergy) } + " keV",
                             style = MaterialTheme.typography.bodySmall)
                     }
-                    TextButton(onClick = { s.setup = setup.copy(backgrounds = setup.backgrounds - entry) }) { Text("✕") }
+                    TextButton(onClick = { s.setup = setup.copy(backgrounds = setup.backgrounds - entry) }) { Text("✕", Modifier.semantics { contentDescription = "Remove" }) }
                 }
                 NumberField(if (src.notation == null) "Counts, strongest line" else "Counts per γ ray", entry.counts, "", range = 0.0..1e12) { v ->
                     s.setup = setup.copy(backgrounds = setup.backgrounds.map { if (it.id == entry.id) it.copy(counts = v) else it })
@@ -202,7 +204,7 @@ private fun GammaSection(wb: Workbench, r: Reaction) {
         MoreOptions("Calibration sources & custom lines", summary = if (setup.lines.isEmpty()) "none" else "${setup.lines.size} line(s)") {
             for (line in setup.lines) Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("${line.name} · ${Fmt.keV(line.energy)} keV · ${Fmt.sig(line.counts, 3)}", Modifier.weight(1f))
-                TextButton(onClick = { s.setup = setup.copy(lines = setup.lines - line) }) { Text("✕") }
+                TextButton(onClick = { s.setup = setup.copy(lines = setup.lines - line) }) { Text("✕", Modifier.semantics { contentDescription = "Remove" }) }
             }
             var menu by remember { mutableStateOf(false) }
             Box {
@@ -302,7 +304,7 @@ private fun ParticleSection(wb: Workbench, r: Reaction) {
                     Text("${f.material.name}", Modifier.weight(1f))
                     NumberField("Thickness", f.thickness / 1e4, "µm", Modifier.weight(1f), range = 0.0..1e6) { v ->
                         s.particle = det.copy(foils = det.foils.mapIndexed { j, x -> if (j == i) x.copy(thickness = v * 1e4) else x }) }
-                    TextButton(onClick = { s.particle = det.copy(foils = det.foils.filterIndexed { j, _ -> j != i }) }) { Text("✕") }
+                    TextButton(onClick = { s.particle = det.copy(foils = det.foils.filterIndexed { j, _ -> j != i }) }) { Text("✕", Modifier.semantics { contentDescription = "Remove" }) }
                 }
             }
             var picking by remember { mutableStateOf(false) }

@@ -8,6 +8,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -188,7 +190,7 @@ private fun StackEditor(wb: Workbench) {
                     Text(t?.name ?: k, Modifier.weight(1f))
                     NumberField("µm", a / 1e4, "µm", Modifier.weight(1f), range = 0.0..1e6) { v ->
                         run.updateLayers(beforeTarget, list.mapIndexed { j, x -> if (j == i) x.first to v * 1e4 else x }) }
-                    TextButton(onClick = { run.updateLayers(beforeTarget, list.filterIndexed { j, _ -> j != i }) }) { Text("✕") }
+                    TextButton(onClick = { run.updateLayers(beforeTarget, list.filterIndexed { j, _ -> j != i }) }) { Text("✕", Modifier.semantics { contentDescription = "Remove" }) }
                 }
             }
             var picking by remember { mutableStateOf(false) }

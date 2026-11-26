@@ -34,7 +34,7 @@ levels, EXFOR channels) · Notebook (CSV/text export) · Experiments (saved setu
 Formula sheet · Settings & about. The home has tool search and pinned tools.
 Apple-only features (Shortcuts, widgets) are not on Android/Linux/Windows.
 
-**Not yet tested** on an Android phone, on Linux or on Windows; the workflow produces the installers for that.
+**Tested** on the Android emulator (API 35). **Not yet tested** on a real Android phone, on Linux or on Windows; the workflow produces the installers for that.
 
 Each screen shows the result first, then the few inputs that matter, then plots; secondary settings are folded
 under “More options” style sections with a one-line summary.
@@ -52,6 +52,18 @@ cd multiplatform
 ./gradlew :composeApp:assembleDebug        # APK: composeApp/build/outputs/apk/debug/composeApp-debug.apk
 ./gradlew :composeApp:packageDeb           # Linux .deb (run on Linux; packageMsi on Windows, packageDmg on macOS)
 ```
+
+**Release APK.** Create a key once (keep it and its passwords safe, outside the repository; the same key must sign
+every update):
+
+```bash
+keytool -genkeypair -v -keystore ~/gamow-release.jks -alias gamow -keyalg RSA -keysize 4096 -validity 10000
+```
+
+then a git-ignored `multiplatform/keystore.properties` with `storeFile=/Users/you/gamow-release.jks`,
+`storePassword=…`, `keyAlias=gamow`, `keyPassword=…` (or the environment variables `GAMOW_KEYSTORE`,
+`GAMOW_KEYSTORE_PASSWORD`, `GAMOW_KEY_ALIAS`, `GAMOW_KEY_PASSWORD`, e.g. as CI secrets), and build
+`./gradlew :composeApp:assembleRelease`.
 
 Install the APK with `adb install composeApp/build/outputs/apk/debug/composeApp-debug.apk`, or copy it to the
 phone and open it (allow installs from that source). The GitHub workflow `.github/workflows/multiplatform.yml`

@@ -9,6 +9,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -169,7 +171,10 @@ private fun ToolList(selected: Tool?, onPick: (Tool) -> Unit) {
             headlineContent = { Text(t.title, fontWeight = if (t == selected) FontWeight.SemiBold else null) },
             supportingContent = { Text(t.subtitle) },
             trailingContent = {
-                TextButton(onClick = { Pins.toggle(t) }) { Text(if (t in Pins.pinned) "★" else "☆", color = MaterialTheme.colorScheme.primary) }
+                TextButton(onClick = { Pins.toggle(t) }, modifier = Modifier.semantics {
+                    contentDescription = if (t in Pins.pinned) "Unpin ${t.title}" else "Pin ${t.title}" }) {
+                    Text(if (t in Pins.pinned) "★" else "☆", color = MaterialTheme.colorScheme.primary)
+                }
             },
             colors = ListItemDefaults.colors(containerColor = if (t == selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
                 else MaterialTheme.colorScheme.surface),

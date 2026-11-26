@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -46,6 +48,8 @@ fun Plot(
     cursor: Double? = null,
     height: Dp = 260.dp,
     onPointer: ((Double) -> Unit)? = null,
+    /** Spoken by screen readers; defaults to the axes and what the plot shows. */
+    description: String? = null,
 ) {
     val measurer = rememberTextMeasurer()
     val axisColor = MaterialTheme.colorScheme.onSurfaceVariant
@@ -65,14 +69,28 @@ fun Plot(
     fun ty(v: Double) = if (yLog) log10(v) else v
     val ax0 = tx(x0); val ax1 = tx(x1); val ay0 = ty(y0); val ay1 = ty(y1)
 
+    // Margins follow the measured tick and axis labels, which grow with the user's font size.
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    val yTickWidth = ticks(y0, y1, yLog).maxOfOrNull { measurer.measure(tickLabel(it), labelStyle).size.width } ?: 0
+    val tickHeight = measurer.measure("0", labelStyle).size.height
+    val axisHeight = if (xLabel.isEmpty()) 0 else measurer.measure(xLabel, labelStyle).size.height
+    val leftPx = yTickWidth + with(density) { 10.dp.toPx() }
+    val bottomPx = tickHeight + axisHeight + with(density) { 10.dp.toPx() }
     Canvas(
-        modifier.fillMaxWidth().height(height).pointerInput(xLog, x0, x1) {
+        modifier.fillMaxWidth().height(height).semantics {
+            contentDescription = description ?: buildString {
+                append("Plot of ${yLabel.ifEmpty { "values" }} versus ${xLabel.ifEmpty { "x" }}")
+                append(", ${tickLabel(x0)} to ${tickLabel(x1)}")
+                if (cursor != null) append(", cursor at ${tickLabel(cursor)}")
+                if (onPointer != null) append(". Touch and drag to read values")
+            }
+        }.pointerInput(xLog, x0, x1, leftPx) {
             if (onPointer == null) return@pointerInput
             awaitPointerEventScope {
                 while (true) {
                     val e = awaitPointerEvent()
                     val p = e.changes.firstOrNull()?.position ?: continue
-                    val left = 56.dp.toPx(); val right = size.width - 12.dp.toPx()
+                    val left = leftPx; val right = size.width - 12.dp.toPx()
                     if (p.x < left || p.x > right) continue
                     val f = (p.x - left) / (right - left)
                     val a = ax0 + f * (ax1 - ax0)
@@ -81,8 +99,8 @@ fun Plot(
             }
         }
     ) {
-        val left = 56.dp.toPx(); val right = size.width - 12.dp.toPx()
-        val top = 8.dp.toPx(); val bottom = size.height - 34.dp.toPx()
+        val left = leftPx; val right = size.width - 12.dp.toPx()
+        val top = 8.dp.toPx(); val bottom = size.height - bottomPx
         fun px(v: Double) = (left + (tx(v) - ax0) / (ax1 - ax0) * (right - left)).toFloat()
         fun py(v: Double) = (bottom - (ty(v) - ay0) / (ay1 - ay0) * (bottom - top)).toFloat()
 

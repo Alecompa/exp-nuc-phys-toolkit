@@ -1,3 +1,4 @@
+import java.util.Properties
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
@@ -45,6 +46,15 @@ kotlin {
     }
 }
 
+// Release signing: from multiplatform/keystore.properties (git-ignored) or the environment (CI secrets).
+// Keys: storeFile, storePassword, keyAlias, keyPassword / GAMOW_KEYSTORE, GAMOW_KEYSTORE_PASSWORD, GAMOW_KEY_ALIAS,
+// GAMOW_KEY_PASSWORD. Without them, release builds stay unsigned and debug builds are unaffected.
+val signingProps = Properties().apply {
+    rootDir.resolve("keystore.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
+}
+fun signing(key: String, env: String): String? = signingProps.getProperty(key) ?: System.getenv(env)
+val releaseKeystore = signing("storeFile", "GAMOW_KEYSTORE")
+
 android {
     namespace = "com.acompagnucci.gamow"
     compileSdk = 35
@@ -61,8 +71,19 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     packaging { resources { excludes += "/META-INF/{AL2.0,LGPL2.1}" } }
+    signingConfigs {
+        if (releaseKeystore != null) create("release") {
+            storeFile = rootDir.resolve(releaseKeystore)
+            storePassword = signing("storePassword", "GAMOW_KEYSTORE_PASSWORD")
+            keyAlias = signing("keyAlias", "GAMOW_KEY_ALIAS")
+            keyPassword = signing("keyPassword", "GAMOW_KEY_PASSWORD")
+        }
+    }
     buildTypes {
-        getByName("release") { isMinifyEnabled = false }
+        getByName("release") {
+            isMinifyEnabled = false
+            if (releaseKeystore != null) signingConfig = signingConfigs.getByName("release")
+        }
     }
 }
 
