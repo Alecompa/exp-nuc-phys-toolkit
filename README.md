@@ -103,7 +103,15 @@ open exp-nuc-phys-toolkit/Gamow.xcodeproj
    identifier is taken, change the prefix (`com.yourname.gamow`, `com.yourname.gamow.widgets`).
 3. Connect the iPhone, enable Developer Mode on it, pick it as the run destination and press ⌘R.
 
-With a free account the app has to be reinstalled every 7 days. [docs/release.md](docs/release.md) covers
+With a free account the app has to be reinstalled every 7 days.
+
+## Mac app
+
+The **GamowMac** scheme builds a native macOS app from the same code: a sidebar with the setup, every tool and the
+data views; ⌘O opens a spectrum (or drop `.Spe`, `.Chn` or CSV files on the window), ⌘K edits the setup,
+⌘⌥↑/↓ step the beam energy; pointing at EXFOR points or spectrum channels shows their values. Select the GamowMac
+scheme, choose your team under Signing & Capabilities and press ⌘R. The app is sandboxed (network for EXFOR and
+ENSDF, files you open). [docs/release.md](docs/release.md) covers
 TestFlight and the App Store.
 
 ## Project layout

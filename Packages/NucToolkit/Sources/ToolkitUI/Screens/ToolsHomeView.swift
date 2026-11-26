@@ -35,6 +35,14 @@ struct ToolsHomeView: View {
                 ReactionSetupSheet()
             }
         }
+        #if DEBUG
+        // Screenshot automation: GAMOW_OPEN_TOOL=<Tool raw value> opens a tool, GAMOW_OPEN_SETUP=1 the setup sheet.
+        .onAppear {
+            let env = ProcessInfo.processInfo.environment
+            if path.isEmpty, let t = env["GAMOW_OPEN_TOOL"].flatMap(Tool.init(rawValue:)) { path = [.tool(t)] }
+            if env["GAMOW_OPEN_SETUP"] == "1" { editingSetup = true }
+        }
+        #endif
     }
 
     // MARK: Layouts

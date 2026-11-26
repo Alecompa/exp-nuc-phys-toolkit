@@ -51,12 +51,14 @@ extension View {
     /// Shared destinations for every navigation stack in the app.
     func appDestinations(namespace: Namespace.ID) -> some View {
         navigationDestination(for: Route.self) { route in
-            destination(route, namespace: namespace).readableContentWidth()
+            routeDestination(route, namespace: namespace).readableContentWidth()
         }
     }
+}
 
-    @ViewBuilder
-    private func destination(_ route: Route, namespace: Namespace.ID) -> some View {
+/// The screen of a route (tool or nuclide), shared by the iPhone/iPad stacks and the Mac sidebar.
+@MainActor @ViewBuilder
+func routeDestination(_ route: Route, namespace: Namespace.ID) -> some View {
             switch route {
             case .tool(.qValue):
                 QValueView().zoomTransition(id: Tool.qValue, in: namespace)
@@ -105,5 +107,4 @@ extension View {
             case .nuclide(let n):
                 NuclideDetailView(nuclide: n).zoomTransition(id: n.id, in: namespace)
             }
-    }
 }

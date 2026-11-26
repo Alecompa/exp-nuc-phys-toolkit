@@ -26,6 +26,13 @@ struct ExperimentWorkflowTests {
         #expect(ExperimentSetup(workbench) == snapshot)
     }
 
+    @Test func freshInstallUsesReactionDefaults() {
+        let workbench = Workbench(defaults: isolatedDefaults())        // nothing saved
+        #expect(workbench.sFactorIsPlaceholder)
+        #expect(workbench.sFactorModel.s0 == 1)
+        #expect(abs(workbench.isotopicAbundance - 98.94) < 1e-9)         // natural ¹²C (nubase2020.csv)
+    }
+
     @Test func everyPresetParses() {
         for item in Presets.groups.flatMap(\.items) {
             #expect((try? Reaction(notation: item)) != nil, "\(item)")
