@@ -37,7 +37,7 @@ struct DecayView: View {
                         Label("\(state?.label ?? nuclideText) is stable.", systemImage: "checkmark.seal.fill")
                             .foregroundStyle(.green)
                     } else {
-                        Label("Unknown nuclide. Type e.g. 60Co, 26mAl or 241Am.", systemImage: "questionmark.circle")
+                        Label("Choose a radioactive nuclide below.", systemImage: "questionmark.circle")
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -45,15 +45,7 @@ struct DecayView: View {
             }
 
             Section {
-                LabeledContent("Nuclide") {
-                    TextField("e.g. 137Cs", text: $nuclideText)
-                        .multilineTextAlignment(.trailing)
-                        .autocorrectionDisabled()
-                        #if os(iOS)
-                        .textInputAutocapitalization(.never)
-                        #endif
-                        .disabled(useCustom)
-                }
+                NuclidePickerRow(title: "Nuclide", nuclide: $nuclideText, disabled: useCustom)
                 Toggle("Custom half-life", isOn: $useCustom.animation(.smooth))
                 if useCustom {
                     LabeledContent("Half-life") {
@@ -75,7 +67,7 @@ struct DecayView: View {
             } header: {
                 Text("Nuclide")
             } footer: {
-                if !useCustom { Text("Half-lives from NUBASE2020. Isomers are written with m, e.g. 26mAl, 178m2Hf.") }
+                if !useCustom { Text("Half-lives from NUBASE2020, isomers included (²⁶ᵐAl, ¹⁷⁸ᵐ²Hf).") }
             }
 
             if let h = halfLife, h.isFinite, h > 0 {
