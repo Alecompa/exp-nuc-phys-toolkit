@@ -116,6 +116,14 @@ struct MeasuredSpectrumRobustnessTests {
         #expect(PeakSearch.find([Double](repeating: 5, count: 1024), fwhm: 500).isEmpty)
     }
 
+    @Test func windowsLineEndings() throws {
+        let spe = "$SPEC_ID:\r\ntest\r\n$MEAS_TIM:\r\n100 120\r\n$DATA:\r\n0 2\r\n4\r\n5\r\n6\r\n"
+        let s = try MeasuredSpectrum.read(Data(spe.utf8), name: "w.Spe")
+        #expect(s.counts == [4, 5, 6])
+        #expect(s.liveTime == 100)
+        #expect(try MeasuredSpectrum.read(Data("0,7\r\n1,8\r\n".utf8), name: "w.csv").counts == [7, 8])
+    }
+
     @Test func headerNumbersAndDescendingEnergies() throws {
         let text = "Live time: 100\nchannel counts\n0 4\n1 5\n2 6\n3 7\n"
         #expect(try MeasuredSpectrum.read(Data(text.utf8), name: "a.txt").counts == [4, 5, 6, 7])

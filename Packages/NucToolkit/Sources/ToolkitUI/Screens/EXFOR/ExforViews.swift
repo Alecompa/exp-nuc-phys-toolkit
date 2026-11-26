@@ -246,18 +246,20 @@ struct ExforChannelView<Header: View>: View {
                     Text("S factor").tag(ExforTable.Quantity.sFactor)
                 }
                 .disabled(entrance == nil)
-                Picker("Energy", selection: $storedFrame.animation(.smooth)) {
-                    Text("Laboratory").tag(ExforTable.Frame.lab)
-                    Text("Centre of mass").tag(ExforTable.Frame.cm)
-                }
-                .disabled(entrance == nil)
-                Toggle("Logarithmic energy axis", isOn: $logX.animation(.smooth))
-                Toggle("Logarithmic \(quantity == .sFactor ? "S" : "σ") axis", isOn: $logY.animation(.smooth))
-                if entrance?.isCharged == true {
-                    Toggle("Gamow window at T₉ = \(Fmt.significant(workbench.temperatureT9, digits: 3))", isOn: $showGamow.animation(.smooth))
-                }
-                if isSetupReaction, entrance?.isCharged == true {
-                    Toggle("S(E) model of Reaction Rate", isOn: $showModel.animation(.smooth))
+                DisclosureGroup("Plot options") {
+                    Picker("Energy", selection: $storedFrame.animation(.smooth)) {
+                        Text("Laboratory").tag(ExforTable.Frame.lab)
+                        Text("Centre of mass").tag(ExforTable.Frame.cm)
+                    }
+                    .disabled(entrance == nil)
+                    Toggle("Logarithmic energy axis", isOn: $logX.animation(.smooth))
+                    Toggle("Logarithmic \(quantity == .sFactor ? "S" : "σ") axis", isOn: $logY.animation(.smooth))
+                    if entrance?.isCharged == true {
+                        Toggle("Gamow window at T₉ = \(Fmt.significant(workbench.temperatureT9, digits: 3))", isOn: $showGamow.animation(.smooth))
+                    }
+                    if isSetupReaction, entrance?.isCharged == true {
+                        Toggle("S(E) model of Reaction Rate", isOn: $showModel.animation(.smooth))
+                    }
                 }
             } header: {
                 Text("Display")

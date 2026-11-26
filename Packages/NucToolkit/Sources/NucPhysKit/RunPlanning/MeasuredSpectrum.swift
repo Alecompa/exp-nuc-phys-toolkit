@@ -33,9 +33,11 @@ public struct MeasuredSpectrum: Hashable, Sendable {
     /// calibrated energies (keV) and gives a linear calibration from its first and last rows.
     public static func read(_ data: Data, name: String) throws -> MeasuredSpectrum {
         if name.lowercased().hasSuffix(".chn") { return try chn(data, name: name) }
-        guard let text = String(data: data, encoding: .utf8) ?? String(data: data, encoding: .isoLatin1) else {
+        guard let raw = String(data: data, encoding: .utf8) ?? String(data: data, encoding: .isoLatin1) else {
             throw ImportError.unreadable("not a text file")
         }
+        // Windows line endings (files from DAQ PCs): "\r\n" would otherwise split into an extra empty line.
+        let text = raw.replacingOccurrences(of: "\r\n", with: "\n").replacingOccurrences(of: "\r", with: "\n")
         if text.contains("$DATA:") { return try spe(text, name: name) }
         return try columns(text, name: name)
     }
@@ -223,7 +225,8 @@ public enum PeakSearch {
                 area = 0; m1 = 0; m2 = 0; variance = 0
                 for j in lo...hi {
                     let net = counts[j] - background[j]
-                    guard net > 0 else { continue }
+                    // A channel the SNIP background leaves unchanged has net ≈ 0 to rounding; skip it deterministically.
+                    guard net > 1e-9 * max(counts[j], 1) else { continue }
                     area += net; m1 += net * Double(j); m2 += net * Double(j) * Double(j)
                     variance += max(counts[j], 0) + background[j]
                 }

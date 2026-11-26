@@ -257,12 +257,7 @@ struct CertificateSheet: View {
         NavigationStack {
             Form {
                 Section {
-                    Picker("Nuclide", selection: $draft.nuclide) {
-                        ForEach(CalibrationSources.all) { Text($0.label).tag($0.id) }
-                        if CalibrationSources.source(named: draft.nuclide) == nil {
-                            Text(draft.nuclide).tag(draft.nuclide)
-                        }
-                    }
+                    NuclidePickerRow(title: "Nuclide", nuclide: $draft.nuclide)
                     TextField("Name (e.g. certificate number)", text: $draft.name)
                 } footer: {
                     if let s = draft.state { Text("T½ = \(s.halfLifeText.isEmpty ? Fmt.halfLife(s.halfLife) : s.halfLifeText)") }

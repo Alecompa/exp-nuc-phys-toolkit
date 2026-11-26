@@ -63,6 +63,12 @@ private struct GammaSpectrumSections: View {
     @AppStorage("spectrum.reactionLines") private var includeReaction = true
     @AppStorage("spectrum.reactions") private var reactions = 1e4
     @AppStorage("spectrum.applyEfficiency") private var applyEfficiency = false
+    // Folded groups, remembered between visits; the reaction's own lines start open.
+    @AppStorage("spectrum.show.reaction") private var showReaction = true
+    @AppStorage("spectrum.show.background") private var showBackground = false
+    @AppStorage("spectrum.show.other") private var showOther = false
+    @AppStorage("spectrum.show.detector") private var showDetector = false
+    @AppStorage("spectrum.show.window") private var showWindow = false
     @State private var bins: [SpectrumBin] = []
     @State private var error: String?
     @State private var scheme: LevelScheme?
@@ -98,69 +104,68 @@ private struct GammaSpectrumSections: View {
                 }
             } header: { Text("Spectrum") }
 
-            if !fromReaction.lines.isEmpty {
-                Section {
-                    Toggle("Include in spectrum", isOn: $includeReaction)
-                    ScientificField(title: "Reactions", value: $reactions)
-                    Toggle("Apply efficiency curve", isOn: $applyEfficiency)
-                    ForEach(fromReaction.lines) { g in
-                        HStack {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("\(Fmt.keV(g.meanEnergy, digits: 6)) keV").monospacedDigit()
-                                Text(g.label).font(.caption).foregroundStyle(.secondary)
-                                if let d = dopplerText(g) { Text(d).font(.caption2).foregroundStyle(.secondary) }
-                            }
-                            Spacer()
-                            VStack(alignment: .trailing, spacing: 2) {
-                                Text("\(Fmt.significant(100 * g.intensity, digits: 3)) %").monospacedDigit()
-                                Text("\(Fmt.significant(counts(for: g), digits: 3)) counts").font(.caption).foregroundStyle(.secondary)
-                            }
-                        }
-                    }
-                } header: { Text("From the reaction") } footer: {
-                    Text(fromReaction.note)
-                }
-            }
-
-            BackgroundSection(setup: $workbench.spectrumSetup, beamEnergy: workbench.reactionEnergy,
-                              projectile: workbench.reaction?.projectile)
-
+            // What is in the spectrum: one folded group per kind of line, each with a one-line summary.
             Section {
-                ForEach($workbench.spectrumSetup.lines) { $line in
-                    VStack(alignment: .leading, spacing: 6) {
-                        Toggle(isOn: $line.enabled) {
-                            TextField("Label", text: $line.name).font(.body.weight(.medium))
+                if !fromReaction.lines.isEmpty {
+                    DisclosureGroup(isExpanded: $showReaction) {
+                        Toggle("Include in spectrum", isOn: $includeReaction)
+                        ScientificField(title: "Reactions", value: $reactions)
+                        Toggle("Apply efficiency curve", isOn: $applyEfficiency)
+                        ForEach(fromReaction.lines) { g in
+                            HStack {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("\(Fmt.keV(g.meanEnergy, digits: 6)) keV").monospacedDigit()
+                                    Text(g.label).font(.caption).foregroundStyle(.secondary)
+                                    if let d = dopplerText(g) { Text(d).font(.caption2).foregroundStyle(.secondary) }
+                                }
+                                Spacer()
+                                VStack(alignment: .trailing, spacing: 2) {
+                                    Text("\(Fmt.significant(100 * g.intensity, digits: 3)) %").monospacedDigit()
+                                    Text("\(Fmt.significant(counts(for: g), digits: 3)) counts").font(.caption).foregroundStyle(.secondary)
+                                }
+                            }
                         }
-                        NumberField(title: "Energy", value: $line.energy, unit: "keV", range: 1...20000)
-                        NumberField(title: "Peak counts", value: $line.counts, range: 0...1e12)
-                        if let t = transmission(at: line.energy) {
-                            Text("Foil transmission \(Fmt.significant(t * 100, digits: 3)) %")
-                                .font(.caption).foregroundStyle(.secondary)
+                        Text(fromReaction.note).font(.caption).foregroundStyle(.secondary)
+                    } label: {
+                        GroupLabel(title: "Reaction γ rays", symbol: "atom",
+                                   detail: includeReaction ? "\(fromReaction.lines.count) line\(fromReaction.lines.count == 1 ? "" : "s")" : "off")
+                    }
+                }
+                DisclosureGroup(isExpanded: $showBackground) {
+                    BackgroundRows(setup: $workbench.spectrumSetup, beamEnergy: workbench.reactionEnergy,
+                                   projectile: workbench.reaction?.projectile)
+                } label: {
+                    let n = workbench.spectrumSetup.backgrounds.filter(\.enabled).count
+                    GroupLabel(title: "Contaminants & background", symbol: "exclamationmark.triangle", detail: n == 0 ? "none" : "\(n) on")
+                }
+                DisclosureGroup(isExpanded: $showOther) {
+                    ForEach($workbench.spectrumSetup.lines) { $line in
+                        VStack(alignment: .leading, spacing: 6) {
+                            Toggle(isOn: $line.enabled) {
+                                TextField("Label", text: $line.name).font(.body.weight(.medium))
+                            }
+                            NumberField(title: "Energy", value: $line.energy, unit: "keV", range: 1...20000)
+                            NumberField(title: "Peak counts", value: $line.counts, range: 0...1e12)
+                            if let t = transmission(at: line.energy) {
+                                Text("Foil transmission \(Fmt.significant(t * 100, digits: 3)) %")
+                                    .font(.caption).foregroundStyle(.secondary)
+                            }
                         }
+                        .padding(.vertical, 2)
                     }
-                    .padding(.vertical, 2)
+                    .onDelete { workbench.spectrumSetup.lines.remove(atOffsets: $0) }
+                    Menu {
+                        Menu("Calibration source") {
+                            ForEach(CalibrationSources.all) { source in Button(source.label) { addSource(source) } }
+                        }
+                        Button("Custom line") { workbench.spectrumSetup.lines.append(.init(name: "Line", counts: 1000)) }
+                    } label: { Label("Add source or line", systemImage: "plus") }
+                    Text("Counts are photopeak areas before the foils. Swipe a line to remove it.").font(.caption).foregroundStyle(.secondary)
+                } label: {
+                    let n = workbench.spectrumSetup.lines.filter(\.enabled).count
+                    GroupLabel(title: "Sources & custom lines", symbol: "rays", detail: n == 0 ? "none" : "\(n) on")
                 }
-                .onDelete { workbench.spectrumSetup.lines.remove(atOffsets: $0) }
-                Menu {
-                    Button("Custom line") { workbench.spectrumSetup.lines.append(.init(name: "Line", counts: 1000)) }
-                    Menu("Calibration source") {
-                        ForEach(CalibrationSources.all) { source in Button(source.label) { addSource(source) } }
-                    }
-                } label: { Label("Add line", systemImage: "plus") }
-            } header: { Text("Other lines") } footer: {
-                Text("Custom lines and calibration sources. Counts are photopeak areas before the foils.")
-            }
-
-            Section("Window") {
-                NumberField(title: "Maximum energy", value: $workbench.spectrumSetup.maximumEnergy, unit: "keV", range: 1...20000)
-                Picker("Channels", selection: $workbench.spectrumSetup.channels) {
-                    ForEach([512, 1024, 2048, 4096, 8192], id: \.self) { Text("\($0)").tag($0) }
-                }
-                NumberField(title: "Background", value: $workbench.spectrumSetup.background, unit: "counts/keV", range: 0...1e8)
-                NumberField(title: "Compton / peak", value: $workbench.spectrumSetup.continuumRatio, range: 0...100)
-            }
-
-            EscapeSection(escape: $workbench.spectrumSetup.escape)
+            } header: { Text("In the spectrum") }
 
             Section {
                 Picker("Detector", selection: $workbench.resolutionModel) {
@@ -177,22 +182,37 @@ private struct GammaSpectrumSections: View {
                     }
                 }
                 ValueRow(label: "FWHM at 1332 keV", value: Fmt.significant(workbench.resolutionModel.fwhm(at: 1332.5), digits: 3), unit: "keV")
-                NavigationLink("Resolution & efficiency") { DetectorView() }
                 LabeledContent("Angle to beam") { Text("\(Fmt.number(workbench.spectrumSetup.geometry.angle, decimals: 1))°").monospacedDigit() }
                 Slider(value: Binding(get: { workbench.spectrumSetup.geometry.angle },
                                       set: { workbench.spectrumSetup.geometry.angle = ($0 * 2).rounded() / 2 }), in: 0...180)
-                NumberField(title: "Half-opening", value: $workbench.spectrumSetup.geometry.halfOpening, unit: "°", range: 0...90)
-                Toggle("Recoils stop in the target", isOn: $workbench.spectrumSetup.geometry.recoilsStop)
-                if workbench.spectrumSetup.geometry.recoilsStop {
-                    NumberField(title: "Stopping time", value: Binding(get: { workbench.spectrumSetup.geometry.stoppingTime * 1e12 },
-                                                                       set: { workbench.spectrumSetup.geometry.stoppingTime = $0 * 1e-12 }),
-                                unit: "ps", range: 0.01...100)
+                DisclosureGroup("More detector settings", isExpanded: $showDetector) {
+                    NavigationLink("Resolution & efficiency curve") { DetectorView() }
+                    NumberField(title: "Half-opening", value: $workbench.spectrumSetup.geometry.halfOpening, unit: "°", range: 0...90)
+                    Toggle("Recoils stop in the target", isOn: $workbench.spectrumSetup.geometry.recoilsStop)
+                    if workbench.spectrumSetup.geometry.recoilsStop {
+                        NumberField(title: "Stopping time", value: Binding(get: { workbench.spectrumSetup.geometry.stoppingTime * 1e12 },
+                                                                           set: { workbench.spectrumSetup.geometry.stoppingTime = $0 * 1e-12 }),
+                                    unit: "ps", range: 0.01...100)
+                    }
+                    Text("Levels living longer than the recoil stopping time (solid targets, 0.1–1 ps) decay mostly at rest; in a gas target every recoil decays in flight.")
+                        .font(.caption).foregroundStyle(.secondary)
+                    EscapeRows(escape: $workbench.spectrumSetup.escape)
+                    FoilRows(foils: $workbench.spectrumSetup.foils)
                 }
             } header: { Text("Detector") } footer: {
-                Text("In-beam γ rays are Doppler shifted by the c.m. velocity at this angle. A level that lives longer than the recoil's stopping time (solid targets, 0.1–1 ps) decays mostly at rest; in a gas target every recoil decays in flight.")
+                Text("In-beam γ rays are Doppler shifted by the c.m. velocity at this angle.")
             }
 
-            FoilsSection(foils: $workbench.spectrumSetup.foils)
+            Section {
+                DisclosureGroup("Energy window and continuum", isExpanded: $showWindow) {
+                    NumberField(title: "Maximum energy", value: $workbench.spectrumSetup.maximumEnergy, unit: "keV", range: 1...20000)
+                    Picker("Channels", selection: $workbench.spectrumSetup.channels) {
+                        ForEach([512, 1024, 2048, 4096, 8192], id: \.self) { Text("\($0)").tag($0) }
+                    }
+                    NumberField(title: "Flat background", value: $workbench.spectrumSetup.background, unit: "counts/keV", range: 0...1e8)
+                    NumberField(title: "Compton / peak", value: $workbench.spectrumSetup.continuumRatio, range: 0...100)
+                }
+            }
 
             Section {
                 Link("NIST attenuation tables", destination: URL(string: "https://physics.nist.gov/PhysRefData/XrayMassCoef/chap2.html")!)
@@ -412,16 +432,25 @@ private struct ParticleChart: View {
 
 // MARK: - Foils
 
-/// Absorbers in front of a detector; each one opens the composition editor.
+/// Absorbers in front of a detector, as a section (particle mode).
 private struct FoilsSection: View {
-    @Environment(Workbench.self) private var workbench
     @Binding var foils: [DetectorFoil]
     var footer = "Swipe to remove."
+
+    var body: some View {
+        Section { FoilRows(foils: $foils) } header: { Text("Foils") } footer: { Text(footer) }
+    }
+}
+
+/// Absorber rows; each foil opens the composition editor.
+private struct FoilRows: View {
+    @Environment(Workbench.self) private var workbench
+    @Binding var foils: [DetectorFoil]
     @State private var editing: DetectorFoil?
 
     var body: some View {
         @Bindable var workbench = workbench
-        Section {
+        Group {
             ForEach($foils) { $foil in
                 VStack(alignment: .leading, spacing: 6) {
                     Button { editing = foil } label: {
@@ -446,17 +475,17 @@ private struct FoilsSection: View {
                         if let i = foils.firstIndex(where: { $0.id == foil.id }) { foils[i] = updated } else { foils.append(updated) }
                     }
                 }
-        } header: { Text("Foils") } footer: { Text(footer) }
+        }
     }
 }
 
 /// Single/double escape peaks: ratios at 6 MeV, scaled with the crystal's pair-production share.
-private struct EscapeSection: View {
+private struct EscapeRows: View {
     @Binding var escape: EscapeModel
 
     var body: some View {
-        Section {
-            Toggle("Escape peaks", isOn: $escape.enabled)
+        Group {
+            Toggle("Single and double escape peaks", isOn: $escape.enabled)
             if escape.enabled {
                 Picker("Crystal", selection: Binding(get: { escape.crystal }, set: { escape.useTypical(for: $0) })) {
                     ForEach(DetectorCrystal.allCases) { Text($0.name).tag($0) }
@@ -467,10 +496,8 @@ private struct EscapeSection: View {
                 let r3 = escape.ratios(at: 3000), r10 = escape.ratios(at: 10000)
                 ValueRow(label: "SE · DE / peak at 3 MeV", value: "\(Fmt.significant(r3.single, digits: 2)) · \(Fmt.significant(r3.double, digits: 2))")
                 ValueRow(label: "SE · DE / peak at 10 MeV", value: "\(Fmt.significant(r10.single, digits: 2)) · \(Fmt.significant(r10.double, digits: 2))")
-            }
-        } footer: {
-            if escape.enabled {
-                Text("Single (SE) and double (DE) escape at E − 511 and E − 1022 keV, scaled by pair production (NIST XCOM). Ratios depend on crystal size: prefer measured ones.")
+                Text("Escape peaks at E − 511 and E − 1022 keV, scaled by pair production (NIST XCOM). Ratios depend on crystal size: prefer measured ones.")
+                    .font(.caption).foregroundStyle(.secondary)
             }
         }
     }
@@ -479,13 +506,13 @@ private struct EscapeSection: View {
 // MARK: - Contaminants and room background
 
 /// Beam-induced contaminant reactions and room-background lines, with energies computed for the current beam.
-private struct BackgroundSection: View {
+private struct BackgroundRows: View {
     @Binding var setup: SpectrumSetup
     let beamEnergy: Double
     let projectile: Nuclide?
 
     var body: some View {
-        Section {
+        Group {
             ForEach($setup.backgrounds) { $entry in
                 if let source = BackgroundLibrary.source(id: entry.id) {
                     let lines = source.lines(beamEnergy: beamEnergy, geometry: setup.geometry)
@@ -521,8 +548,22 @@ private struct BackgroundSection: View {
                     }
                 }
             } label: { Label("Add contaminant or background", systemImage: "plus") }
-        } header: { Text("Contaminants & background") } footer: {
-            Text("Energies follow the beam energy and the detector angle (capture primaries from AME2020 Q values, residual levels and lifetimes from ENSDF). Each contaminant lists one cascade; branchings to other levels depend on the resonance and are left out.")
+            Text("Only reactions open for this beam are offered. Energies follow the beam energy and detector angle; each contaminant lists one cascade (other branchings depend on the resonance). Swipe to remove.")
+                .font(.caption).foregroundStyle(.secondary)
+        }
+    }
+}
+
+/// Label of a folded group: what it is, and a short status (e.g. "3 lines", "none").
+private struct GroupLabel: View {
+    let title: String
+    let symbol: String
+    let detail: String
+    var body: some View {
+        HStack {
+            Label(title, systemImage: symbol)
+            Spacer()
+            Text(detail).font(.subheadline).foregroundStyle(.secondary)
         }
     }
 }

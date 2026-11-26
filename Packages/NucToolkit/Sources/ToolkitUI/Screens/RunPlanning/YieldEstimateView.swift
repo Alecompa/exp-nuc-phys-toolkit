@@ -165,9 +165,6 @@ struct YieldEstimateView: View {
             }
 
             Section {
-                NumberField(title: "Isotope abundance in untagged material", value: $workbench.isotopicAbundance, unit: "%", range: 0...100)
-                Text("Explicit isotope formulas such as [17O] contribute only to that isotope and do not use this abundance factor.")
-                    .font(.caption).foregroundStyle(.secondary)
                 Picker("Cross section from", selection: $source.animation(.smooth)) {
                     ForEach(Source.allCases) { Text($0.rawValue).tag($0) }
                 }
@@ -198,12 +195,19 @@ struct YieldEstimateView: View {
                     NumberField(title: "E_R (lab)", value: $resonanceLab, unit: "keV", range: 1e-3...1e6)
                     ScientificField(title: "ωγ", value: $strength, unit: "eV")
                 }
-                Button {
-                    editingTarget = true
+                DisclosureGroup {
+                    Button {
+                        editingTarget = true
+                    } label: {
+                        LabeledContent("Material", value: workbench.stoppingTarget?.name ?? "None")
+                    }
+                    .foregroundStyle(.primary)
+                    NumberField(title: "\(r.target.label) abundance", value: $workbench.isotopicAbundance, unit: "%", range: 0...100)
+                    Text("Natural abundance by default (NUBASE2020); set your enrichment. Isotopes written explicitly in a formula, such as [17O], ignore this factor.")
+                        .font(.caption).foregroundStyle(.secondary)
                 } label: {
-                    LabeledContent("Target material", value: workbench.stoppingTarget?.name ?? "None")
+                    LabeledContent("Target", value: "\(workbench.stoppingTarget?.name ?? "None") · \(Fmt.significant(workbench.isotopicAbundance, digits: 4)) % \(r.target.label)")
                 }
-                .foregroundStyle(.primary)
                 if let note = est.note {
                     Label(note, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.orange).font(.callout)
                 }
@@ -276,15 +280,17 @@ struct YieldEstimateView: View {
                 let d = Fmt.duration(time)
                 ValueRow(label: "Beam time", value: d.value, unit: d.unit)
                 ValueRow(label: "Charge needed", value: Fmt.significant(time * workbench.beamCurrent * 1e-6, digits: 3), unit: "C")
-                NumberField(title: "Planned time", value: $plannedHours, unit: "h", range: 1e-3...1e6)
-                ValueRow(label: "Statistical uncertainty", value: Fmt.significant(100 * after, digits: 3), unit: "%",
-                         note: "After the planned time")
-                ValueRow(label: "Detection limit (Currie)", value: Fmt.significant(CountingStatistics.detectionLimit(backgroundCounts: background * plannedHours * 3600, backgroundFromEqualTime: equalBackground), digits: 3),
-                         unit: "counts", note: "L_D in the planned time")
                 if signal > 0 {
                     UncertaintyChart(signal: signal, background: background, equal: equalBackground, goal: goalPercent / 100)
                         .frame(height: 200)
                         .padding(.vertical, 6)
+                }
+                DisclosureGroup("With a planned run time") {
+                    NumberField(title: "Planned time", value: $plannedHours, unit: "h", range: 1e-3...1e6)
+                    ValueRow(label: "Statistical uncertainty", value: Fmt.significant(100 * after, digits: 3), unit: "%",
+                             note: "After the planned time")
+                    ValueRow(label: "Detection limit (Currie)", value: Fmt.significant(CountingStatistics.detectionLimit(backgroundCounts: background * plannedHours * 3600, backgroundFromEqualTime: equalBackground), digits: 3),
+                             unit: "counts", note: "L_D in the planned time")
                 }
             } header: {
                 Text("Statistics")

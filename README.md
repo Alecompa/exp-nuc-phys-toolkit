@@ -114,6 +114,12 @@ scheme, choose your team under Signing & Capabilities and press ⌘R. The app is
 ENSDF, files you open). [docs/release.md](docs/release.md) covers
 TestFlight and the App Store.
 
+## Android, Linux and Windows
+
+[`multiplatform/`](multiplatform/README.md) holds a Kotlin Multiplatform version of the app (Android APK, Linux,
+Windows and macOS desktop) with the same data files and the same physics, checked against shared reference
+values. It covers the setup, Q value, kinematics, Gamow window and S ↔ σ so far.
+
 ## Project layout
 
 | Path | Contents |

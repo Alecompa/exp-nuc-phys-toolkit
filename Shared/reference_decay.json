@@ -1,0 +1,553 @@
+[
+  {
+    "inputs" : {
+
+    },
+    "name" : "nubase",
+    "values" : {
+      "radioactive" : 5221,
+      "states" : 5641
+    }
+  },
+  {
+    "inputs" : {
+      "label" : "60Co",
+      "modes" : "β⁻ 100 %",
+      "nuclide" : "60Co"
+    },
+    "name" : "state",
+    "values" : {
+      "a" : 60,
+      "abundance" : -2,
+      "excitation" : 0,
+      "halfLife" : 166349200,
+      "halfLifeUnc" : 18930,
+      "state" : 0,
+      "z" : 27
+    }
+  },
+  {
+    "inputs" : {
+      "label" : "137Cs",
+      "modes" : "β⁻ 100 %",
+      "nuclide" : "137Cs"
+    },
+    "name" : "state",
+    "values" : {
+      "a" : 137,
+      "abundance" : -2,
+      "excitation" : 0,
+      "halfLife" : 947970100,
+      "halfLifeUnc" : 1262000,
+      "state" : 0,
+      "z" : 55
+    }
+  },
+  {
+    "inputs" : {
+      "label" : "26mAl",
+      "modes" : "β⁺ 100 %",
+      "nuclide" : "26mAl"
+    },
+    "name" : "state",
+    "values" : {
+      "a" : 26,
+      "abundance" : -2,
+      "excitation" : 228.306,
+      "halfLife" : 6.346,
+      "halfLifeUnc" : 0.0005,
+      "state" : 1,
+      "z" : 13
+    }
+  },
+  {
+    "inputs" : {
+      "label" : "178nHf",
+      "modes" : "IT 100 %",
+      "nuclide" : "178m2Hf"
+    },
+    "name" : "state",
+    "values" : {
+      "a" : 178,
+      "abundance" : -2,
+      "excitation" : 2446.09,
+      "halfLife" : 978264700,
+      "halfLifeUnc" : 31560000,
+      "state" : 2,
+      "z" : 72
+    }
+  },
+  {
+    "inputs" : {
+      "label" : "166mHo",
+      "modes" : "β⁻ 100 %",
+      "nuclide" : "166mHo"
+    },
+    "name" : "state",
+    "values" : {
+      "a" : 166,
+      "abundance" : -2,
+      "excitation" : 5.969,
+      "halfLife" : 35741370000,
+      "halfLifeUnc" : 123100000,
+      "state" : 1,
+      "z" : 67
+    }
+  },
+  {
+    "inputs" : {
+      "label" : "241Am",
+      "modes" : "α 100 %; SF 0,00000000036 %",
+      "nuclide" : "241Am"
+    },
+    "name" : "state",
+    "values" : {
+      "a" : 241,
+      "abundance" : -2,
+      "excitation" : 0,
+      "halfLife" : 13651530000,
+      "halfLifeUnc" : 18930000,
+      "state" : 0,
+      "z" : 95
+    }
+  },
+  {
+    "inputs" : {
+      "label" : "3H",
+      "modes" : "β⁻ 100 %",
+      "nuclide" : "3H"
+    },
+    "name" : "state",
+    "values" : {
+      "a" : 3,
+      "abundance" : -2,
+      "excitation" : 0,
+      "halfLife" : 388781300,
+      "halfLifeUnc" : 631100,
+      "state" : 0,
+      "z" : 1
+    }
+  },
+  {
+    "inputs" : {
+      "label" : "14N",
+      "modes" : "",
+      "nuclide" : "14N"
+    },
+    "name" : "state",
+    "values" : {
+      "a" : 14,
+      "abundance" : 99.6205,
+      "excitation" : 0,
+      "halfLife" : -1,
+      "halfLifeUnc" : -2,
+      "state" : 0,
+      "z" : 7
+    }
+  },
+  {
+    "inputs" : {
+      "label" : "238U",
+      "modes" : "α 100 %; SF 0,0000544 %; 2β⁻ 0,00000000022 %",
+      "nuclide" : "238U"
+    },
+    "name" : "state",
+    "values" : {
+      "a" : 238,
+      "abundance" : 99.2742,
+      "excitation" : 0,
+      "halfLife" : 1.408386e+17,
+      "halfLifeUnc" : 94670000000000,
+      "state" : 0,
+      "z" : 92
+    }
+  },
+  {
+    "inputs" : {
+      "label" : "8Be",
+      "modes" : "α 100 %",
+      "nuclide" : "8Be"
+    },
+    "name" : "state",
+    "values" : {
+      "a" : 8,
+      "abundance" : -2,
+      "excitation" : 0,
+      "halfLife" : 8.19e-17,
+      "halfLifeUnc" : 3.7e-18,
+      "state" : 0,
+      "z" : 4
+    }
+  },
+  {
+    "inputs" : {
+      "label" : "7Be",
+      "modes" : "ε 100 %",
+      "nuclide" : "7Be"
+    },
+    "name" : "state",
+    "values" : {
+      "a" : 7,
+      "abundance" : -2,
+      "excitation" : 0,
+      "halfLife" : 4598208,
+      "halfLifeUnc" : 5184,
+      "state" : 0,
+      "z" : 4
+    }
+  },
+  {
+    "inputs" : {
+      "a0" : "10000.0",
+      "nuclide" : "60Co",
+      "t" : "300000000.0"
+    },
+    "name" : "decay",
+    "values" : {
+      "activity" : 2864.9161431773014,
+      "atoms" : 2399911658958.4634,
+      "relUnc" : 0.00014225118617653437,
+      "tenth" : 552600081.0420368
+    }
+  },
+  {
+    "inputs" : {
+      "a0" : "37000.0",
+      "nuclide" : "137Cs",
+      "t" : "1000000000.0"
+    },
+    "name" : "decay",
+    "values" : {
+      "activity" : 17809.409457521517,
+      "atoms" : 50602375200697.55,
+      "relUnc" : 0.00097340940283433,
+      "tenth" : 3149088508.3031826
+    }
+  },
+  {
+    "inputs" : {
+      "a0" : "100000.0",
+      "nuclide" : "22Na",
+      "t" : "50000000.0"
+    },
+    "name" : "decay",
+    "values" : {
+      "activity" : 65567.17841054952,
+      "atoms" : 11845676113645.979,
+      "relUnc" : 9.731402806063063e-05,
+      "tenth" : 272756772.3571687
+    }
+  },
+  {
+    "inputs" : {
+      "a0" : "1000.0",
+      "nuclide" : "26mAl",
+      "t" : "10.0"
+    },
+    "name" : "decay",
+    "values" : {
+      "activity" : 335.45803918891994,
+      "atoms" : 9155.342729481363,
+      "relUnc" : 8.605880868845337e-05,
+      "tenth" : 21.0809556901552
+    }
+  },
+  {
+    "inputs" : {
+      "nuclide" : "22Na"
+    },
+    "name" : "source",
+    "values" : {
+      "e0" : 511,
+      "e1" : 1274.537,
+      "i0" : 179.91,
+      "i1" : 99.94,
+      "lines" : 2
+    }
+  },
+  {
+    "inputs" : {
+      "nuclide" : "54Mn"
+    },
+    "name" : "source",
+    "values" : {
+      "e0" : 834.848,
+      "i0" : 99.976,
+      "lines" : 1
+    }
+  },
+  {
+    "inputs" : {
+      "nuclide" : "56Co"
+    },
+    "name" : "source",
+    "values" : {
+      "e0" : 511,
+      "e1" : 846.77,
+      "e2" : 1037.843,
+      "e3" : 1238.288,
+      "i0" : 39.41192,
+      "i1" : 99.9399,
+      "i2" : 14.05154994,
+      "i3" : 66.4600335,
+      "lines" : 36
+    }
+  },
+  {
+    "inputs" : {
+      "nuclide" : "57Co"
+    },
+    "name" : "source",
+    "values" : {
+      "e0" : 14.4129,
+      "e1" : 122.06065,
+      "e2" : 136.47356,
+      "i0" : 9.16,
+      "i1" : 85.6,
+      "i2" : 10.68,
+      "lines" : 4
+    }
+  },
+  {
+    "inputs" : {
+      "nuclide" : "60Co"
+    },
+    "name" : "source",
+    "values" : {
+      "e0" : 1173.228,
+      "e1" : 1332.492,
+      "i0" : 99.85,
+      "i1" : 99.9826,
+      "lines" : 2
+    }
+  },
+  {
+    "inputs" : {
+      "nuclide" : "65Zn"
+    },
+    "name" : "source",
+    "values" : {
+      "e0" : 1115.539,
+      "i0" : 50.12,
+      "lines" : 2
+    }
+  },
+  {
+    "inputs" : {
+      "nuclide" : "88Y"
+    },
+    "name" : "source",
+    "values" : {
+      "e0" : 14.098,
+      "e1" : 14.165,
+      "e2" : 15.898,
+      "e3" : 15.955,
+      "i0" : 17.5346315003416,
+      "i1" : 33.688052834469936,
+      "i2" : 8.318019978263644,
+      "i3" : 9.399362575437916,
+      "lines" : 10
+    }
+  },
+  {
+    "inputs" : {
+      "nuclide" : "109Cd"
+    },
+    "name" : "source",
+    "values" : {
+      "e0" : 21.99,
+      "e1" : 22.163,
+      "e2" : 25.03,
+      "e3" : 25.211,
+      "i0" : 29.24587787428811,
+      "i1" : 55.12889325973253,
+      "i2" : 15.272264792145984,
+      "i3" : 17.929638865979385,
+      "lines" : 6
+    }
+  },
+  {
+    "inputs" : {
+      "nuclide" : "133Ba"
+    },
+    "name" : "source",
+    "values" : {
+      "e0" : 30.625,
+      "e1" : 30.973,
+      "e2" : 35.089,
+      "e3" : 35.414,
+      "i0" : 32.6,
+      "i1" : 60.2,
+      "i2" : 17.6,
+      "i3" : 21.9,
+      "lines" : 14
+    }
+  },
+  {
+    "inputs" : {
+      "nuclide" : "137Cs"
+    },
+    "name" : "source",
+    "values" : {
+      "e0" : 661.657,
+      "i0" : 85.1,
+      "lines" : 6
+    }
+  },
+  {
+    "inputs" : {
+      "nuclide" : "139Ce"
+    },
+    "name" : "source",
+    "values" : {
+      "e0" : 33.034,
+      "e1" : 33.442,
+      "e2" : 37.908,
+      "e3" : 38.273,
+      "i0" : 22.49387034509511,
+      "i1" : 41.3186450130329,
+      "i2" : 12.304153001216065,
+      "i3" : 15.417103710523728,
+      "lines" : 6
+    }
+  },
+  {
+    "inputs" : {
+      "nuclide" : "152Eu"
+    },
+    "name" : "source",
+    "values" : {
+      "e0" : 39.522,
+      "e1" : 40.117,
+      "e2" : 45.523,
+      "e3" : 45.998,
+      "i0" : 20.87,
+      "i1" : 37.8,
+      "i2" : 11.81,
+      "i3" : 14.85,
+      "lines" : 62
+    }
+  },
+  {
+    "inputs" : {
+      "nuclide" : "207Bi"
+    },
+    "name" : "source",
+    "values" : {
+      "e0" : 12.522,
+      "e1" : 72.805,
+      "e2" : 74.97,
+      "e3" : 84.986,
+      "i0" : 33.18940489011642,
+      "i1" : 21.710873162133087,
+      "i2" : 36.48886245736653,
+      "i3" : 12.471371918464202,
+      "lines" : 13
+    }
+  },
+  {
+    "inputs" : {
+      "nuclide" : "241Am"
+    },
+    "name" : "source",
+    "values" : {
+      "e0" : 17.136,
+      "e1" : 59.5409,
+      "i0" : 36.639507503463285,
+      "i1" : 35.9,
+      "lines" : 5
+    }
+  },
+  {
+    "inputs" : {
+      "nuclide" : "113Sn"
+    },
+    "name" : "source",
+    "values" : {
+      "e0" : 24.001,
+      "e1" : 24.209,
+      "e2" : 27.367,
+      "e3" : 27.581,
+      "i0" : 27.798688608293656,
+      "i1" : 52.15513810186427,
+      "i2" : 14.63356593064907,
+      "i3" : 17.413943457472392,
+      "lines" : 7
+    }
+  },
+  {
+    "inputs" : {
+      "nuclide" : "85Sr"
+    },
+    "name" : "source",
+    "values" : {
+      "e0" : 13.336,
+      "e1" : 13.396,
+      "e2" : 15.021,
+      "e3" : 15.07,
+      "i0" : 17.2,
+      "i1" : 33,
+      "i2" : 8,
+      "i3" : 9,
+      "lines" : 6
+    }
+  },
+  {
+    "inputs" : {
+      "nuclide" : "51Cr"
+    },
+    "name" : "source",
+    "values" : {
+      "e0" : 320.0824,
+      "i0" : 9.91,
+      "lines" : 1
+    }
+  },
+  {
+    "inputs" : {
+      "nuclide" : "46Sc"
+    },
+    "name" : "source",
+    "values" : {
+      "e0" : 889.277,
+      "e1" : 1120.545,
+      "i0" : 99.984,
+      "i1" : 99.987,
+      "lines" : 2
+    }
+  },
+  {
+    "inputs" : {
+      "nuclide" : "182Ta"
+    },
+    "name" : "source",
+    "values" : {
+      "e0" : 57.983,
+      "e1" : 59.32,
+      "e2" : 67.335,
+      "e3" : 67.7497,
+      "i0" : 10.052568389560236,
+      "i1" : 17.461470192044878,
+      "i2" : 5.787882527370621,
+      "i3" : 42.92232,
+      "lines" : 41
+    }
+  },
+  {
+    "inputs" : {
+      "nuclide" : "166mHo"
+    },
+    "name" : "source",
+    "values" : {
+      "e0" : 19.84,
+      "e1" : 46.7,
+      "e2" : 47.547,
+      "e3" : 48.222,
+      "i0" : 7,
+      "i1" : 6.449011094553517,
+      "i2" : 11.485326971600207,
+      "i3" : 10.492833958075561,
+      "lines" : 62
+    }
+  }
+]
