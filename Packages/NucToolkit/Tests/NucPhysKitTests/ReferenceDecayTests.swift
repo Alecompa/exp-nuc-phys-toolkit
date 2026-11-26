@@ -15,7 +15,7 @@ struct ReferenceDecayTests {
             "radioactive": Double(nb.states.filter { ($0.halfLife ?? 0).isFinite && ($0.halfLife ?? 0) > 0 }.count)]))
         for n in ["60Co", "137Cs", "26mAl", "178m2Hf", "166mHo", "241Am", "3H", "14N", "238U", "8Be", "7Be"] {
             guard let s = nb.state(named: n) else { continue }
-            out.append(.init(name: "state", inputs: ["nuclide": n, "label": s.plainLabel, "modes": s.decayModes.map(\.text).joined(separator: "; ")],
+            out.append(.init(name: "state", inputs: ["nuclide": n, "label": s.plainLabel, "modes": s.decayModes.map { $0.text(locale: Locale(identifier: "en_US_POSIX")) }.joined(separator: "; ")],
                              values: ["z": Double(s.z), "a": Double(s.a), "state": Double(s.state), "excitation": s.excitation,
                                       "halfLife": s.halfLife.map { $0.isFinite ? $0 : -1 } ?? -2, "halfLifeUnc": s.halfLifeUncertainty ?? -2,
                                       "abundance": s.abundance ?? -2]))

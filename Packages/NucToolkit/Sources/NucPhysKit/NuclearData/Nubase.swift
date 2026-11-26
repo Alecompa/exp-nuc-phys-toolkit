@@ -80,8 +80,11 @@ public struct DecayMode: Hashable, Sendable {
         return s
     }
 
-    /// "β⁻ 100 %", "ε + β⁺ ≈ 100 %", "α ?".
-    public var text: String {
+    /// "β⁻ 100 %", "ε + β⁺ ≈ 100 %", "α ?", with the branch formatted in the user's locale.
+    public var text: String { text(locale: .current) }
+
+    /// The same text with the branch formatted in `locale` (the shared reference files use `en_US_POSIX`).
+    public func text(locale: Locale) -> String {
         let rel: String = switch relation {
         case "=": ""
         case "~": "≈ "
@@ -91,7 +94,7 @@ public struct DecayMode: Hashable, Sendable {
         default: relation + " "
         }
         guard let branch else { return "\(name) \(rel)".trimmingCharacters(in: .whitespaces) }
-        let v = branch.formatted(.number.precision(.significantDigits(1...6)))
+        let v = branch.formatted(.number.precision(.significantDigits(1...6)).locale(locale))
         return "\(name) \(rel)\(v) %"
     }
 }
