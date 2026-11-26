@@ -19,12 +19,48 @@ import kotlin.math.max
 import kotlin.math.pow
 import kotlin.math.roundToInt
 
-/** Settings of the detector-spectrum tool that survive navigation (in memory for the session). */
+/**
+ * Settings of the detector-spectrum tool, kept between launches (contaminants, sources, window, geometry, escape model,
+ * particle detector). Foils are kept for the session only.
+ */
 private object SpectrumState {
-    var setup by mutableStateOf(SpectrumSetup(maximumEnergy = 3000.0))
-    var preset by mutableStateOf(0)
-    var reactions by mutableStateOf(1e4)
-    var particle by mutableStateOf(ParticleDetectorSetup())
+    private const val RS = '\u001E'; private const val FS = '\u001F'
+    var setup by mutableStateOf(loadSetup())
+    var reactions by mutableStateOf(Prefs.get("spec.reactions")?.toDoubleOrNull() ?: 1e4)
+    var particle by mutableStateOf(loadParticle())
+
+    /** Saves after every change; called from the screen's LaunchedEffect. */
+    fun save() {
+        val s = setup; val g = s.geometry; val e = s.escape
+        Prefs.put("spec.setup", listOf(
+            "${s.maximumEnergy}", "${s.channels}", "${s.continuumRatio}", "${s.background}",
+            "${g.angle}", "${g.halfOpening}", "${g.recoilsStop}", "${g.stoppingTime}",
+            "${e.enabled}", e.crystal.name, "${e.singleAtReference}", "${e.doubleAtReference}",
+            s.backgrounds.joinToString(";") { "${it.id}:${it.counts}:${it.enabled}" },
+            s.lines.joinToString(";") { "${it.name.replace(":", " ").replace(";", " ")}:${it.energy}:${it.counts}:${it.enabled}" },
+        ).joinToString(FS.toString()))
+        Prefs.put("spec.reactions", "$reactions")
+        val p = particle
+        Prefs.put("spec.particle", "${p.angle}$FS${p.resolution}$FS${p.halfOpening}$FS${p.showElastic}")
+    }
+
+    private fun loadSetup(): SpectrumSetup = Prefs.get("spec.setup")?.let { str -> runCatching {
+        val f = str.split(FS)
+        fun pairs(t: String) = t.split(';').filter { it.isNotEmpty() }.map { it.split(':') }
+        SpectrumSetup(
+            maximumEnergy = f[0].toDouble(), channels = f[1].toInt(), continuumRatio = f[2].toDouble(), background = f[3].toDouble(),
+            geometry = GammaGeometry(f[4].toDouble(), f[5].toDouble(), f[6].toBoolean(), f[7].toDouble()),
+            escape = EscapeModel(enabled = f[8].toBoolean(), crystal = DetectorCrystal.valueOf(f[9]),
+                singleAtReference = f[10].toDouble(), doubleAtReference = f[11].toDouble()),
+            backgrounds = pairs(f[12]).map { BackgroundEntry(it[0], it[1].toDouble(), it[2].toBoolean()) },
+            lines = pairs(f[13]).map { SpectrumLine(it[0], it[1].toDouble(), it[2].toDouble(), it[3].toBoolean()) },
+        )
+    }.getOrNull() } ?: SpectrumSetup(maximumEnergy = 3000.0)
+
+    private fun loadParticle(): ParticleDetectorSetup = Prefs.get("spec.particle")?.let { str -> runCatching {
+        val f = str.split(FS)
+        ParticleDetectorSetup(angle = f[0].toDouble(), resolution = f[1].toDouble(), halfOpening = f[2].toDouble(), showElastic = f[3].toBoolean())
+    }.getOrNull() } ?: ParticleDetectorSetup()
 }
 
 /**
@@ -40,6 +76,7 @@ fun SpectrumScreen(wb: Workbench, onEdit: () -> Unit) {
         ReactionHeader(wb, onEdit)
         Choice(listOf(false to "γ rays", true to "Particles"), particles) { particles = it }
     }
+    LaunchedEffect(SpectrumState.setup, SpectrumState.particle, SpectrumState.reactions) { SpectrumState.save() }
     if (particles) ParticleSection(wb, r) else GammaSection(wb, r)
 }
 
@@ -47,7 +84,7 @@ fun SpectrumScreen(wb: Workbench, onEdit: () -> Unit) {
 private fun GammaSection(wb: Workbench, r: Reaction) {
     val s = SpectrumState
     val setup = s.setup
-    val model = ResolutionModel.presets[s.preset].model
+    val model = DetectorSettings.model
     val geo = setup.geometry
     // Level scheme of the residual from ENSDF (IAEA LiveChart, cached on the device); null until loaded or offline.
     var scheme by remember(r.residual) { mutableStateOf(LiveChartClient.shared.cached(r.residual.z, r.residual.a)) }
@@ -100,7 +137,27 @@ private fun GammaSection(wb: Workbench, r: Reaction) {
                     if (b != null) Text("${Fmt.keV(b.energy)} keV · ${Fmt.sig(b.total, 4)} counts (peaks ${Fmt.sig(b.photopeak + b.escape, 3)}, continuum ${Fmt.sig(b.compton, 3)})",
                         style = MaterialTheme.typography.bodySmall)
                 }
-                Row(verticalAlignment = Alignment.CenterVertically) { Switch(logY, { logY = it }); Text("  Logarithmic counts") }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Switch(logY, { logY = it }); Text("  Logarithmic counts  ")
+                    val export = rememberTextExporter()
+                    TextButton(onClick = { export("gamma_spectrum.csv", GammaSpectrum.csv(bins)) }) { Text("Export CSV") }
+                }
+                var roiLo by remember { mutableStateOf(0.0) }
+                var roiHi by remember { mutableStateOf(setup.maximumEnergy) }
+                MoreOptions("Region of interest", summary = "${Fmt.sig(roiLo, 4)}–${Fmt.sig(roiHi, 4)} keV") {
+                    Row {
+                        NumberField("From", roiLo, "keV", Modifier.weight(1f), range = 0.0..20000.0) { roiLo = it }
+                        Spacer(Modifier.width(6.dp))
+                        NumberField("To", roiHi, "keV", Modifier.weight(1f), range = 0.0..20000.0) { roiHi = it }
+                    }
+                    if (roiHi > roiLo) {
+                        val roi = SpectrumRegion.integrate(bins, setup.maximumEnergy / setup.channels, roiLo, roiHi)
+                        ValueRow("Total", Fmt.sig(roi.total, 6)); ValueRow("Photopeaks", Fmt.sig(roi.photopeak, 6))
+                        ValueRow("Compton", Fmt.sig(roi.compton, 6)); ValueRow("Escape", Fmt.sig(roi.escape, 6))
+                        ValueRow("Flat background", Fmt.sig(roi.background, 6))
+                        TextButton(onClick = { probe?.let { p -> roiLo = p - 10; roiHi = p + 10 } }) { Text("Centre ±10 keV on the cursor") }
+                    } else Text("The upper limit must exceed the lower one.", color = MaterialTheme.colorScheme.error)
+                }
             }
         }
     }
@@ -164,10 +221,10 @@ private fun GammaSection(wb: Workbench, r: Reaction) {
     SectionCard("Detector", footer = "Deterministic response: Gaussian photopeaks, single-scatter Compton continuum, escape peaks scaled with the NIST XCOM pair fraction. No summing or pile-up.") {
         var menu by remember { mutableStateOf(false) }
         Box {
-            PickerField("Detector", ResolutionModel.presets[s.preset].name) { menu = true }
+            PickerField("Detector", ResolutionModel.presets[DetectorSettings.preset].name) { menu = true }
             DropdownMenu(menu, { menu = false }) {
                 ResolutionModel.presets.forEachIndexed { i, p -> DropdownMenuItem(text = { Text(p.name) }, onClick = {
-                    s.preset = i; menu = false
+                    DetectorSettings.choosePreset(i); menu = false
                     DetectorCrystal.matching(p.name)?.let { c -> s.setup = setup.copy(escape = setup.escape.copy(crystal = c,
                         singleAtReference = c.typicalEscape.first, doubleAtReference = c.typicalEscape.second)) }
                 }) }
@@ -201,7 +258,7 @@ private fun GammaSection(wb: Workbench, r: Reaction) {
 private fun ParticleSection(wb: Workbench, r: Reaction) {
     val s = SpectrumState
     val det = s.particle
-    val material: StoppingTarget? = wb.run.material()
+    val material: StoppingTarget? = wb.run.target()
     val groups = remember(r, wb.beamEnergy, wb.residualExcitation, material, det) {
         runCatching { ParticleSpectrum.groups(r, wb.beamEnergy, wb.residualExcitation, material, det) }.getOrDefault(emptyList())
     }

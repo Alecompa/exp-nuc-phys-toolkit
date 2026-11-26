@@ -60,6 +60,20 @@ class RenderScreens {
         }
     }
 
+    @Test fun phaseOneTools() {
+        render("android_rutherford", 412, 1500, Tool.Rutherford)
+        render("android_doppler", 412, 1400, Tool.Doppler)
+        render("android_detector", 412, 1500, Tool.Detector)
+        render("android_units", 412, 1200, Tool.Units)
+        render("linux_constants", 1200, 900, Tool.Constants)
+    }
+
+    @Test fun phaseThree() {
+        render("android_home_pinned", 412, 1500, null)
+        render("android_experiments", 412, 1000, Tool.Experiments)
+        render("android_settings", 412, 1500, Tool.Settings)
+    }
+
     @Test fun desktopScreens() {
         render("linux_gamow", 1200, 820, Tool.Gamow)
         render("linux_qvalue", 1200, 820, Tool.QValue)

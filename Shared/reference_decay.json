@@ -549,5 +549,286 @@
       "i3" : 10.492833958075561,
       "lines" : 62
     }
+  },
+  {
+    "inputs" : {
+      "energy" : "5.0"
+    },
+    "name" : "muen",
+    "values" : {
+      "muen" : 4.742
+    }
+  },
+  {
+    "inputs" : {
+      "energy" : "10.0"
+    },
+    "name" : "muen",
+    "values" : {
+      "muen" : 4.742
+    }
+  },
+  {
+    "inputs" : {
+      "energy" : "25.0"
+    },
+    "name" : "muen",
+    "values" : {
+      "muen" : 0.2701868588644638
+    }
+  },
+  {
+    "inputs" : {
+      "energy" : "59.5"
+    },
+    "name" : "muen",
+    "values" : {
+      "muen" : 0.03082923860550163
+    }
+  },
+  {
+    "inputs" : {
+      "energy" : "122.0"
+    },
+    "name" : "muen",
+    "values" : {
+      "muen" : 0.024073470293761008
+    }
+  },
+  {
+    "inputs" : {
+      "energy" : "661.7"
+    },
+    "name" : "muen",
+    "values" : {
+      "muen" : 0.029286483546468234
+    }
+  },
+  {
+    "inputs" : {
+      "energy" : "1332.5"
+    },
+    "name" : "muen",
+    "values" : {
+      "muen" : 0.02623664282682488
+    }
+  },
+  {
+    "inputs" : {
+      "energy" : "6129.0"
+    },
+    "name" : "muen",
+    "values" : {
+      "muen" : 0.01637653959105026
+    }
+  },
+  {
+    "inputs" : {
+      "energy" : "20000.0"
+    },
+    "name" : "muen",
+    "values" : {
+      "muen" : 0.014499999999999997
+    }
+  },
+  {
+    "inputs" : {
+      "nuclide" : "22Na"
+    },
+    "name" : "kerma",
+    "values" : {
+      "constant" : 0.2802002884146876,
+      "rate" : 1.1519345190381602
+    }
+  },
+  {
+    "inputs" : {
+      "nuclide" : "54Mn"
+    },
+    "name" : "kerma",
+    "values" : {
+      "constant" : 0.1097180733272425,
+      "rate" : 0.45106319034533027
+    }
+  },
+  {
+    "inputs" : {
+      "nuclide" : "56Co"
+    },
+    "name" : "kerma",
+    "values" : {
+      "constant" : 0.4197554577905327,
+      "rate" : 1.72566132647219
+    }
+  },
+  {
+    "inputs" : {
+      "nuclide" : "57Co"
+    },
+    "name" : "kerma",
+    "values" : {
+      "constant" : 0.01332649919537836,
+      "rate" : 0.05478671891433326
+    }
+  },
+  {
+    "inputs" : {
+      "nuclide" : "60Co"
+    },
+    "name" : "kerma",
+    "values" : {
+      "constant" : 0.30563274176439387,
+      "rate" : 1.2564901605869527
+    }
+  },
+  {
+    "inputs" : {
+      "nuclide" : "65Zn"
+    },
+    "name" : "kerma",
+    "values" : {
+      "constant" : 0.07202460951563504,
+      "rate" : 0.29610117245316625
+    }
+  },
+  {
+    "inputs" : {
+      "nuclide" : "88Y"
+    },
+    "name" : "kerma",
+    "values" : {
+      "constant" : 0.31267601564141567,
+      "rate" : 1.2854458420813755
+    }
+  },
+  {
+    "inputs" : {
+      "nuclide" : "109Cd"
+    },
+    "name" : "kerma",
+    "values" : {
+      "constant" : 0.045184203283516425,
+      "rate" : 0.18575728016556753
+    }
+  },
+  {
+    "inputs" : {
+      "nuclide" : "133Ba"
+    },
+    "name" : "kerma",
+    "values" : {
+      "constant" : 0.07327979965738236,
+      "rate" : 0.30126139859146084
+    }
+  },
+  {
+    "inputs" : {
+      "nuclide" : "137Cs"
+    },
+    "name" : "kerma",
+    "values" : {
+      "constant" : 0.07714631719317167,
+      "rate" : 0.3171570817941502
+    }
+  },
+  {
+    "inputs" : {
+      "nuclide" : "139Ce"
+    },
+    "name" : "kerma",
+    "values" : {
+      "constant" : 0.030933111234130107,
+      "rate" : 0.12716945729586823
+    }
+  },
+  {
+    "inputs" : {
+      "nuclide" : "152Eu"
+    },
+    "name" : "kerma",
+    "values" : {
+      "constant" : 0.15245783176924163,
+      "rate" : 0.6267710861624378
+    }
+  },
+  {
+    "inputs" : {
+      "nuclide" : "207Bi"
+    },
+    "name" : "kerma",
+    "values" : {
+      "constant" : 0.20062035535070724,
+      "rate" : 0.824772571997352
+    }
+  },
+  {
+    "inputs" : {
+      "nuclide" : "241Am"
+    },
+    "name" : "kerma",
+    "values" : {
+      "constant" : 0.0036823294788958134,
+      "rate" : 0.015138465635460568
+    }
+  },
+  {
+    "inputs" : {
+      "nuclide" : "113Sn"
+    },
+    "name" : "kerma",
+    "values" : {
+      "constant" : 0.07058814562510789,
+      "rate" : 0.2901957097921102
+    }
+  },
+  {
+    "inputs" : {
+      "nuclide" : "85Sr"
+    },
+    "name" : "kerma",
+    "values" : {
+      "constant" : 0.06692967212239381,
+      "rate" : 0.2751553187253968
+    }
+  },
+  {
+    "inputs" : {
+      "nuclide" : "51Cr"
+    },
+    "name" : "kerma",
+    "values" : {
+      "constant" : 0.0042064035762878925,
+      "rate" : 0.01729299248029467
+    }
+  },
+  {
+    "inputs" : {
+      "nuclide" : "46Sc"
+    },
+    "name" : "kerma",
+    "values" : {
+      "constant" : 0.25596347973307987,
+      "rate" : 1.0522943055693283
+    }
+  },
+  {
+    "inputs" : {
+      "nuclide" : "182Ta"
+    },
+    "name" : "kerma",
+    "values" : {
+      "constant" : 0.1621946849468843,
+      "rate" : 0.6668003714483021
+    }
+  },
+  {
+    "inputs" : {
+      "nuclide" : "166mHo"
+    },
+    "name" : "kerma",
+    "values" : {
+      "constant" : 0.22277161819416294,
+      "rate" : 0.9158388747982253
+    }
   }
 ]

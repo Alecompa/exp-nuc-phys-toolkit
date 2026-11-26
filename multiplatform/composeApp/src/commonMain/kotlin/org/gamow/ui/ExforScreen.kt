@@ -1,6 +1,7 @@
 package org.gamow.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -9,6 +10,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.async
@@ -44,12 +47,20 @@ fun ExforScreen(wb: Workbench, onEdit: () -> Unit) {
     val tables = remember(r) { mutableStateMapOf<String, Result<ExforTable>>() }
     val shown = datasets.filter { it.level == level }
     var picked by remember { mutableStateOf<String?>(null) }
+    var open by remember(r) { mutableStateOf<String?>(null) }
 
     LaunchedEffect(r, level) {
         val gate = Semaphore(6)
         shown.filter { it.id !in tables }.map { d ->
             async { gate.withPermit { tables[d.id] = runCatching { ExforClient.shared.table(d) } } }
         }.awaitAll()
+    }
+
+    val openDataset = open?.let { id -> datasets.firstOrNull { it.id == id } }
+    val openTable = openDataset?.let { tables[it.id]?.getOrNull() }
+    if (openDataset != null && openTable != null) {
+        ExforDatasetDetail(wb, openDataset, openTable, entrance) { open = null }
+        return
     }
 
     SectionCard {
@@ -88,6 +99,13 @@ fun ExforScreen(wb: Workbench, onEdit: () -> Unit) {
                     }
                 })
             Text(picked ?: "Tap the plot to identify the nearest point.", style = MaterialTheme.typography.bodySmall)
+            val clipboard = LocalClipboardManager.current
+            var copied by remember(series.size, quantity, frame, level) { mutableStateOf(false) }
+            OutlinedButton(onClick = {
+                clipboard.setText(AnnotatedString(seriesCsv(f, levelLabel(level, datasets), entrance != null, quantity, frame,
+                    series.map { it.first to it.third })))
+                copied = true
+            }) { Text(if (copied) "Copied ✓" else "Copy CSV of the shown series") }
             if (gamow != null) Text("Shaded: Gamow window at T₉ = ${Fmt.sig(wb.t9, 3)}", style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
@@ -108,13 +126,17 @@ fun ExforScreen(wb: Workbench, onEdit: () -> Unit) {
             if (entrance != null) Row(verticalAlignment = Alignment.CenterVertically) { Switch(showGamow, { showGamow = it }); Text("  Gamow window") }
         }
     }
-    SectionCard("Tables, newest first", footer = "Tap a row to hide or show it in the plot.") {
+    SectionCard("Tables, newest first", footer = "Tap a row for its reference and points; tap the dot to hide or show it in the plot.") {
         shown.forEachIndexed { i, d ->
             val state = tables[d.id]
-            Row(Modifier.fillMaxWidth().clickable { hidden = if (d.id in hidden) hidden - d.id else hidden + d.id }.padding(vertical = 6.dp),
+            Row(Modifier.fillMaxWidth().clickable(enabled = state?.isSuccess == true) { open = d.id }.padding(vertical = 2.dp),
                 verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(12.dp).background(if (d.id in hidden) Color.Transparent else color(i), CircleShape))
-                Column(Modifier.weight(1f).padding(start = 10.dp)) {
+                Box(Modifier.size(36.dp).clickable { hidden = if (d.id in hidden) hidden - d.id else hidden + d.id },
+                    contentAlignment = Alignment.Center) {
+                    Box(Modifier.size(12.dp).border(1.5.dp, color(i), CircleShape)
+                        .background(if (d.id in hidden) Color.Transparent else color(i), CircleShape))
+                }
+                Column(Modifier.weight(1f).padding(start = 4.dp)) {
                     Text("${d.author} (${d.year})", fontWeight = FontWeight.Medium)
                     Text(buildString {
                         append("EXFOR ${d.exforID}")
@@ -124,6 +146,21 @@ fun ExforScreen(wb: Workbench, onEdit: () -> Unit) {
                     }, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
+        }
+    }
+}
+
+/** The plotted series as one CSV; without a charged entrance channel the points are as tabulated (each table's own frame and quantity). */
+private fun seriesCsv(r: Reaction, state: String, converted: Boolean, quantity: ExforTable.Quantity, frame: ExforTable.Frame,
+                      series: List<Pair<ExforDataset, List<ExforTable.Point>>>): String {
+    val e = if (!converted) "E_keV" else if (frame == ExforTable.Frame.CM) "E_cm_keV" else "E_lab_keV"
+    val q = if (!converted) "value" else if (quantity == ExforTable.Quantity.S_FACTOR) "S_keVb" else "sigma_b"
+    return buildString {
+        append("# ${r.plainLabel}, $state, EXFOR tables from IAEA-NDS/exfortables_py")
+        append(if (converted) "\n" else " (energies and values as tabulated: keV, barn or keV b)\n")
+        append("author,year,exfor_id,$e,d$e,$q,d$q\n")
+        for ((d, pts) in series) for (p in pts) {
+            append("\"${d.author.replace("\"", "\"\"")}\",${d.year},${d.exforID},${p.energy},${p.energyUncertainty ?: ""},${p.value},${p.uncertainty ?: ""}\n")
         }
     }
 }

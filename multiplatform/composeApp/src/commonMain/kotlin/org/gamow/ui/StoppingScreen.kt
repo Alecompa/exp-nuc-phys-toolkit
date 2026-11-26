@@ -21,7 +21,7 @@ fun StoppingScreen(wb: Workbench, onEdit: () -> Unit) {
     val r = wb.reaction ?: return NoReaction(onEdit)
     if (r.projectile.z !in 1..92) return Message("Stopping powers need a charged ion beam.")
     val ion = remember(r) { StoppingIon(r.projectile) }
-    val material = wb.run.material()
+    val material = wb.run.target()
     var picking by remember { mutableStateOf(false) }
     var unit by remember { mutableStateOf(StoppingUnit.KEV_PER_MICRON) }
     val thickness = wb.run.thickness
@@ -58,12 +58,25 @@ fun StoppingScreen(wb: Workbench, onEdit: () -> Unit) {
                 "nuclear ${Fmt.sig(calc.convert(sp.nuclear, unit), 3)} ${unit.label}", style = MaterialTheme.typography.bodySmall)
         }
         Text("── total   ‒ ‒ electronic (blue), nuclear (grey)", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        val exportTable = rememberTextExporter()
+        TextButton(onClick = {
+            val table = runCatching { calc.rangeTable(10.0, maxOf(e * 2, 100.0)) }.getOrDefault(emptyList())
+            exportTable("stopping_${r.projectile.plainLabel}_in_${target.name.filter { it.isLetterOrDigit() }}.csv",
+                "# ${r.projectile.plainLabel} in ${target.name} (${Fmt.sig(target.density, 4)} g/cm3), SRIM-2013; stopping in eV/(1e15 at/cm2), ranges in Angstrom\n" +
+                "energy_keV,electronic,nuclear,projected_range,longitudinal_straggling,lateral_straggling\n" +
+                table.joinToString("\n") { row -> listOf(row.energy, row.electronic, row.nuclear, row.projectedRange, row.longitudinalStraggling, row.lateralStraggling)
+                    .joinToString(",") { formatSignificant(it, 6) } })
+        }) { Text("Export stopping and range table (CSV)") }
     }
 
-    SectionCard("Through a layer of ${target.name}") {
-        ValueWithUnit("Thickness", thickness, tUnit, ThicknessUnit.entries.map { it to it.symbol },
+    SectionCard("Through a layer of ${target.name}${if (wb.run.gasOn) " gas" else ""}") {
+        ValueWithUnit(if (wb.run.gasOn) "Cell length" else "Thickness", thickness, tUnit, ThicknessUnit.entries.map { it to it.symbol },
             { u -> u.toAngstrom(1.0, target) }) { v, u -> wb.run.updateThickness(v); tUnit = u }
-        val loss = runCatching { calc.energyLoss(e, thickness, tilt) }.getOrNull()
+        val tr = wb.run.transport(ion, e)
+        val loss = tr?.target
+        tr?.before?.lastOrNull()?.let { w -> ValueRow("Energy entering the target", Fmt.keV(w.energyOut), "keV",
+            note = "After ${tr.before.size} window layer${if (tr.before.size > 1) "s" else ""}, straggling FWHM ${Fmt.sig(w.fwhm, 3)} keV") }
+        if (tr != null && loss == null) Text("The beam stops before the target, in the entrance layers.", color = MaterialTheme.colorScheme.error)
         if (loss != null) {
             if (loss.stopped) Text("The beam stops in this layer.", color = MaterialTheme.colorScheme.error)
             else {
@@ -77,6 +90,21 @@ fun StoppingScreen(wb: Workbench, onEdit: () -> Unit) {
             listOf("Energy after" to "${Fmt.keV(loss.energyOut)} keV", "Energy loss" to "${Fmt.keV(loss.energyLoss)} keV",
                 "Mean energy" to "${Fmt.keV(loss.meanEnergy)} keV", "Straggling FWHM" to "${Fmt.sig(loss.fwhm, 3)} keV", "Tilt" to "${Fmt.fixed(tilt, 1)}°")
         }
+        // Energy (±σ) against path depth through windows, target and backing.
+        tr?.let { t ->
+            val layers = t.before + listOfNotNull(t.target) + t.after
+            var offset = 0.0
+            val mean = ArrayList<Pair<Double, Double>>(); val up = ArrayList<Pair<Double, Double>>(); val down = ArrayList<Pair<Double, Double>>()
+            for (l in layers) {
+                for (pt in l.profile) { val d = (offset + pt.depth) / 1e4; mean += d to pt.energy; up += d to pt.energy + pt.sigma; down += d to pt.energy - pt.sigma }
+                offset += l.pathLength
+            }
+            if (mean.size > 2) Plot(listOf(PlotSeries(mean, MaterialTheme.colorScheme.primary),
+                PlotSeries(up, Color(0xFF9E9E9E), dashed = true), PlotSeries(down, Color(0xFF9E9E9E), dashed = true)),
+                xLabel = "path depth (µm)", yLabel = "E (keV)", height = 200.dp)
+        }
+        tr?.after?.forEachIndexed { i, l -> ValueRow("After backing layer ${i + 1}", if (l.stopped) "stopped" else Fmt.keV(l.energyOut), if (l.stopped) "" else "keV") }
+        StackEditor(wb)
         MoreOptions("Tilt and range", summary = if (tilt == 0.0) "normal incidence" else "${Fmt.fixed(tilt, 0)}° tilt") {
             NumberField("Tilt to the beam", tilt, "°", range = 0.0..89.0) { wb.run.updateTilt(it) }
             runCatching { calc.range(e) }.getOrNull()?.let { rr ->
@@ -134,6 +162,38 @@ fun MaterialPickerDialog(onDismiss: () -> Unit, onPick: (StoppingTarget, String)
                     }
                 }
             }
+        }
+    }
+}
+
+/** Entrance windows, backing and gas cell of the target, shared with Yield. */
+@Composable
+private fun StackEditor(wb: Workbench) {
+    val run = wb.run
+    MoreOptions("Windows, backing and gas cell",
+        summary = "${run.before.size} window(s) · ${run.after.size} backing layer(s)" + if (run.gasOn) " · gas ${Fmt.sig(run.pressure, 3)} mbar" else "") {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Switch(run.gasOn, { run.updateGas(it) }); Text("  Gas target (cell length = thickness)")
+        }
+        if (run.gasOn) {
+            NumberField("Pressure", run.pressure, "mbar", range = 1e-6..1e5) { run.updateGas(true, p = it) }
+            NumberField("Temperature", run.temperature, "K", range = 1.0..5000.0) { run.updateGas(true, t = it) }
+        }
+        for (beforeTarget in listOf(true, false)) {
+            val list = if (beforeTarget) run.before else run.after
+            Text(if (beforeTarget) "Before the target (windows, dead layers)" else "Behind the target (backing)", style = MaterialTheme.typography.labelLarge)
+            list.forEachIndexed { i, (k, a) ->
+                val t = RunState.key(k)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(t?.name ?: k, Modifier.weight(1f))
+                    NumberField("µm", a / 1e4, "µm", Modifier.weight(1f), range = 0.0..1e6) { v ->
+                        run.updateLayers(beforeTarget, list.mapIndexed { j, x -> if (j == i) x.first to v * 1e4 else x }) }
+                    TextButton(onClick = { run.updateLayers(beforeTarget, list.filterIndexed { j, _ -> j != i }) }) { Text("✕") }
+                }
+            }
+            var picking by remember { mutableStateOf(false) }
+            if (picking) MaterialPickerDialog(onDismiss = { picking = false }) { _, key -> run.updateLayers(beforeTarget, list + (key to 1e4)); picking = false }
+            OutlinedButton(onClick = { picking = true }) { Text(if (beforeTarget) "Add window" else "Add backing layer") }
         }
     }
 }

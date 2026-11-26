@@ -26,10 +26,13 @@ SwiftUI (`App/`, `MacApp/`, `Packages/`).
 | Reaction rates, narrow resonances, Coulomb functions and penetrabilities, Rutherford, yields, counting statistics | `reference_astro.json` |
 | γ response (attenuation, escape peaks, Doppler boxes), in-beam γ and contaminants, particle spectra, measured spectra, peak search, auto-calibration, detector model, γ cascades | `reference_spectra.json` |
 
-**Screens** (all platforms): Reaction setup · Q value · Kinematics · EXFOR · Stopping & energy loss · Gamow window ·
-S ↔ σ · Reaction rate · Resonance strength · Penetrability · Yield & beam time · Detector spectrum (γ and particles,
-contaminants) · Spectrum analysis (open a file, peaks, auto-calibration) · Calibration sources · Decay · Nuclides ·
-Notebook. Apple-only features (Shortcuts, widgets) are not on Android/Linux/Windows.
+**Screens** (all platforms): Reaction setup · Q value · Kinematics · EXFOR (table details, use as S(E)) ·
+Rutherford · Gamma Doppler · Stopping & energy loss (windows, backing, gas cell) · Gamow window · S ↔ σ · Reaction
+rate · Resonance strength (ωγ from widths) · Penetrability · Yield & beam time · Beam current · Detector response
+(efficiency fit) · Detector spectrum · Spectrum analysis · Calibration sources (dose rate) · Decay · Nuclides (ENSDF
+levels, EXFOR channels) · Notebook (CSV/text export) · Experiments (saved setups, run log, iOS JSON import) · Constants · Unit converter ·
+Formula sheet · Settings & about. The home has tool search and pinned tools.
+Apple-only features (Shortcuts, widgets) are not on Android/Linux/Windows.
 
 **Not yet tested** on an Android phone, on Linux or on Windows; the workflow produces the installers for that.
 

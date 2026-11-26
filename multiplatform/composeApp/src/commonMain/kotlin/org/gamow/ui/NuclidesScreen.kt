@@ -77,6 +77,7 @@ private fun NuclideDetail(n: Nuclide, wb: Workbench, onUseReaction: () -> Unit) 
             }
         }
     }
+    ExforChannelsSection(n, wb, onUseReaction)
     SectionCard("Mass (AME2020)") {
         ValueRow("Mass excess Δ", "${Fmt.keV(n.massExcess)} ± ${Fmt.sig(n.massExcessUncertainty, 2)}", "keV",
             note = if (n.isEstimated) "Estimated from systematics (#)" else null)
@@ -93,4 +94,5 @@ private fun NuclideDetail(n: Nuclide, wb: Workbench, onUseReaction: () -> Unit) 
         for (s in isomers) ValueRow(s.label, halfLifeText(s), note = "Eₓ = ${Fmt.keV(s.excitation)} keV" +
             if (s.spinParity.isNotEmpty()) " · ${s.spinParity}" else "")
     }
+    LevelsSection(n, wb)
 }

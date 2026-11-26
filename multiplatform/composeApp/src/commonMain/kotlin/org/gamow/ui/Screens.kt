@@ -103,6 +103,14 @@ fun KinematicsScreen(wb: Workbench, onEdit: () -> Unit) {
             ValueRow("dE/dθ", Fmt.sig(s.energySlope * PI / 180, 4), "keV/°")
         }
     }
+    val exportKin = rememberTextExporter()
+    TextButton(onClick = {
+        exportKin("kinematics_${r.plainLabel.filter { it.isLetterOrDigit() }}.csv",
+            "# ${r.plainLabel} at ${wb.beamEnergy} keV, residual Ex ${wb.residualExcitation} keV\n" +
+            "theta_cm_deg,theta_lab_deg,ejectile_keV,residual_theta_deg,residual_keV,jacobian\n" +
+            k.curve(181).joinToString("\n") { s -> listOf(s.thetaCM.degrees, s.ejectileAngle.degrees, s.ejectileEnergy, s.residualAngle.degrees,
+                s.residualEnergy, s.jacobian).joinToString(",") { formatSignificant(it, 8) } })
+    }) { Text("Export kinematics table (CSV)") }
     SectionCard("Centre of mass") {
         ValueRow("E c.m.", Fmt.keV(k.centerOfMassEnergy), "keV")
         ValueRow("β c.m.", Fmt.sig(k.beta, 5))

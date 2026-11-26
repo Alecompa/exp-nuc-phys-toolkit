@@ -73,6 +73,10 @@ class LiveChartClient(
     /** Cached data older than this (s) is refreshed when online. */
     var maxAge: Double = 30 * 86400.0
 
+    /** Bytes and files in the level-scheme cache; clearing it forces fresh downloads. */
+    fun cacheUsage(): Pair<Long, Int> = org.gamow.core.exfor.ExforFiles.usage(directory)
+    fun clearCache() = org.gamow.core.exfor.ExforFiles.deleteTree(directory)
+
     private fun path(z: Int, a: Int, kind: String) = "$directory/${apiName(z, a)}.$kind"
 
     fun cached(z: Int, a: Int): LevelScheme? {

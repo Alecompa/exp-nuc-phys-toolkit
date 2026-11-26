@@ -23,8 +23,55 @@ class RunState(private val wb: Workbench) {
         private set
     var current by mutableStateOf(Prefs.get("run.current")?.toDoubleOrNull() ?: 100.0)         // µA
         private set
-    var chargeState by mutableStateOf(Prefs.get("run.charge")?.toIntOrNull() ?: 1)
+    private var storedCharge by mutableStateOf(Prefs.get("run.charge")?.toIntOrNull() ?: 1)
+    /** Beam charge state, never above the projectile's Z (a 2+ from an α run does not carry over to protons). */
+    val chargeState: Int get() = storedCharge.coerceIn(1, maxOf(1, wb.reaction?.projectile?.z ?: 1))
+
+    // MARK: Gas target: the target layer is a gas cell (thickness = cell length) at this pressure and temperature.
+    var gasOn by mutableStateOf(Prefs.get("run.gas") == "1")
         private set
+    var pressure by mutableStateOf(Prefs.get("run.p")?.toDoubleOrNull() ?: 1.0)          // mbar
+        private set
+    var temperature by mutableStateOf(Prefs.get("run.T")?.toDoubleOrNull() ?: 293.15)    // K
+        private set
+    fun updateGas(on: Boolean, p: Double = pressure, t: Double = temperature) {
+        gasOn = on; pressure = p; temperature = t
+        Prefs.put("run.gas", if (on) "1" else "0"); Prefs.put("run.p", "$p"); Prefs.put("run.T", "$t")
+    }
+
+    // MARK: Layers the beam crosses before (windows, dead layers) and after (backing) the target: material key + Å.
+    var before by mutableStateOf(loadLayers("run.before"))
+        private set
+    var after by mutableStateOf(loadLayers("run.after"))
+        private set
+    fun updateLayers(beforeTarget: Boolean, list: List<Pair<String, Double>>) {
+        if (beforeTarget) before = list else after = list
+        Prefs.put(if (beforeTarget) "run.before" else "run.after", list.joinToString("\u001E") { "${it.first}\u001F${it.second}" })
+    }
+    private fun loadLayers(k: String): List<Pair<String, Double>> = (Prefs.get(k) ?: "").split('\u001E').mapNotNull { e ->
+        e.split('\u001F').takeIf { it.size == 2 }?.let { (a, b) -> b.toDoubleOrNull()?.let { a to it } }
+    }
+
+    /** The target layer material, as a gas at `pressure` and `temperature` when the gas cell is on. */
+    fun target(): StoppingTarget? = material()?.let { t ->
+        if (!gasOn) t else t.copy(density = GasTarget.density(t, pressure, temperature, GasTarget.defaultAtomsPerMolecule(t)), isGas = true)
+    }
+
+    /** Beam transport through windows, the target layer and the backing: (before, target, after); target null if the beam stops first. */
+    data class Transport(val before: List<StoppingCalculator.EnergyLoss>, val target: StoppingCalculator.EnergyLoss?, val after: List<StoppingCalculator.EnergyLoss>)
+
+    fun transport(ion: StoppingIon, energy: Double): Transport? {
+        val t = target() ?: return null
+        val pre = before.mapNotNull { (k, a) -> key(k)?.let { StackLayer(it, a) } }.filter { it.thickness > 0 }
+        val post = after.mapNotNull { (k, a) -> key(k)?.let { StackLayer(it, a) } }.filter { it.thickness > 0 }
+        // A target of zero thickness has no layer: never let the backing stand in for it.
+        if (!(thickness > 0)) {
+            val windows = runCatching { LayerStack.transport(ion, pre, energy, tilt) }.getOrNull() ?: return null
+            return Transport(windows, null, emptyList())
+        }
+        val all = runCatching { LayerStack.transport(ion, pre + StackLayer(t, thickness) + post, energy, tilt) }.getOrNull() ?: return null
+        return Transport(all.take(pre.size), all.getOrNull(pre.size), if (all.size > pre.size + 1) all.drop(pre.size + 1) else emptyList())
+    }
 
     fun material(): StoppingTarget? = key(materialKey) ?: wb.reaction?.target?.z?.takeIf { it in 1..92 }?.let { runCatching { StoppingTarget.element(it) }.getOrNull() }
 
@@ -32,7 +79,7 @@ class RunState(private val wb: Workbench) {
     fun updateThickness(a: Double) { thickness = a; Prefs.put("run.thickness", "$a") }
     fun updateTilt(t: Double) { tilt = t; Prefs.put("run.tilt", "$t") }
     fun updateCurrent(i: Double) { current = i; Prefs.put("run.current", "$i") }
-    fun updateCharge(q: Int) { chargeState = q; Prefs.put("run.charge", "$q") }
+    fun updateCharge(q: Int) { storedCharge = q; Prefs.put("run.charge", "$q") }
 
     // MARK: Per-reaction astrophysics profile
     data class Profile(val model: SFactorModel, val resonances: List<NarrowResonance>, val screening: Double,

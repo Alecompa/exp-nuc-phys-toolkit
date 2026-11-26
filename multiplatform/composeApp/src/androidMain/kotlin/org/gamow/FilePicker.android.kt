@@ -20,3 +20,16 @@ actual fun rememberFilePicker(onFile: (name: String, bytes: ByteArray) -> Unit):
     }
     return { launcher.launch(arrayOf("*/*")) }
 }
+
+@Composable
+actual fun rememberTextExporter(): (fileName: String, text: String) -> Unit {
+    val context = LocalContext.current
+    return { name, text ->
+        val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+            type = if (name.endsWith(".csv")) "text/csv" else "text/plain"
+            putExtra(android.content.Intent.EXTRA_SUBJECT, name)
+            putExtra(android.content.Intent.EXTRA_TEXT, text)
+        }
+        context.startActivity(android.content.Intent.createChooser(send, name).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
+    }
+}
