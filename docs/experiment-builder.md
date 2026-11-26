@@ -40,6 +40,18 @@ A tool that cannot say anything about the current setup is left out of the list:
 hidden when the ejectile is a particle and the residual Eₓ is 0, since no γ ray is emitted. Search
 still finds it.
 
+## Measured spectra
+
+**Spectrum Analysis** opens a measured spectrum (ORTEC `.Spe` — including files with Windows line endings — `.Chn`,
+or plain text/CSV with one column of counts or two columns). It finds peaks with a second-derivative filter over a SNIP background, calibrates the
+energy automatically against calibration-source, room-background and the setup's in-beam lines (pair voting, then
+weighted least squares, with residuals), and identifies peaks including single and double escape peaks. The peak
+list exports as CSV. Peak areas are moment estimates, not fitted line shapes. On the Mac, ⌘O opens a file and
+spectra can be dropped on the window.
+
+In **Yield & Beam Time** the target details and the planned-run results are folded; in **EXFOR**, the axis switches
+and overlays sit under **Plot options**.
+
 ## Isotopes and tilted targets
 
 Explicit formulas such as `Ta2[17O]5` now retain their isotope identities. An explicit isotope
@@ -81,6 +93,13 @@ cache, or from the IAEA LiveChart when online data are allowed in Settings; with
   is not an ENSDF level, a single recoil-corrected transition Eₓ → 0 is assumed and the footer says so.
   Line counts are reactions × γ per reaction, times the efficiency curve when it is applied.
   A channel with no γ ray (e.g. (p,α) to the ground state) says so instead of showing a placeholder.
+
+In γ mode the screen is four blocks: **Spectrum** (the plot); **In the spectrum**, with the reaction's γ rays,
+beam-induced and room-background contaminants, and sources and custom lines each folded behind a one-line
+summary; **Detector**, with the essentials in view and the rest under **More detector settings**; and the
+**Energy window and continuum**. Contaminants and sources are chosen from lists; source nuclides come from a
+searchable picker (calibration sources first, then common lab nuclides, then any nuclide by element or mass
+number), the same picker as in the Decay calculator and the New Source sheet.
 
 Gamma Doppler and Yield & Beam Time follow the same rule: with a charged ejectile and Eₓ = 0 the yield
 counts the particle itself (efficiency = solid-angle fraction), and the Doppler tool is hidden from the

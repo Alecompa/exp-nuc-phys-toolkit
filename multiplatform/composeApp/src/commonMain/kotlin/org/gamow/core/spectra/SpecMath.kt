@@ -10,6 +10,15 @@ import kotlin.random.Random
  * erf and erfc for common Kotlin (no libm here): a port of fdlibm's s_erf.c (Sun Microsystems, 1993), error below
  * 1 ulp. The Swift app uses Apple's libm, which agrees to a few ulp; a bin far in a Gaussian tail, where
  * erf(b) − erf(a) cancels, can therefore differ in its leading digits from the Swift value, the bulk does not.
+ *
+ * Notice of the original fdlibm source, preserved as its licence requires:
+ *
+ *   Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
+ *
+ *   Developed at SunSoft, a Sun Microsystems, Inc. business.
+ *   Permission to use, copy, modify, and distribute this
+ *   software is freely granted, provided that this notice
+ *   is preserved.
  */
 internal object SpecMath {
     private const val ERX = 8.45062911510467529297e-01

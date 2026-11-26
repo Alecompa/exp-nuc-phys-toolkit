@@ -1,16 +1,18 @@
 # Gamow — a pocket toolkit for experimental nuclear astrophysics
 
-![Platform](https://img.shields.io/badge/platform-iOS%20%7C%20iPadOS%2026-blue)
+![Platform](https://img.shields.io/badge/platform-iOS%20%7C%20iPadOS%20%7C%20macOS%2026-blue)
+![Multiplatform](https://img.shields.io/badge/also-Android%20%7C%20Linux%20%7C%20Windows-blue)
 ![Swift](https://img.shields.io/badge/Swift-6-orange)
 ![SwiftUI](https://img.shields.io/badge/UI-SwiftUI%20%2B%20Liquid%20Glass-purple)
-![Tests](https://img.shields.io/badge/tests-124%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/Swift%20tests-132%20passing-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
-Gamow is a native iPhone and iPad app for the numbers an experimental nuclear physicist needs at the
+Gamow is a native iPhone, iPad and Mac app for the numbers an experimental nuclear physicist needs at the
 accelerator, in the counting room or in a meeting: Q values and kinematics, SRIM stopping powers through target
 stacks, Gamow windows, S factors and reaction rates, beam-time estimates, detector response, calibration sources
 and nuclear data, including measured cross sections from EXFOR. It works offline, keeps a notebook of saved
-calculations, and has no account, tracking or ads.
+calculations, and has no account, tracking or ads. A Kotlin Multiplatform version with the same physics runs on
+Android, Linux and Windows (see [below](#android-linux-and-windows)).
 
 <p align="center">
   <img src="docs/screenshots/tools.png" width="200" alt="Tools home with the current setup, pinned tools and collapsible categories">
@@ -41,7 +43,7 @@ is left in its ground state) but stay reachable through search.
 | **Run planning** | Yield, count rate and beam time for a target statistical uncertainty, with background and the Currie detection limit · beam current ↔ particles/s, charge state, power on target, integrated charge |
 | **Detector spectrum** | Expected spectrum for the current setup · charged-particle mode: ejectile groups and beam elastically scattered on the natural isotopes of each target element (both kinematic branches, Rutherford weights) at the detector angle, through absorber foils (SRIM stopping, straggling, kinematic spread) · γ mode: primary capture γ (exact two-body energy, recoil included) and the residual-level cascade from ENSDF branching, Doppler shifted at the γ-detector angle, emitted in flight or at rest according to the ENSDF lifetime and the recoil stopping time · beam-induced contaminants (¹⁹F(p,αγ), ¹⁵N(p,αγ), ¹¹B, ¹³C, ¹²C, ²H, ¹⁴N, ²³Na, ²⁷Al(p,γ), inelastic lines, (α,nγ)) and room background (⁴⁰K, ²⁰⁸Tl, ²¹⁴Bi), recomputed for the beam energy · custom and source lines, Gaussian photopeaks, Compton continuum, single/double escape peaks scaled with the NIST XCOM pair-production fraction, NIST foil attenuation · zoom, cursors, ROI sums, CSV export |
 | **Spectrum analysis** | Import a measured spectrum (ORTEC .Spe/.Chn, text or CSV) · peak search (second-derivative filter, SNIP background) · automatic energy calibration against calibration sources, room background and the setup's in-beam lines, with residuals · peak identification including escape peaks · peak list CSV |
-| **Detectors & sources** | HPGe/scintillator resolution model · weighted efficiency-curve fit to your calibration points · calibration sources: activity today with uncertainty, γ lines with expected counts, air-kerma rate · decay calculator (activity, atoms, mass, time to a fraction) |
+| **Detectors & sources** | HPGe/scintillator resolution model · weighted efficiency-curve fit to your calibration points · calibration sources: activity today with uncertainty, γ lines with expected counts, air-kerma rate · decay calculator (activity, atoms, mass, time to a fraction) · nuclides chosen from a searchable picker (calibration sources first, then common lab nuclides) |
 | **Reference** | CODATA 2018 constants · unit converter (energy, T₉ ↔ kT, barns, lengths, areal density, activity, time, charge) · formula sheet |
 | **Nuclides** | AME2020 masses and separation energies · NUBASE2020 half-lives, Jπ, decay modes, abundances, isomers · ENSDF levels and γ rays from the IAEA LiveChart, cached for offline use |
 | **Cross sections (EXFOR)** | Measured σ and S factors for p, d, t, ³He, α and heavy-ion reactions (51 871 tables) · every reaction on a nuclide, or the data for the current setup · overlay of all measurements with error bars, S factor at c.m. energies by default (σ and lab on request), tap a point to see author, energy and value, pinch to zoom with the y axis following, Gamow window band and the rate tool's S(E) model overlaid, final-state selection, inverse-kinematics setups find the normal-kinematics data · reference, facility and link to the EXFOR entry · CSV export · a measured S(E) can feed the rate tool |
@@ -76,7 +78,9 @@ particles that stop in a foil flagged. With a γ ray, or a residual left in an e
 own γ rays — the primary capture γ and the cascade of the residual level, following the ENSDF branching ratios — and
 builds the HPGe or scintillator response with photopeaks, Compton continuum and single/double escape peaks. Custom
 and contaminant lines, calibration-source templates, foils in front of the detector and a flat background can be
-added; the spectrum exports as CSV. See [the experiment-builder guide](docs/experiment-builder.md) for the
+added; the spectrum exports as CSV. The screen keeps four blocks in view — the spectrum, what is in it (reaction γ
+rays, contaminants, sources, each folded behind a one-line summary), the detector essentials (the rest under
+**More detector settings**) and the energy window. See [the experiment-builder guide](docs/experiment-builder.md) for the
 workflow, the model's assumptions and its validation.
 
 <p align="center">
@@ -111,24 +115,40 @@ The **GamowMac** scheme builds a native macOS app from the same code: a sidebar 
 data views; ⌘O opens a spectrum (or drop `.Spe`, `.Chn` or CSV files on the window), ⌘K edits the setup,
 ⌘⌥↑/↓ step the beam energy; pointing at EXFOR points or spectrum channels shows their values. Select the GamowMac
 scheme, choose your team under Signing & Capabilities and press ⌘R. The app is sandboxed (network for EXFOR and
-ENSDF, files you open). [docs/release.md](docs/release.md) covers
-TestFlight and the App Store.
+ENSDF, files you open). [docs/release.md](docs/release.md) covers TestFlight, the App Store and the
+Android/desktop packages.
 
 ## Android, Linux and Windows
 
-[`multiplatform/`](multiplatform/README.md) holds a Kotlin Multiplatform version of the app (Android APK, Linux,
-Windows and macOS desktop) with the same data files and the same physics, checked against shared reference
-values. It covers the setup, Q value, kinematics, Gamow window and S ↔ σ so far.
+[`multiplatform/`](multiplatform/README.md) holds a Kotlin Multiplatform / Compose Multiplatform version of the app:
+one Kotlin code base builds the Android APK and desktop packages for Linux (.deb, .rpm), Windows (.msi) and macOS
+(.dmg). It packages the same data files as the Swift app, and all of NucPhysKit's physics is ported.
+
+- **Same numbers on every platform.** Six files in `Shared/reference_*.json` (about 1 600 cases, 26 000 values)
+  are written and checked by the Swift `Reference*Tests` and must be reproduced by the Kotlin tests to 10⁻⁹
+  relative (peak-area uncertainties to 1 %, calibration residuals to 10⁻⁸ keV). After changing the physics on both
+  sides, regenerate them with `GAMOW_WRITE_REFERENCE=1 ./Tools/test.sh --filter Reference`.
+- **17 screens:** setup, Q value, kinematics, EXFOR, stopping and energy loss, Gamow window, S ↔ σ, reaction rate,
+  resonance strength, penetrability, yield and beam time, detector spectrum, spectrum analysis, calibration
+  sources, decay, nuclides and notebook. Rutherford, Gamma Doppler, beam current, detector response, reference
+  tables, experiments and settings are still missing; [`multiplatform/PLAN.md`](multiplatform/PLAN.md) plans them.
+- **CI:** [`.github/workflows/multiplatform.yml`](.github/workflows/multiplatform.yml) runs the Kotlin tests and
+  builds the APK, `.deb`, `.msi` and `.dmg` as downloadable artifacts.
+
+The Android and desktop builds have not yet been tried on real Android phones, Linux or Windows machines.
 
 ## Project layout
 
 | Path | Contents |
 |---|---|
 | `Packages/NucToolkit/Sources/NucPhysKit` | Physics only, no UI: masses, reactions, kinematics, `Stopping/` (SRIM-2013), `Astro/` (Coulomb functions, Gamow window, rates), `NuclearData/` (NUBASE, decay, LiveChart client, γ cascades, EXFOR index, table parser and client), `RunPlanning/` (beam, statistics, detectors, γ and particle spectra) |
-| `Packages/NucToolkit/Sources/ToolkitUI` | All SwiftUI screens |
-| `Packages/NucToolkit/Tests/NucPhysKitTests` | Swift Testing suite: Q values against AME2020, kinematics conservation, 24 SRIM SR-module reference cases, Coulomb functions against mpmath, Gamow peak, rate formulae, NUBASE, decay, efficiency fit, EXFOR index and tables, γ cascades, escape peaks, photon attenuation, particle spectra |
-| `App/` | `@main` app target and the App Intents (Shortcuts) |
+| `Packages/NucToolkit/Sources/ToolkitUI` | All SwiftUI screens, shared by the iOS and Mac apps (`MacRootView` is the Mac sidebar) |
+| `Packages/NucToolkit/Tests/NucPhysKitTests` | Swift Testing suite: Q values against AME2020, kinematics conservation, 24 SRIM SR-module reference cases, Coulomb functions against mpmath, Gamow peak, rate formulae, NUBASE, decay, efficiency fit, EXFOR index and tables, γ cascades, escape peaks, photon attenuation, particle spectra, in-beam γ, measured spectra; `Reference*Tests` write and check the shared reference values |
+| `App/` | `@main` iOS app target and the App Intents (Shortcuts) |
+| `MacApp/` | `@main` macOS app target (GamowMac), icon and sandbox entitlements |
 | `Widgets/` | Widget extension |
+| `multiplatform/` | Kotlin Multiplatform app for Android, Linux and Windows ([README](multiplatform/README.md), [PLAN](multiplatform/PLAN.md)) |
+| `Shared/` | Reference values that the Swift and Kotlin tests must both reproduce |
 | `Data/` | Source tables: AME2020, NUBASE2020, SRIM-2013 data, raw IAEA LiveChart decay data |
 | `Tools/` | Converters that build the bundled data, icon generator, test scripts |
 | `project.yml` | [XcodeGen](https://github.com/yonaskolb/XcodeGen) spec; run `xcodegen generate` after editing it |
@@ -139,6 +159,18 @@ Run the physics tests on the Mac (needs Xcode, not only the Command Line Tools):
 
 ```bash
 ./Tools/test.sh
+```
+
+Run the Kotlin tests (needs JDK 17+) against the same reference values:
+
+```bash
+cd multiplatform && ./gradlew :composeApp:desktopTest
+```
+
+Regenerate the shared reference values after an intended physics change, then make both suites pass:
+
+```bash
+GAMOW_WRITE_REFERENCE=1 ./Tools/test.sh --filter Reference
 ```
 
 Regenerate the Xcode project after changing `project.yml`:
@@ -215,6 +247,7 @@ publication against the primary references.
 | Pair-production fraction (escape peaks) | M. J. Berger et al., [NIST XCOM](https://physics.nist.gov/PhysRefData/Xcom/html/xcom1.html) | Public domain |
 | Air μ_en/ρ | J. H. Hubbell and S. M. Seltzer, NISTIR 5632 | Public domain |
 | Constants | CODATA 2018 | Public domain |
+| Error function (Kotlin app) | port of fdlibm `s_erf.c`, Sun Microsystems (1993) | Free with notice preserved ([NOTICE](NOTICE)) |
 
 Because the SRIM data may only be used non-commercially, Gamow is and will stay free.
 
@@ -227,4 +260,5 @@ above and [NOTICE](NOTICE)): in particular the SRIM-2013 data are for non-commer
 
 Gamow collects no data. It makes two kinds of network request: to the IAEA Nuclear Data Section for the level
 scheme of the nuclide you open, and to GitHub (`raw.githubusercontent.com`) for the EXFOR tables of the reaction you
-open. See [docs/privacy.md](docs/privacy.md).
+open. The Mac, Android and desktop versions make the same two requests and nothing else. See
+[docs/privacy.md](docs/privacy.md).

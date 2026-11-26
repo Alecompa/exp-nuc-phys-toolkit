@@ -7,6 +7,11 @@ Third-party data and code are not covered by the licence above and keep their ow
   free for non-commercial use only.
 - The Swift stopping code is a port of LunaSRIM by J. Skowronski, MIT licensed
   (see Data/SRIM2013/LunaSRIM-LICENSE).
+- The Kotlin app's error function (multiplatform/.../core/spectra/SpecMath.kt) is a port of fdlibm's s_erf.c:
+    Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
+    Developed at SunSoft, a Sun Microsystems, Inc. business.
+    Permission to use, copy, modify, and distribute this software is freely granted,
+    provided that this notice is preserved.
 - AME2020, NUBASE2020 and ENSDF/IAEA LiveChart data: published nuclear-data evaluations;
   cite the original references when you use them.
 - Packages/NucToolkit/Sources/NucPhysKit/Resources/exfor_index.deflate is a list of the file names in

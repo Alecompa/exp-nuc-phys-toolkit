@@ -1,7 +1,9 @@
 # Gamow — roadmap
 
-Gamow is an iOS/iPadOS toolkit for experimental nuclear (astro)physicists. This file is the single place where
-planned work is tracked: tick items as they land, and note decisions that are not obvious from the code.
+Gamow is an iOS, iPadOS and macOS toolkit for experimental nuclear (astro)physicists, with a Kotlin Multiplatform
+version for Android, Linux and Windows. This file is the single place where planned work is tracked: tick items as
+they land, and note decisions that are not obvious from the code. Work on the Kotlin app towards parity with the
+Swift app is tracked in [multiplatform/PLAN.md](multiplatform/PLAN.md).
 
 Status: `[x]` done · `[~]` in progress · `[ ]` planned
 
@@ -13,8 +15,9 @@ Status: `[x]` done · `[~]` in progress · `[ ]` planned
 | 2 | Stopping powers and targets (LunaSRIM port, compounds, layer stacks) | ✅ done (CAB correction, exit-path loss, target profiles open) |
 | 3 | Nuclear astrophysics (Gamow window, S factor, resonances, rates, penetrabilities) | ✅ done (broad resonances, rate uncertainties, stellar screening open) |
 | 4 | Run planning, detectors, sources | ✅ done |
-| 5 | Data and productivity (NUBASE, ENSDF, notebook, exports, reference, Shortcuts, widget) | ✅ done (iPad pass, Mac, iCloud open) |
+| 5 | Data and productivity (NUBASE, ENSDF, notebook, exports, reference, Shortcuts, widget) | ✅ done (iCloud open) |
 | 5b | Experimental and evaluated reaction data (EXFOR, level-scheme diagram, rate evaluations) | 🚧 EXFOR done |
+| 5c | Other platforms: native Mac app, Kotlin Multiplatform app for Android, Linux and Windows | 🚧 Mac done; Android/desktop physics ported, screens partly |
 | 6 | Release: first TestFlight / App Store version | ⏳ next |
 | 7 | Ideas for later | 💡 open |
 
@@ -88,7 +91,8 @@ Ziegler's non-commercial terms → app stays free / non-commercial, credit SRIM)
 - [x] Unit converter, constants reference, formula sheet
 - [x] Shortcuts (Q value, Gamow peak, source activity, half-life); source-activity widget (Home and Lock Screen)
 - [x] Release basics: automatic signing, export-compliance key, About/licences/privacy screens, docs/release.md
-- [ ] iPad polish, Mac and iCloud: moved to milestones 6 and 7
+- [x] iPad and iPhone Duo layouts; native Mac app (milestone 5c)
+- [ ] iCloud: moved to milestone 7
 
 ## Milestone 5b — Reaction data
 
@@ -120,13 +124,31 @@ EXFOR comes from the tables the IAEA publishes as [IAEA-NDS/exfortables_py](http
 - [ ] Rate evaluations (STARLIB rates with uncertainty factors for light targets, licence to be checked)
 - [ ] Device test of the EXFOR screens (simulator unavailable on the development Mac at the time of writing)
 
+## Milestone 5c — Other platforms
+
+- [x] Native macOS app (**GamowMac** scheme, `MacApp/`) from the shared SwiftUI code: sidebar with the setup, every
+      tool and the data views; ⌘O / drag and drop of spectra, ⌘K edits the setup, ⌘⌥↑/↓ step the beam energy;
+      hover read-outs on EXFOR points and spectrum channels; sandboxed (network, user-selected files)
+- [x] Kotlin Multiplatform / Compose Multiplatform app (`multiplatform/`): Android APK and Linux, Windows and macOS
+      desktop packages, packaging the Swift package's data files
+- [x] All NucPhysKit physics ported to Kotlin and checked against six shared reference files
+      (`Shared/reference_*.json`, ~1 600 cases, 10⁻⁹ relative)
+- [x] 17 Kotlin screens (setup, Q value, kinematics, EXFOR, stopping, Gamow window, S ↔ σ, rate, resonance
+      strength, penetrability, yield, detector spectrum, spectrum analysis, sources, decay, nuclides, notebook)
+- [x] GitHub workflow running the Kotlin tests and building the APK, `.deb`, `.msi` and `.dmg`
+- [x] Simpler iOS/Mac interface: searchable nuclide picker; Detector Spectrum in four blocks with folded
+      sections; folded target details in Yield, plot options in EXFOR
+- [ ] Kotlin parity: missing tools, deeper features, experiments and settings (see `multiplatform/PLAN.md`)
+- [ ] Test the APK on Android phones and the installers on Linux and Windows; release APK signing
+- [ ] Report EXFOR table O2597-002 (¹²C(p,γ), energies stored in MeV instead of keV) to the IAEA NDS
+
 ## Milestone 6 — First public release
 
 - [ ] Test on physical iPhones and iPads: launch time, memory, haptics, keyboard, widget refresh
 - [ ] Accessibility pass (Dynamic Type to AX5, VoiceOver for charts and controls, Reduce Transparency / Increase Contrast)
 - [ ] iPad: every tool in the sidebar layout at all window sizes; keyboard shortcuts for the common tools
 - [ ] Localisation of units and number formats (decimal comma) checked in all inputs
-- [ ] App Store assets: screenshots (6.9" iPhone, 13" iPad), description, privacy URL, support page
+- [ ] App Store assets: screenshots (6.9" iPhone, 13" iPad, Mac), description, privacy URL, support page
 - [ ] TestFlight beta with colleagues; collect feedback in GitHub issues
 
 ## Milestone 7 — Ideas for later
@@ -168,7 +190,7 @@ EXFOR comes from the tables the IAEA publishes as [IAEA-NDS/exfortables_py](http
 - [ ] Proper peak fits (Gaussian + step + linear background, multiplets) instead of moment estimates
 - [ ] Measured-spectrum overlay on the simulated spectrum; efficiency points straight from source peak areas
 - [ ] Notebook in iCloud (CloudKit) and a widget listing the user's saved sources (needs an App Group)
-- [ ] Native macOS version (the app already runs as "Designed for iPad" on Apple silicon)
+- [x] Native macOS version (milestone 5c)
 
 ## Design principles (from Apple HIG + apple-design skills)
 
